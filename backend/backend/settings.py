@@ -110,7 +110,7 @@ DATABASES = {
         'NAME': 'skf',
         'USER': 'postgres',
         'PASSWORD': 'password123',
-        'HOST': 'localhost',
+        'HOST': '10.117.8.143',
         'PORT': '5432',
     }
     # 'default': {
