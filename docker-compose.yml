@@ -29,9 +29,11 @@ services:
       - "5433:5432"
 
   celerybeat:
-    <<: *django
+    build:
+      context: ./backend
     image: celerybeat
-    command: celery -A backend worker --loglevel=info
+    command: >
+      sh -c "celery -A backend beat --loglevel=info"
     depends_on:
       - postgres
 
