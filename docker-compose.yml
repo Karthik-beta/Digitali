@@ -16,8 +16,6 @@ services:
       - postgres
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgres://postgres:password123@postgres:5432/skf
 
   postgres:
     image: postgres:latest
@@ -28,7 +26,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   celerybeat:
     <<: *django

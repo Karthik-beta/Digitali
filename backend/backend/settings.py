@@ -110,8 +110,8 @@ DATABASES = {
         'NAME': 'skf',
         'USER': 'postgres',
         'PASSWORD': 'password123',
-        'HOST': 'postgres',
-        'PORT': '5432',
+        'HOST': '10.117.8.143',
+        'PORT': '5433',
     }
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
