@@ -28,12 +28,12 @@ services:
     ports:
       - "5433:5432"
 
-  # celerybeat:
-  #   <<: *django
-  #   image: celerybeat
-  #   command: celery -A backend worker --loglevel=info
-  #   depends_on:
-  #     - postgres
+  celerybeat:
+    <<: *django
+    image: celerybeat
+    command: celery -A backend worker --loglevel=info
+    depends_on:
+      - postgres
 
   frontend:
     build:
