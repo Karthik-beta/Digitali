@@ -37,7 +37,7 @@ services:
       context: ./frontend
     image: frontend
     ports:
-      - 4200:80
+      - 8080:80
     volumes:
       - ./frontend:/app
     depends_on:
