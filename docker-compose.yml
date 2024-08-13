@@ -1,3 +1,5 @@
+version: '3.9'
+
 volumes:
   postgres_data: {}
   postgres_data_backups: {}
@@ -13,7 +15,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - 8000:8000
+      - "8000:8000"
 
   postgres:
     image: postgres:latest
@@ -30,13 +32,15 @@ services:
     <<: *django
     image: celerybeat
     command: celery -A backend worker --loglevel=info
+    depends_on:
+      - postgres
 
   frontend:
     build:
       context: ./frontend
     image: frontend
     ports:
-      - 8080:80
+      - "8080:80"
     volumes:
       - ./frontend:/app
     depends_on:
