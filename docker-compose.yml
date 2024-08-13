@@ -36,7 +36,8 @@ services:
       - production_redis_data:/data
 
   celeryworker:
-    <<: *django
+    build:
+      context: ./backend
     image: celeryworker
     command: celery -A backend worker --loglevel=info
     depends_on:
@@ -44,7 +45,8 @@ services:
       - redis
 
   celerybeat:
-    <<: *django
+    build:
+      context: ./backend
     image: celerybeat
     command: celery -A backend worker --loglevel=info
     depends_on:
