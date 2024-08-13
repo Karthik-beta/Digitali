@@ -21,15 +21,16 @@ COPY . /app/
 # Expose port 8000 to the outside world
 EXPOSE 8000
 
-# Add an entrypoint script to handle migrations and server startup
-COPY entrypoint.sh /app/
+# # Add an entrypoint script to handle migrations and server startup
+# COPY entrypoint.sh /app/
 
-# Ensure the entrypoint script is executable
-RUN chmod +x /app/entrypoint.sh
+# # Ensure the entrypoint script is executable
+# RUN chmod +x /app/entrypoint.sh
 
-# Set the entrypoint for the container
-ENTRYPOINT ["/app/entrypoint.sh"]
+# # Set the entrypoint for the container
+# ENTRYPOINT ["/app/entrypoint.sh"]
 
 
 # Default command to run the Django application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
