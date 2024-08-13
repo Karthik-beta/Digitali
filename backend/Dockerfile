@@ -25,12 +25,11 @@ EXPOSE 8000
 COPY entrypoint.sh /app/
 
 # Ensure the entrypoint script is executable
-# RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Set the entrypoint for the container
-# ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
 
-RUN python manage.py migrate
 
 # Default command to run the Django application
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
