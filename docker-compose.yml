@@ -13,7 +13,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - 8000:8000
+      - 8001:8000
 
   postgres:
     image: postgres:latest
@@ -36,7 +36,7 @@ services:
       context: ./frontend
     image: frontend
     ports:
-      - 8080:80
+      - 8081:80
     volumes:
       - ./frontend:/app
     depends_on:
