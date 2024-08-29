@@ -63,8 +63,8 @@ def process_logs(log_data):
 
             if not success:  # If processing failed, break the loop
                 print(f"Error processing log for employee: {log_entry.employeeid}")
-                transaction.set_rollback(True)  # Rollback the transaction
-                process_success = False  # Set the flag to False indicating failure
+                # transaction.set_rollback(True)  # Rollback the transaction
+                # process_success = False  # Set the flag to False indicating failure
                 # break  # Stop processing further logs
                 continue
 
