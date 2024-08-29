@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 #     print("Logs processed.", log_data.count())
 #     return process_success  # Return the overall processing success flag
 
+@shared_task
 def process_logs(log_data):
     """
     Processes a list of log entries one by one, sending each log for processing only
@@ -77,6 +78,7 @@ def process_logs(log_data):
     print("Logs processed.", log_data.count())
     return process_success  # Return the overall processing success flag
 
+@shared_task
 def scan_for_data():
     try:
         with transaction.atomic():
