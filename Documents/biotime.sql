@@ -1,1 +1,0 @@
-SET timezone = 'Asia/Calcutta';

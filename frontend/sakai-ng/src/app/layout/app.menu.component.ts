@@ -59,18 +59,18 @@ export class AppMenuComponent implements OnInit {
                                     }
                                 ]
                             },
-                            {
-                                label: 'Payroll Management', icon: 'fa-solid fa-money-check-dollar',
-                                items: [
-                                    { label: 'Payroll Components', icon: 'fa-solid fa-coins' },
-                                    { label: 'CTC Details', icon: 'fa-solid fa-file-invoice-dollar' },
-                                    { label: 'Payroll Regulation', icon: 'fa-solid fa-scale-balanced' },
-                                    { label: 'Attendance Bonus', icon: 'fa-solid fa-calendar-check' },
-                                    { label: 'Yearly Bonus', icon: 'fa-solid fa-money-check' },
-                                    { label: 'Salary Advance', icon: 'fa-solid fa-money-bill-wave' },
-                                    { label: 'Monthly Attendance', icon: 'fa-solid fa-calendar-days' },
-                                ]
-                            }
+                            // {
+                            //     label: 'Payroll Management', icon: 'fa-solid fa-money-check-dollar',
+                            //     items: [
+                            //         { label: 'Payroll Components', icon: 'fa-solid fa-coins' },
+                            //         { label: 'CTC Details', icon: 'fa-solid fa-file-invoice-dollar' },
+                            //         { label: 'Payroll Regulation', icon: 'fa-solid fa-scale-balanced' },
+                            //         { label: 'Attendance Bonus', icon: 'fa-solid fa-calendar-check' },
+                            //         { label: 'Yearly Bonus', icon: 'fa-solid fa-money-check' },
+                            //         { label: 'Salary Advance', icon: 'fa-solid fa-money-bill-wave' },
+                            //         { label: 'Monthly Attendance', icon: 'fa-solid fa-calendar-days' },
+                            //     ]
+                            // }
                         ]
                     }
                 ]
