@@ -36,29 +36,19 @@ services:
     build:
       context: ./backend
     image: celeryworker
-    command: celery -A config.celery_app worker --loglevel=info
+    command: celery -A backend worker --loglevel=info
     depends_on:
       - postgres
       - redis
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend:/app
 
   celerybeat:
     build:
       context: ./backend
     image: celerybeat
-    command: celery -A config.celery_app beat --loglevel=info
+    command: celery -A backend beat --loglevel=info
     depends_on:
       - postgres
       - redis
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend:/app
 
   frontend:
     build:
