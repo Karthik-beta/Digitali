@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import View
 from django.core.management import execute_from_command_line
 import openpyxl
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 
 from resource.models import Employee, Attendance, Logs
@@ -397,7 +399,7 @@ class ExportAttendanceExcelView(View):
             ws.cell(row=row_num, column=8, value=record.employeeid.category)
             ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
             ws.cell(row=row_num, column=10, value=record.logdate)
-            ws.cell(row=row_num, column=11, value=record.employeeid.shift.name)
+            ws.cell(row=row_num, column=11, value=record.employeeid.shift if record.employeeid and record.employeeid.shift else None)
             ws.cell(row=row_num, column=12, value=record.shift_status)
             ws.cell(row=row_num, column=13, value=record.first_logtime)
             ws.cell(row=row_num, column=14, value=record.last_logtime)
@@ -710,3 +712,269 @@ class EmployeeDropdownList(generics.ListAPIView):
     queryset = Employee.objects.all().order_by('employee_id')
     pagination_class = None
     serializer_class = serializers.EmployeeDropdownSerializer
+
+class ExportEmployeeAttendanceExcelView(View):
+    def get(self, request, *args, **kwargs):
+        employee_id = request.GET.get('employee_id')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        queryset = Attendance.objects.order_by('-logdate').all()
+
+        if employee_id:
+            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+        if month:
+            queryset = queryset.filter(logdate__month=month)
+        if year:
+            queryset = queryset.filter(logdate__year=year)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = f"Employee {employee_id} Attendance Report"
+
+        # Create the row with the required employee details
+        if employee_id and month and year:
+            employee = queryset.first().employeeid
+            first_day_of_month = date(int(year), int(month), 1)
+            next_month = first_day_of_month.replace(day=28) + timedelta(days=4)
+            last_day_of_month = next_month - timedelta(days=next_month.day)
+            num_days = last_day_of_month.day
+
+            # ws.append([f"Monthly In and Out Register for the Period of: {first_day_of_month} to {last_day_of_month}"])
+            # Merge cells for the header
+            header_text = f"Monthly In and Out Register for the Period of: {first_day_of_month} to {last_day_of_month}"
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=5)
+            header_cell = ws.cell(row=1, column=1, value=header_text)
+            ws.append([f"EMP ID: ", f"{employee.employee_id}", "CALENDAR DAYS:", num_days, "Days"] + [str(day) for day in range(1, num_days + 1)])
+
+            # Fetch the shift data for each day
+            shifts = []
+            shift_status = []
+            first_logtime = []
+            last_logtime = []
+            total_hours = []
+            late_entries = []
+            early_exits = []
+            overtime = []
+
+            for day in range(1, num_days + 1):
+                log_date = date(int(year), int(month), day)
+                attendance_record = queryset.filter(logdate=log_date).first()
+                if attendance_record:
+                    shifts.append(attendance_record.shift if attendance_record.shift else "")
+                    if attendance_record.shift_status == 'P':
+                        shift_status.append(attendance_record.shift_status)
+                    elif attendance_record.shift_status == 'A':
+                        if log_date.weekday() >= 6:
+                            shift_status.append("WO")
+                        else:
+                            shift_status.append("A")
+                    first_logtime.append(attendance_record.first_logtime if attendance_record.first_logtime else "")
+                    last_logtime.append(attendance_record.last_logtime if attendance_record.last_logtime else "")
+                    total_hours.append(attendance_record.total_time if attendance_record.total_time else "")
+                    late_entries.append(attendance_record.late_entry if attendance_record.late_entry else "")
+                    early_exits.append(attendance_record.early_exit if attendance_record.early_exit else "")
+                    overtime.append(attendance_record.overtime if attendance_record.overtime else "")
+                else:
+                    shifts.append("")
+                    shift_status.append("")
+                    first_logtime.append("")
+                    last_logtime.append("")
+                    total_hours.append("")
+                    late_entries.append("")
+                    early_exits.append("")
+                    overtime.append("")
+
+            total_present_days = shift_status.count('P') + shift_status.count('HD')  # Count total "P" and "HD" days
+
+            ws.append([f"EMP Name: ", f"{employee.employee_name}", "PAID DAYS:", "", "Shift"] + shifts)
+            ws.append([f"COMPANY: ", f"{employee.company.name if employee.company else ''}", "PRESENT DAYS:", f"{total_present_days}", "Status"] + shift_status)
+            for idx, status in enumerate(shift_status, start=6):  # Adjust the starting index based on the row where 'shift_status' starts
+                cell = ws.cell(row=4, column=idx)  # Adjust the row based on where 'shift_status' is located
+                if status == 'P':
+                    cell.style = 'Good'
+                elif status == 'WO': 
+                    cell.style = 'Neutral'
+                else:
+                    cell.style = 'Bad'
+
+                cell.alignment = Alignment(horizontal='center')
+
+            total_WO_days = shift_status.count('WO')  # Count total "WO" days
+            total_late_entry_time  = sum([t for t in late_entries if t], timedelta())
+            total_early_exit_time = sum([t for t in early_exits if t], timedelta())
+            total_OT_time = sum([t for t in overtime if t], timedelta())
+            total_working_time = sum([t for t in total_hours if t], timedelta())
+
+            total_GS_days = shifts.count('GS') if shifts else 0
+            total_OS_days = shifts.count('OS') if shifts else 0
+            total_FS_days = shifts.count('FS') if shifts else 0
+            total_SS_days = shifts.count('SS') if shifts else 0
+            total_NS_days = shifts.count('NS') if shifts else 0
+
+            ws.append(["LOCATION: ", f"{employee.location.name if employee.location else ''}", "WO:", f"{total_WO_days}", "Duty-In"] + first_logtime)
+            ws.append(["DEPARTMENT: ", f"{employee.department.name if employee.department else ''}", "WW:", "0", "Duty-Out"] + last_logtime)
+            ws.append(["DESIGNATION: ", f"{employee.designation.name if employee.designation else ''}", "FS:", "0", "Duty Hours"] + total_hours)
+            ws.append(["EMP TYPE: ", f"{employee.job_type if employee.job_type else ''}", "PH:", "0", "Lunch-Out"] + [" "] * num_days)
+            ws.append(["REPORTING MNG: ", f"{employee.reporting_manager.employee_name [employee.reporting_manager.employee_id] if employee.reporting_manager else ''}", "CO:", "0", "Lunch-In"] + [" "] * num_days)
+            ws.append(["CL:", "0", "CW:", "0", "Lunch Hours"] + [" "] * num_days)
+            ws.append(["EL:", "0", "LATE ENTRY HOURS:", f"{total_late_entry_time}", "OT-In"])
+            ws.append(["SL:", "0", "EARLY EXIT HOURS:", f"{total_early_exit_time}", "OT-Out"])
+            ws.append(["MEDICAL:", "0", "OT HOURS:", f"{total_OT_time}", "OT Hours"] + overtime)
+            ws.append(["ON DUTY:", "0", "LUNCH HOURS:", "", "Late Entry"] + late_entries)
+            ws.append([f"GS:{total_GS_days} OS:{total_OS_days} FS:{total_FS_days} SS:{total_SS_days} NS:{total_NS_days}", "", "WORKING HOURS:", f"{total_working_time}", "Early Exit"] + early_exits)
+        
+        # Auto-adjust column widths with a minimum width
+        min_width = 10  # Define the minimum width for the columns
+        for col_idx, column in enumerate(ws.columns, start=1):
+            max_length = 0
+            column_letter = get_column_letter(col_idx)  # Get the column letter using index
+
+            # Iterate through all cells in the column, skipping the first row
+            for cell in column[1:]:  # Skip first row
+                if cell.row == 1 and cell.column < 6:  # Skip merged header cells if needed
+                    continue
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+
+            # Adjust column width, ensuring it meets the minimum width
+            adjusted_width = max(max_length + 2, min_width)  # Add padding and ensure it meets minimum width
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Convert the month and year to a datetime object
+        month_name = datetime(year=int(year), month=int(month), day=1).strftime('%B')
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=Employee_{employee.employee_id}_Attendance_{month_name}_{year}.xlsx'
+        wb.save(response)
+        return response
+    
+class ExportAllEmployeeAttendanceExcelView(View):
+
+    def get(self, request, *args, **kwargs):
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        if not (month and year):
+            return Response({'error': 'Month and year are required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = Attendance.objects.order_by('-logdate').all()
+
+        if month:
+            queryset = queryset.filter(logdate__month=month)
+        if year:
+            queryset = queryset.filter(logdate__year=year)
+
+        wb = Workbook()
+        ws = wb.active
+
+        # Title of the worksheet
+        ws.title = f"Attendance_{month}_{year}"
+
+        first_day_of_month = date(int(year), int(month), 1)
+        next_month = first_day_of_month.replace(day=28) + timedelta(days=4)
+        last_day_of_month = next_month - timedelta(days=next_month.day)
+        num_days = last_day_of_month.day
+
+        row_num = 1  # Start from the first row
+
+        for employee in Employee.objects.all():  # Assuming Employee is the model containing employee details
+            employee_queryset = queryset.filter(employeeid=employee)
+
+            if employee_queryset.exists():
+                self.add_employee_attendance(ws, employee, employee_queryset, first_day_of_month, last_day_of_month, num_days, row_num)
+                row_num += 16  # Skip 14 rows between each employee's data for clarity
+                
+
+        month_name = datetime(year=int(year), month=int(month), day=1).strftime('%B')
+
+        self.auto_adjust_column_width(ws, min_width=10)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=All_Employee_Attendance_{month_name}_{year}.xlsx'
+        wb.save(response)
+        return response
+
+    def add_employee_attendance(self, ws, employee, queryset, first_day, last_day, num_days, start_row):
+        # Employee details and attendance header
+        header_text = f"{employee.employee_name} (ID: {employee.employee_id}) form: {first_day} to {last_day}"
+        ws.merge_cells(start_row=start_row, start_column=1, end_row=start_row, end_column=1)
+        ws.cell(row=start_row, column=1, value=header_text)
+
+        ws.append([f"EMP ID: ", f"{employee.employee_id}", "CALENDAR DAYS:", num_days, "Days"] + [str(day) for day in range(1, num_days + 1)])
+
+        shifts, shift_status, first_logtime, last_logtime, total_hours, late_entries, early_exits, overtime = self.fetch_attendance_data(queryset, num_days, int(first_day.year), int(first_day.month))
+
+        total_present_days = shift_status.count('P') + shift_status.count('HD')
+        total_WO_days = shift_status.count('WO')
+        total_late_entry_time = sum([t for t in late_entries if t], timedelta())
+        total_early_exit_time = sum([t for t in early_exits if t], timedelta())
+        total_OT_time = sum([t for t in overtime if t], timedelta())
+        total_working_time = sum([t for t in total_hours if t], timedelta())
+
+        ws.append([f"EMP Name: ", f"{employee.employee_name}", "PAID DAYS:", "", "Shift"] + shifts)
+        ws.append([f"COMPANY: ", f"{employee.company.name if employee.company else ''}", "PRESENT DAYS:", f"{total_present_days}", "Status"] + shift_status)
+        for idx, status in enumerate(shift_status, start=6):  # Adjust the starting index based on the row where 'shift_status' starts
+            cell = ws.cell(row=start_row+3, column=idx)  # Adjust the row based on where 'shift_status' is located
+            if status == 'P':
+                cell.style = 'Good'
+            elif status == 'WO': 
+                cell.style = 'Neutral'
+            else:
+                cell.style = 'Bad'
+
+        ws.append(["LOCATION: ", f"{employee.location.name if employee.location else ''}", "WO:", f"{total_WO_days}", "Duty-In"] + first_logtime)
+        ws.append(["DEPARTMENT: ", f"{employee.department.name if employee.department else ''}", "WW:", "0", "Duty-Out"] + last_logtime)
+        ws.append(["DESIGNATION: ", f"{employee.designation.name if employee.designation else ''}", "FS:", "0", "Duty Hours"] + total_hours)
+        ws.append(["EMP TYPE: ", f"{employee.job_type if employee.job_type else ''}", "PH:", "0", "Lunch-Out"] + [" "] * num_days)
+        ws.append(["REPORTING MNG: ", f"{employee.reporting_manager.employee_name [employee.reporting_manager.employee_id] if employee.reporting_manager else ''}", "CO:", "0", "Lunch-In"] + [" "] * num_days)
+        ws.append(["CL:", "0", "CW:", "0", "Lunch Hours"] + [" "] * num_days)
+        ws.append(["EL:", "0", "LATE ENTRY HOURS:", f"{total_late_entry_time}", "OT-In"])
+        ws.append(["SL:", "0", "EARLY EXIT HOURS:", f"{total_early_exit_time}", "OT-Out"])
+        ws.append(["MEDICAL:", "0", "OT HOURS:", f"{total_OT_time}", "OT Hours"] + overtime)
+        ws.append(["ON DUTY:", "0", "LUNCH HOURS:", "", "Late Entry"] + late_entries)
+        ws.append([f"GS:{shifts.count('GS')} OS:{shifts.count('OS')} FS:{shifts.count('FS')} SS:{shifts.count('SS')} NS:{shifts.count('NS')}", "", "WORKING HOURS:", f"{total_working_time}", "Early Exit"] + early_exits)
+
+    def fetch_attendance_data(self, queryset, num_days, year, month):
+        shifts, shift_status, first_logtime, last_logtime, total_hours, late_entries, early_exits, overtime = ([] for _ in range(8))
+
+        for day in range(1, num_days + 1):
+            log_date = date(year, month, day)
+            attendance_record = queryset.filter(logdate=log_date).first()
+            if attendance_record:
+                shifts.append(attendance_record.shift if attendance_record.shift else "")
+                shift_status.append(attendance_record.shift_status if attendance_record.shift_status else "")
+                first_logtime.append(attendance_record.first_logtime if attendance_record.first_logtime else "")
+                last_logtime.append(attendance_record.last_logtime if attendance_record.last_logtime else "")
+                total_hours.append(attendance_record.total_time if attendance_record.total_time else "")
+                late_entries.append(attendance_record.late_entry if attendance_record.late_entry else "")
+                early_exits.append(attendance_record.early_exit if attendance_record.early_exit else "")
+                overtime.append(attendance_record.overtime if attendance_record.overtime else "")
+            else:
+                shifts.append("")
+                shift_status.append("")
+                first_logtime.append("")
+                last_logtime.append("")
+                total_hours.append("")
+                late_entries.append("")
+                early_exits.append("")
+                overtime.append("")
+
+        return shifts, shift_status, first_logtime, last_logtime, total_hours, late_entries, early_exits, overtime
+
+    def auto_adjust_column_width(self, ws, min_width=10):
+        for col_idx, column in enumerate(ws.columns, start=1):
+            max_length = 0
+            column_letter = get_column_letter(col_idx)
+            for cell in column[1:]:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = max(max_length + 2, min_width)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        

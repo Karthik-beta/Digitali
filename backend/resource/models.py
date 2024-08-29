@@ -221,11 +221,8 @@ class Employee(models.Model):
             # Add more indexes as needed
         ]
 
- 
-  
-
 class Logs(models.Model):
-    id = models.IntegerField(primary_key=True, editable=False)
+    id = models.AutoField(primary_key=True)
     employeeid = models.CharField(blank=True, null=True)
     log_datetime = models.DateTimeField(blank=True, null=True)
     direction = models.CharField(max_length=50, blank=True, null=True)

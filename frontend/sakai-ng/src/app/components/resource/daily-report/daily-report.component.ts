@@ -11,6 +11,7 @@ import { of } from 'rxjs';
 interface Employee {
     employee_id: string;
 }
+
 interface Location {
     name: string;
 }
@@ -682,6 +683,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         return 'status-badge status-' +
                 (shiftStatus === 'P' ? 'P' : '') +
                 (shiftStatus === 'A' ? 'A' : '') +
+                (shiftStatus === 'HD' ? 'HD' : '') +
                 (shiftStatus === 'P/A' ? 'Resigned' : '') +
                 (shiftStatus === 'A/P' ? 'Resigned' : '') +
                 (shiftStatus === 'WO' ? 'Resigned' : '') +

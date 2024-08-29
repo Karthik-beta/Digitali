@@ -6,26 +6,42 @@ from celery import shared_task
 
 # from resource.attendance import AttendanceCalculator
 from resource.attendance import AttendanceService
+from resource.attendance2 import process_attendance
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # def process_logs(log_data):
 #     """
-#     Process individual log entries.
+#     Processes a list of log entries one by one, sending each log for processing only
+#     if the previous log was processed successfully.
 #     """
-#     for log in log_data:
-#         # Example processing logic
-#         print(f"Processing log with id {log.id}")
-#         logger.info(f"Processing log with id {log.id}")
+#     process_success = True  # Flag to track overall processing success
 
-#         employeeid = log.employeeid
-#         log_datetime = log.log_datetime
-#         direction = log.direction
+#     for log_entry in log_data:  # Iterate through each Logs object in the QuerySet
+#         if process_success:
+#             service = AttendanceService(
+#                 log_entry.employeeid,  # Access attributes directly
+#                 log_entry.log_datetime,
+#                 log_entry.direction
+#             )
+#             success = service.process_attendance()
 
-#         AttendanceCalculator(employeeid, log_datetime, direction)
+#             if not success:  # If processing failed, break the loop
+#                 print(f"Error processing log for employee: {log_entry.employeeid}")
+#                 transaction.set_rollback(True)  # Rollback the transaction
+#                 process_success = False  # Set the flag to False indicating failure
+#                 break  # Stop processing further logs
 
-#     return True
+#             # Update LastLogId after each successful log processing
+#             with transaction.atomic():
+#                 # LastLogId.objects.update(last_log_id=log_entry.id)
+#                 pass
+
+#             print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
+
+#     print("Logs processed.", log_data.count())
+#     return process_success  # Return the overall processing success flag
 
 def process_logs(log_data):
     """
@@ -34,14 +50,16 @@ def process_logs(log_data):
     """
     process_success = True  # Flag to track overall processing success
 
+    print("Processing logs...", log_data)
+
     for log_entry in log_data:  # Iterate through each Logs object in the QuerySet
+        print("Processing log2...", log_entry.employeeid, log_entry.log_datetime, log_entry.direction)
         if process_success:
-            service = AttendanceService(
+            success = process_attendance(
                 log_entry.employeeid,  # Access attributes directly
                 log_entry.log_datetime,
                 log_entry.direction
             )
-            success = service.process_attendance()
 
             if not success:  # If processing failed, break the loop
                 print(f"Error processing log for employee: {log_entry.employeeid}")

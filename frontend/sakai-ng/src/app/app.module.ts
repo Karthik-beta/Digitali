@@ -141,6 +141,13 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 
 import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
 import { ShiftComponent } from './components/configuration/shift/shift.component';
+import { AbsentComponent } from './components/resource/absent/absent.component';
+import { LateEntryComponent } from './components/resource/late-entry/late-entry.component';
+import { EarlyExitComponent } from './components/resource/early-exit/early-exit.component';
+import { OvertimeComponent } from './components/resource/overtime/overtime.component';
+import { PresentComponent } from './components/resource/present/present.component';
+import { MissedPunchReportComponent } from './components/resource/missed-punch-report/missed-punch-report.component';
+import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
 
 
 
@@ -151,7 +158,14 @@ import { ShiftComponent } from './components/configuration/shift/shift.component
         DailyReportComponent, ShiftStrengthComponent, EvacuationComponent, CompanyComponent, LocationComponent, LocationComponent,
         DepartmentComponent, DesignationComponent, DivisionComponent, SubdivisionComponent, ShopfloorComponent, MonthlyInOutComponent,
         MissedPunchComponent,
-        ShiftComponent
+        ShiftComponent,
+        AbsentComponent,
+        LateEntryComponent,
+        EarlyExitComponent,
+        OvertimeComponent,
+        PresentComponent,
+        MissedPunchReportComponent,
+        InsufficientHoursReportComponent
     ],
     imports: [
         AppRoutingModule,

@@ -1,1 +1,0 @@
-*/1 * * * * root cd /app && python manage.py import >> /var/log/cron.log 2>&1

@@ -93,7 +93,7 @@ class AttendanceService:
             Optional[Logs]: The first Logs object for the day, else None.
         """
         try:
-            if self.direction in ['IN', 'INOUT']:
+            if self.direction in ['IN']:
                 # if self.shift.night_shift and self.direction == 'IN':
                 #     # For night shifts, search for the log 6 hours greater than previous day's end time if not return None
                 #     return Logs.objects.filter(
@@ -157,7 +157,7 @@ class AttendanceService:
             Optional[Logs]: The last Logs object, else None.
         """
         try:
-            if self.direction in ['OUT', 'INOUT']:
+            if self.direction in ['OUT']:
                 if self.shift:
                     # Calculate shift start and end, handling night shifts
                     shift_start_time = datetime.combine(self.log_datetime.date(), self.shift.start_time)
@@ -223,31 +223,21 @@ class AttendanceService:
                             
                             return self.find_log_within_tolerance(last_log, self.auto_shift.end_time, self.auto_shift.tolerance_end_time)
                         elif self.auto_shift.night_shift and self.direction == 'OUT':
-                            shift_start_time = datetime.combine(self.log_datetime.date(), self.auto_shift.start_time)
-                            shift_end_time = datetime.combine(self.log_datetime.date() + timedelta(days=1), self.auto_shift.end_time)
-                            logs = Logs.objects.filter(
-                            employeeid=self.employeeid,
-                            log_datetime__range=(shift_start_time, shift_end_time)
-                            ).order_by('-log_datetime')
-
-                            if not logs: 
-                                # Search for logs only on the next day 
-                                shift_start_time = datetime.combine(self.log_datetime.date() + timedelta(days=1), datetime.min.time())
-                                shift_end_time = datetime.combine(self.log_datetime.date() + timedelta(days=1), datetime.max.time())
-                                logs = Logs.objects.filter(
-                                    employeeid=self.employeeid,
-                                    log_datetime__range=(shift_start_time, shift_end_time)
-                                ).order_by('-log_datetime')
-                            return logs.first()
-                            
                             log_date = self.log_datetime.date()
-                            # last_log = Logs.objects.filter(
-                            #     employeeid=self.employeeid,
-                            #     log_datetime__date=log_date,
-                            #     direction__in=['OUT']
-                            # ).order_by('-log_datetime').first()
+                            last_log = Logs.objects.filter(
+                                employeeid=self.employeeid,
+                                log_datetime__date=log_date
+                            ).order_by('-log_datetime').first()
 
-                            return self.find_log_within_tolerance(last_log, self.auto_shift.end_time, self.auto_shift.tolerance_end_time)
+                            # Use find_log_within_tolerance to check against the previous day's end time
+                            yesterday = log_date - timedelta(days=1)
+                            yesterday_end_time = datetime.combine(yesterday, self.auto_shift.end_time).time()
+                            last_log_yesterday = self.find_log_within_tolerance(last_log, yesterday_end_time, self.auto_shift.tolerance_end_time)
+
+                            if last_log_yesterday:
+                                return last_log_yesterday
+                            else:
+                                return self.find_log_within_tolerance(last_log, self.auto_shift.end_time, self.auto_shift.tolerance_end_time)
                 else:
                     # logger.warning(f"Employee {self.employeeid} has no shift assigned.")
                     # return None
@@ -552,7 +542,8 @@ class AttendanceService:
                     # Check if the log time falls within the tolerance window of any AutoShift
                     if start_window <= log_time <= end_window:
                         # Found the matching AutoShift
-                        self.auto_shift = auto_shift  # Assign the matching auto_shift to the instance
+                        auto_shift = auto_shift  # Assign the matching auto_shift to the instance
+                        attendance.shift = auto_shift.shift
                         break  # No need to continue checking other AutoShifts
 
                 # If no matching AutoShift was found, log a warning
@@ -605,7 +596,7 @@ class AttendanceService:
 
         # Logic for handling last_logtime based on IN/OUT and night shifts
         if self.direction in ['OUT']:
-            if (self.shift and self.shift.night_shift) or (self.auto_shift and self.auto_shift.night_shift):
+            if (self.auto_shift and self.auto_shift.night_shift):
                 # Check if there's an existing attendance for the previous day with last_logtime not set
                 yesterday = self.log_datetime.date() - timedelta(days=1)
                 try:
@@ -613,7 +604,40 @@ class AttendanceService:
                     if not previous_attendance.last_logtime: 
                         # This OUT punch is likely associated with yesterday's IN
                         previous_attendance.last_logtime = self.log_datetime.time()
-                        previous_attendance.save(update_fields=['last_logtime'])
+                        first_log_yesterday = self.get_first_log()
+                        if first_log_yesterday:
+                            if self.auto_shift:
+                                previous_attendance.total_time = self.calculate_auto_shift_total_time(
+                                    first_log_yesterday.log_datetime.time(),
+                                    previous_attendance.last_logtime,
+                                    previous_attendance.logdate
+                                )
+                                previous_attendance.early_exit = self.calculate_auto_shift_early_exit(
+                                    self.get_last_log(),
+                                    self.auto_shift
+                                )
+                                previous_attendance.overtime = self.calculate_auto_shift_overtime(
+                                    first_log_yesterday.log_datetime.time(),
+                                    previous_attendance.last_logtime,
+                                    previous_attendance.logdate,
+                                    self.auto_shift
+                                )
+                            elif self.shift:
+                                previous_attendance.total_time = self.calculate_total_time(
+                                    first_log_yesterday,
+                                    self.get_last_log()
+                                )
+                                previous_attendance.early_exit = self.calculate_early_exit(
+                                    self.get_last_log(),
+                                    self.shift
+                                )
+                                previous_attendance.overtime = self.calculate_overtime(
+                                    first_log_yesterday,
+                                    self.get_last_log(),
+                                    self.shift
+                                )
+
+                        previous_attendance.save()
                         logger.info(f"Updated previous day's attendance for employee {self.employeeid} with OUT punch.")
                     else:
                         # This is a regular OUT punch for the current day

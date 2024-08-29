@@ -110,7 +110,7 @@ DATABASES = {
         'NAME': 'skf',
         'USER': 'postgres',
         'PASSWORD': 'password123',
-        # 'HOST': '10.117.8.143',
+        # 'HOST': 'localhost',
         'HOST': '172.23.16.1',
         'PORT': '5433',
     }
@@ -152,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 

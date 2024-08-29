@@ -130,7 +130,19 @@ export class AppMenuComponent implements OnInit {
                             {
                                 label: 'Attendance Management', icon: 'fa-solid fa-calendar-days',
                                 items: [
-                                    { label: 'Daily Info', icon: 'fa-solid fa-calendar-days', routerLink: ['/daily_report'] },
+                                    {
+                                        label: 'Daily Info', icon: 'fa-solid fa-calendar-days',
+                                        items: [
+                                            { label: 'Daily Status', icon: 'fa-solid fa-chart-line', routerLink: ['/daily_report'] },
+                                            { label: 'Present Report', icon: 'fa-solid fa-user-check', routerLink: ['/present_report'] },
+                                            { label: 'Absent Report', icon: 'fa-solid fa-user-times', routerLink: ['/absent_report'] },
+                                            { label: 'Late Entry Report', icon: 'fa-solid fa-clock', routerLink: ['/late_entry_report'] },
+                                            { label: 'Early Exit Report', icon: 'fa-solid fa-door-open', routerLink: ['/early_exit_report'] },
+                                            { label: 'Overtime Report', icon: 'fa-solid fa-hourglass-half', routerLink: ['/overtime_report'] },
+                                            { label: 'Missed Punch Report', icon: 'fa-solid fa-fingerprint', routerLink: ['/missed_punch_report'] },
+                                            { label: 'Insufficient Hours Report', icon: 'fa-solid fa-clock', routerLink: ['/insufficient_hours_report'] },
+                                        ]
+                                    },
                                     {
                                         label: 'Monthly Info', icon: 'fa-solid fa-calendar',
                                         items: [
@@ -142,23 +154,23 @@ export class AppMenuComponent implements OnInit {
                                     }
                                 ]
                             },
-                            {
-                                label: 'Payroll Management', icon: 'fa-solid fa-money-check-dollar',
-                                items: [
-                                    { label: 'New Joining Register', icon: 'fa-solid fa-user-plus' },
-                                    { label: 'Adult Register', icon: 'fa-solid fa-user-tie' },
-                                    { label: 'Holiday Register', icon: 'fa-solid fa-umbrella-beach' },
-                                    { label: 'Man-days Register', icon: 'fa-solid fa-user-group' },
-                                    { label: 'Attendance', icon: 'fa-solid fa-calendar-check' },
-                                    { label: 'Salary Statement', icon: 'fa-solid fa-file-invoice-dollar' },
-                                    { label: 'Salary Abstract', icon: 'fa-solid fa-file-contract' },
-                                    { label: 'Bank Statement', icon: 'fa-solid fa-building-columns' },
-                                    { label: 'PF Statement', icon: 'fa-solid fa-piggy-bank' },
-                                    { label: 'ESI Statement', icon: 'fa-solid fa-hospital' },
-                                    { label: 'PT Statement', icon: 'fa-solid fa-receipt' },
-                                    { label: 'Payslip', icon: 'fa-solid fa-file-invoice' },
-                                ]
-                            },
+                            // {
+                            //     label: 'Payroll Management', icon: 'fa-solid fa-money-check-dollar',
+                            //     items: [
+                            //         { label: 'New Joining Register', icon: 'fa-solid fa-user-plus' },
+                            //         { label: 'Adult Register', icon: 'fa-solid fa-user-tie' },
+                            //         { label: 'Holiday Register', icon: 'fa-solid fa-umbrella-beach' },
+                            //         { label: 'Man-days Register', icon: 'fa-solid fa-user-group' },
+                            //         { label: 'Attendance', icon: 'fa-solid fa-calendar-check' },
+                            //         { label: 'Salary Statement', icon: 'fa-solid fa-file-invoice-dollar' },
+                            //         { label: 'Salary Abstract', icon: 'fa-solid fa-file-contract' },
+                            //         { label: 'Bank Statement', icon: 'fa-solid fa-building-columns' },
+                            //         { label: 'PF Statement', icon: 'fa-solid fa-piggy-bank' },
+                            //         { label: 'ESI Statement', icon: 'fa-solid fa-hospital' },
+                            //         { label: 'PT Statement', icon: 'fa-solid fa-receipt' },
+                            //         { label: 'Payslip', icon: 'fa-solid fa-file-invoice' },
+                            //     ]
+                            // },
                             {
                                 label: 'Canteen Management', icon: 'fa-solid fa-utensils',
                                 items: [

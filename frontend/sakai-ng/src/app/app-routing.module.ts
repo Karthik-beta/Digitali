@@ -13,6 +13,13 @@ import { EvacuationComponent } from './components/resource/resource-dashboard/ev
 import { AddEditEmployeeComponent } from './components/resource/employee-master/add-edit-employee/add-edit-employee.component';
 import { MonthlyInOutComponent } from './components/resource/monthly-in-out/monthly-in-out.component';
 import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
+import { AbsentComponent } from './components/resource/absent/absent.component';
+import { LateEntryComponent } from './components/resource/late-entry/late-entry.component';
+import { EarlyExitComponent } from './components/resource/early-exit/early-exit.component';
+import { OvertimeComponent } from './components/resource/overtime/overtime.component';
+import { PresentComponent } from './components/resource/present/present.component';
+import { MissedPunchReportComponent } from './components/resource/missed-punch-report/missed-punch-report.component';
+import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
 
 @NgModule({
     imports: [
@@ -35,6 +42,13 @@ import { MissedPunchComponent } from './components/resource/attendance-reg/misse
                     { path: 'add_employee', component: AddEditEmployeeComponent, canActivate: [authGuard] },
                     { path: 'view_edit_employee/:id', component: AddEditEmployeeComponent, canActivate: [authGuard] },
                     { path: 'daily_report', component: DailyReportComponent, canActivate: [authGuard] },
+                    { path: 'present_report', component: PresentComponent, canActivate: [authGuard] },
+                    { path: 'absent_report', component: AbsentComponent, canActivate: [authGuard] },
+                    { path: 'late_entry_report', component: LateEntryComponent, canActivate: [authGuard] },
+                    { path: 'early_exit_report', component: EarlyExitComponent, canActivate: [authGuard] },
+                    { path: 'overtime_report', component: OvertimeComponent, canActivate: [authGuard] },
+                    { path: 'missed_punch_report', component: MissedPunchReportComponent, canActivate: [authGuard] },
+                    { path: 'insufficient_hours_report', component: InsufficientHoursReportComponent, canActivate: [authGuard] },
                     { path: 'Monthly_In_Out', component: MonthlyInOutComponent, canActivate: [authGuard] },
                     { path: 'shift_strength', component: ShiftStrengthComponent, canActivate: [authGuard] },
                     { path: 'evacuation', component: EvacuationComponent, canActivate: [authGuard] },

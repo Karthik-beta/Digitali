@@ -6,17 +6,9 @@
 
     <div class="grid p-fluid">
 
-        <!-- <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
-            <span class="p-float-label">
-                <p-calendar [(ngModel)]="date2" [iconDisplay]="'input'" [showIcon]="true" dateFormat="dd/mm/yy" class="p-inputtext-sm"
-                #dateInput (onSelect)="onDateChange(dateInput.value)" inputId="dateInput" placeholder="Select Date"></p-calendar>
-                <label for="dateInput">Date</label>
-            </span>
-        </div> -->
-
         <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
             <span class="p-float-label">
-                <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-sm"
+                <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
                 (onSelect)="onDateRangeChange($event)" inputId="dateRange"></p-calendar>
                 <label for="dateRange">Date Range</label>
             </span>
@@ -24,25 +16,102 @@
 
         <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
             <span class="p-float-label">
-                <p-dropdown
-                [options]="companies" [(ngModel)]="selectedCompany" placeholder="Select a Company"
+                <p-multiSelect [options]="employeeList" [(ngModel)]="selectedEmployees" placeholder="Select a Employee"
+                [autoDisplayFirst]="true" optionLabel="combined_field" class="p-inputtext-sm"
+                inputId="employee" (onChange)="assignEmployeeId(selectedEmployees)">
+                </p-multiSelect>
+                <label for="employee">Employee</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-multiSelect [options]="companies" [(ngModel)]="selectedCompanies" placeholder="Select a Company"
                 [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
-                inputId="company" (onChange)="assignCompanyId(selectedCompany)"></p-dropdown>
+                inputId="company" (onChange)="assignCompanyId(selectedCompanies)">
+                </p-multiSelect>
                 <label for="company">Company</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <!-- <span class="p-float-label">
+                <p-dropdown
+                [options]="locations" [(ngModel)]="selectedLocation" placeholder="Select a Location"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="location" (onChange)="assignLocationId(selectedLocation)"></p-dropdown>
+                <label for="location">Location</label>
+            </span> -->
+            <span class="p-float-label">
+                <p-multiSelect [options]="locations" [(ngModel)]="selectedLocations" placeholder="Select Locations"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-multiselect-sm"
+                inputId="location" (onChange)="assignLocationId(selectedLocations)">
+                </p-multiSelect>
+                <label for="location">Location</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-multiSelect [options]="departments" [(ngModel)]="selectedDepartments" placeholder="Select a Department"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="department" (onChange)="assignDepartmentId(selectedDepartments)">
+                </p-multiSelect>
+                <label for="department">Department</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-multiSelect [options]="designations" [(ngModel)]="selectedDesignations" placeholder="Select a Designation"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="designation" (onChange)="assignDesignationId(selectedDesignations)">
+                </p-multiSelect>
+                <label for="designation">Designation</label>
             </span>
         </div>
 
         <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
             <span class="p-float-label">
                 <p-dropdown
-                [options]="locations" [(ngModel)]="selectedLocation" placeholder="Select a Location"
-                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
-                inputId="location" (onChange)="assignLocationId(selectedLocation)"></p-dropdown>
-                <label for="location">Location</label>
+                [options]="criteria"
+                [(ngModel)]="selectedCity"
+                optionLabel="name"
+                placeholder="Select a City" (onChange)="onCriteriaChange($event)"></p-dropdown>
+                <label for="shift">Criteria</label>
             </span>
         </div>
 
     </div>
+</div>
+
+<div class="card">
+
+    <div class="grid p-fluid mt-1">
+
+        <!-- <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-dropdown [options]="employeeList" [(ngModel)]="selectedEmployee" [filter]="true" placeholder="Select a Employee"
+                optionLabel="combined_field" class="p-inputtext-sm"
+                inputId="employee" (onChange)="assignEmployeeId(selectedEmployee)" />
+                <label for="employee">Employee</label>
+            </span>
+        </div> -->
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <p-calendar
+            [(ngModel)]="month"
+            view="month"
+            dateFormat="mm/yy"
+            [readonlyInput]="true" (onSelect)="onMonthSelect($event)"/>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <p-button label="Submit" (click)="downloadEmployeeMonthlyReport()" />
+        </div>
+
+    </div>
+
 </div>
 
 <div>
@@ -189,3 +258,40 @@
         </p-table>
     </div>
 </div>
+
+
+
+
+
+
+<p-dialog
+    header="Select Employee"
+    [(visible)]="visible"
+    [modal]="true"
+    [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+    [style]="{ width: '50vw' }"
+    [draggable]="false"
+    [resizable]="false">
+
+    <div class="grid p-fluid mt-1">
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-dropdown [options]="employeeList" [(ngModel)]="selectedEmployee" placeholder="Select a Employee"
+                [autoDisplayFirst]="true" optionLabel="combined_field" class="p-inputtext-sm"
+                inputId="employee" (onChange)="assignEmployeeId(selectedEmployee)">
+                </p-dropdown>
+                <label for="employee">Employee</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <p-calendar
+            [(ngModel)]="date"
+            view="month"
+            dateFormat="mm/yy"
+            [readonlyInput]="true" />
+        </div>
+
+    </div>
+</p-dialog>

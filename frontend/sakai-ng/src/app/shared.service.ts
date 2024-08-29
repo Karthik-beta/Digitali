@@ -8,7 +8,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 export class SharedService {
 
     private APIUrl = 'http://172.23.16.1:8001'
-    // private APIUrl = 'http://117.254.108.21:8000'
+    // private APIUrl = 'http://127.0.0.1:8000'
 
 
 
@@ -337,6 +337,39 @@ export class SharedService {
     // Get Employee Dropdown
     getEmployeeDropdown(): Observable<any> {
         return this.http.get(`${this.APIUrl}/employee/dropdown/`);
+    }
+
+    // Download Employee monthly report
+    downloadEmployeeMonthlyReport(params: any): Observable<any> {
+
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+          if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/employee/`, {
+            params: httpParams,
+            responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+        });
+    }
+
+    downloadAllEmployeeMonthlyReport(params: any): Observable<any> {
+
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+          if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/export/allemployees/`, {
+            params: httpParams,
+            responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+        });
     }
 
 }
