@@ -111,5 +111,3 @@ def scan_for_data():
         # Handle the case where LastLogId does not exist
         LastLogId.objects.create(last_log_id=0)
         pass
-
-process_logs.delay()  # Call the task asynchronously
