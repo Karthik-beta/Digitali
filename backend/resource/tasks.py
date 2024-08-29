@@ -54,7 +54,6 @@ def process_logs(log_data):
     print("Processing logs...", log_data)
 
     for log_entry in log_data:  # Iterate through each Logs object in the QuerySet
-        print("Processing log2...", log_entry.employeeid, log_entry.log_datetime, log_entry.direction)
         if process_success:
             success = process_attendance(
                 log_entry.employeeid,  # Access attributes directly
@@ -66,7 +65,8 @@ def process_logs(log_data):
                 print(f"Error processing log for employee: {log_entry.employeeid}")
                 transaction.set_rollback(True)  # Rollback the transaction
                 process_success = False  # Set the flag to False indicating failure
-                break  # Stop processing further logs
+                # break  # Stop processing further logs
+                pass
 
             # Update LastLogId after each successful log processing
             with transaction.atomic():

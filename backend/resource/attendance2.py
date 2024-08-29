@@ -19,7 +19,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
         employee = Employee.objects.get(employee_id=employeeid)
     except Employee.DoesNotExist:
         logger.error(f"Employee with ID: {employeeid} not found.")
-        return True
+        return False
 
     if employee.shift is None:
         if direction == 'In Device':
@@ -69,6 +69,8 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
             # If no matching AutoShift was found, log a warning
             if auto_shift is None:
                 logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
+                pass
+                
 
         elif direction == 'Out Device':   
             try:
