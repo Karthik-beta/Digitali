@@ -44,9 +44,14 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 CELERY_BEAT_SCHEDULE = {
     'scan_logs': {
-        'task': 'resource.tasks.scan_for_data',  # Assuming 'celery.backend_cleanup' is the task name
-        'schedule': timedelta(seconds=30),
+        'task': 'resource.tasks.scan_for_data', 
+        'schedule': timedelta(seconds=10),
     },
+    'mark_absentees': {
+        'task': 'resource.management.commands.absentees',
+        'schedule': crontab(hour=23, minute=59),
+    },
+
 }
 
 # Application definition
@@ -62,6 +67,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'django_celery_beat',
 
     'config',
     'resource',
