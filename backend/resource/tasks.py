@@ -66,12 +66,11 @@ def process_logs(log_data):
                 transaction.set_rollback(True)  # Rollback the transaction
                 process_success = False  # Set the flag to False indicating failure
                 # break  # Stop processing further logs
-                pass
+                continue
 
             # Update LastLogId after each successful log processing
             with transaction.atomic():
                 LastLogId.objects.update(last_log_id=log_entry.id)
-                pass
 
             print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 
