@@ -19,7 +19,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
         employee = Employee.objects.get(employee_id=employeeid)
     except Employee.DoesNotExist:
         logger.error(f"Employee with ID: {employeeid} not found.")
-        return None
+        return True
 
     if employee.shift is None:
         if direction == 'In Device':
