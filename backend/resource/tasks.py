@@ -51,7 +51,7 @@ def process_logs(log_data):
     """
     process_success = True  # Flag to track overall processing success
 
-    print("Processing logs...", log_data)
+    # print("Processing logs...", log_data)
 
     for log_entry in log_data:  # Iterate through each Logs object in the QuerySet
         if process_success:
@@ -69,8 +69,8 @@ def process_logs(log_data):
                 continue
 
             # Update LastLogId after each successful log processing
-            with transaction.atomic():
-                LastLogId.objects.update(last_log_id=log_entry.id)
+            # with transaction.atomic():
+                # LastLogId.objects.update(last_log_id=log_entry.id)
 
             print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 
