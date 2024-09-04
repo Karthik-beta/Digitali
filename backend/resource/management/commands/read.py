@@ -1,7 +1,5 @@
 import logging
 
-from resource.models import Attendance, Logs2
-
 # Set up logging
 logger = logging.getLogger(__name__)
 
