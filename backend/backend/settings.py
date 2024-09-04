@@ -33,8 +33,8 @@ from celery import Celery
 from celery.schedules import crontab, timedelta
 
 # Celery settings
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://redis:6379/0") 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -121,20 +121,16 @@ DATABASES = {
         'PORT': '5432',
     },
     'Attendance_DB': {
-        'ENGINE': 'django.db.backends.postgresql',  # or your preferred database engine
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'biotime',
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': '172.20.176.1',
         'PORT': '7496',
-    },
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
+    }
 }
 
-DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
+# DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
 
 CACHES = {
     'default': {

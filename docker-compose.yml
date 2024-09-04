@@ -8,16 +8,17 @@ services:
   django: &django
     build:
       context: ./backend
-    image: backend
     depends_on:
       - postgres
       - redis
     ports:
       - "30000:8000"
-    environment:
-      - DATABASE_URL=postgres://postgres:password123@172.30.112.1:5432/skf
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend:/usr/src/app
+    # environment:
+    #   - DATABASE_URL=postgres://postgres:password123@172.30.112.1:5432/skf
+    #   - CELERY_BROKER_URL=redis://redis:6379/0
+    #   - CELERY_RESULT_BACKEND=redis://redis:6379/0
 
   postgres:
     image: postgres:latest
@@ -47,27 +48,37 @@ services:
     depends_on:
       - django
 
-  celery:
-    <<: *django
-    command: celery -A backend worker --loglevel=info
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    depends_on:
-      - redis
-      - django
+  # celery:
+  #   container_name: celery
+  #   build:
+  #     context: ./backend
+  #   volumes:
+  #     - ./backend:/usr/src/app
+  #   depends_on:
+  #     - postgres
+  #     - redis
 
-  celery-beat:
-    <<: *django
-    command: celery -A backend beat --loglevel=info  # Introduce a 5-second delay
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend/celerybeat-schedule:/app/celerybeat-schedule
-    depends_on:
-      - redis
-      - django
-    # Remove port mapping for celery-beat:
-    # ports:
-    #   - "8082:8000"
+  # celery:
+  #   <<: *django
+  #   command: celery -A backend worker --loglevel=info
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  #   depends_on:
+  #     - redis
+  #     - django
+
+  # celery-beat:
+  #   <<: *django
+  #   command: celery -A backend beat --loglevel=info  # Introduce a 5-second delay
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  #   volumes:
+  #     - ./backend/celerybeat-schedule:/app/celerybeat-schedule
+  #   depends_on:
+  #     - redis
+  #     - django
+  #   # Remove port mapping for celery-beat:
+  #   # ports:
+  #   #   - "8082:8000"
