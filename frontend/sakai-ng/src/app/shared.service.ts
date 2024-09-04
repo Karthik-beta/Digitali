@@ -7,7 +7,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 })
 export class SharedService {
 
-    private APIUrl = 'http://172.22.64.1:8001'
+    private APIUrl = 'http://10.38.21.181:30000'
     // private APIUrl = 'http://127.0.0.1:8000'
 
 

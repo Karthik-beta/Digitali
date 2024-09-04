@@ -116,15 +116,25 @@ DATABASES = {
         'NAME': 'skf',
         'USER': 'postgres',
         'PASSWORD': 'password123',
-        # 'HOST': 'localhost',
-        'HOST': '172.22.64.1',
+        'HOST': '10.38.21.181',
+        # 'HOST': '172.22.64.1',
         'PORT': '5432',
-    }
+    },
+    'Attendance_DB': {
+        'ENGINE': 'django.db.backends.postgresql',  # or your preferred database engine
+        'NAME': 'biotime',
+        'USER': 'postgres',
+        'PASSWORD': '123456',
+        'HOST': '10.38.21.181',
+        'PORT': '7496',
+    },
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
 }
+
+DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
 
 CACHES = {
     'default': {

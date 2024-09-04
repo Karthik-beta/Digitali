@@ -13,7 +13,11 @@ services:
       - postgres
       - redis
     ports:
-      - "8001:8000"
+      - "30000:8000"
+    environment:
+      - DATABASE_URL=postgres://postgres:password123@172.30.112.1:5432/skf
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
 
   postgres:
     image: postgres:latest
@@ -32,24 +36,6 @@ services:
     volumes:
       - production_redis_data:/data
 
-  celeryworker:
-    build:
-      context: ./backend
-    image: celeryworker
-    command: celery -A backend worker --loglevel=info
-    depends_on:
-      - postgres
-      - redis
-
-  celerybeat:
-    build:
-      context: ./backend
-    image: celerybeat
-    command: celery -A backend beat --loglevel=info
-    depends_on:
-      - postgres
-      - redis
-
   frontend:
     build:
       context: ./frontend
@@ -60,3 +46,28 @@ services:
       - ./frontend:/app
     depends_on:
       - django
+
+  celery:
+    <<: *django
+    command: celery -A backend worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - django
+
+  celery-beat:
+    <<: *django
+    command: celery -A backend beat --loglevel=info  # Introduce a 5-second delay
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/celerybeat-schedule:/app/celerybeat-schedule
+    depends_on:
+      - redis
+      - django
+    # Remove port mapping for celery-beat:
+    # ports:
+    #   - "8082:8000"
