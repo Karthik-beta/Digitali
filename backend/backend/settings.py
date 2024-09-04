@@ -120,17 +120,17 @@ DATABASES = {
         # 'HOST': '172.22.64.1',
         'PORT': '5432',
     },
-    'Attendance_DB': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'biotime',
-        'USER': 'postgres',
-        'PASSWORD': '123456',
-        'HOST': '127.0.0.1',
-        'PORT': '7496',
-    }
+    # 'Attendance_DB': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'biotime',
+    #     'USER': 'postgres',
+    #     'PASSWORD': '123456',
+    #     'HOST': '127.0.0.1',
+    #     'PORT': '7496',
+    # }
 }
 
-DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
+# DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
 
 CACHES = {
     'default': {
