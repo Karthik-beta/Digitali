@@ -125,7 +125,7 @@ DATABASES = {
         'NAME': 'biotime',
         'USER': 'postgres',
         'PASSWORD': '123456',
-        'HOST': '10.38.21.123',
+        'HOST': '127.0.0.1',
         'PORT': '7496',
     },
     # 'default': {
