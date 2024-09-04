@@ -130,7 +130,7 @@ DATABASES = {
     }
 }
 
-# DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
+DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
 
 CACHES = {
     'default': {
