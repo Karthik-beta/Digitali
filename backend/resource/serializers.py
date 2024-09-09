@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from resource.models import (Employee, Attendance, Logs)
+from resource.models import (Employee, Attendance, Logs, LastLogId)
 
 # from config import models as config
 # from config.models import config
@@ -59,3 +59,8 @@ class LogsSerializer(serializers.ModelSerializer):
             return employee.employee_name
         except Employee.DoesNotExist:
             return None
+
+class LastLogIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LastLogId
+        fields = '__all__'

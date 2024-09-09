@@ -117,7 +117,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'password123',
         'HOST': '10.38.21.181',
-        # 'HOST': '172.22.64.1',
+        # 'HOST': '127.0.0.1',
         'PORT': '5432',
     },
     # 'Attendance_DB': {

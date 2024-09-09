@@ -19,7 +19,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 
-from resource.models import Employee, Attendance, Logs
+from resource.models import Employee, Attendance, Logs, LastLogId
 from . import serializers
 from .services import generate_unique_ids, check_employee_id
 
@@ -978,3 +978,8 @@ class ExportAllEmployeeAttendanceExcelView(View):
             adjusted_width = max(max_length + 2, min_width)
             ws.column_dimensions[column_letter].width = adjusted_width
         
+class LastLogIdView(APIView):
+    def get(self, request):
+        last_log = LastLogId.objects.first()  # or .last() if you want the last record
+        serializer = serializers.LastLogIdSerializer(last_log)
+        return Response(serializer.data)
