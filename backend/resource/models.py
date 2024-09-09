@@ -222,7 +222,8 @@ class Employee(models.Model):
         ]
 
 class Logs(models.Model):
-    employeeid = models.CharField(primary_key=True)
+    id = models.AutoField(primary_key=True)
+    employeeid = models.CharField(max_length=50, blank=True, null=True)
     log_datetime = models.DateTimeField(blank=True, null=True)
     direction = models.CharField(max_length=50, blank=True, null=True)
     shortname = models.CharField(max_length=50, blank=True, null=True)
@@ -230,18 +231,7 @@ class Logs(models.Model):
 
     class Meta:   
         db_table = 'logs'
-        managed = False
-
-# class Logs2(models.Model):
-#     employeeid = models.CharField(primary_key=True)
-#     log_datetime = models.DateTimeField(blank=True, null=True)
-#     direction = models.CharField(max_length=50, blank=True, null=True)
-#     shortname = models.CharField(max_length=50, blank=True, null=True)
-#     serialno = models.CharField(max_length=50, blank=True, null=True) 
-
-#     class Meta:   
-#         db_table = 'logs_2'
-#         managed = False
+        managed = True
         
          
 class LastLogId(models.Model):
