@@ -21,6 +21,7 @@ LOGS_URL = API_URL + 'logs'
 def get_last_log_id():
     response = requests.get(LAST_LOG_ID_URL)
     print(dir(requests)) 
+    print(response)
     if response.status_code == 200:
         data = response.json()
         return data.get('last_log_id', 0) or 0
