@@ -10,7 +10,6 @@ mssql_conn_str = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=AWYWE802669\\SQL
 pg_conn_str = 'dbname=casa user=postgres password=password123 host=10.38.21.181 port=5432'
 
 def clear_cache():
-    # Clear temporary files in the temporary directory
     temp_dir = tempfile.gettempdir()
     for file_name in os.listdir(temp_dir):
         file_path = os.path.join(temp_dir, file_name)
@@ -18,8 +17,12 @@ def clear_cache():
             if os.path.isfile(file_path):
                 os.remove(file_path)
             elif os.path.isdir(file_path):
-                os.rmdir(file_path)  # Note: os.rmdir only removes empty directories
-        except Exception as e:
+                # Attempt to remove only if the directory is empty
+                try:
+                    os.rmdir(file_path)
+                except OSError:
+                    print(f'Error clearing cache directory {file_path}: Directory is not empty.')
+        except OSError as e:
             print(f'Error clearing cache file {file_path}: {e}')
 
 def fetch_latest_id_from_postgres():
