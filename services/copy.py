@@ -1,5 +1,5 @@
 import pyodbc
-# import requests
+import requests
 import time
 import os
 import schedule
@@ -18,9 +18,8 @@ LAST_LOG_ID_URL = API_URL + 'last_log_id'
 LOGS_URL = API_URL + 'logs'
 
 # Function to get the last log ID from the API
-def get_last_log_id():
-    import requests
-    response = requests.get(LAST_LOG_ID_URL)
+def get_last_log_id(requests_lib):
+    response = requests_lib.get(LAST_LOG_ID_URL)
     if response.status_code == 200:
         data = response.json()
         return data.get('last_log_id', 0) or 0
@@ -45,8 +44,7 @@ def query_mssql(last_log_id):
     return rows
 
 # Function to post a record to the API
-def post_record(record):
-    import requests
+def post_record(record requests_lib):
     payload = {
         "employeeid": record.employeeid,
         "log_datetime": record.log_datetime.isoformat() if record.log_datetime else None,
@@ -54,7 +52,7 @@ def post_record(record):
         "shortname": record.shortname,
         "serialno": record.serialno
     }
-    response = requests.post(LOGS_URL, json=payload)
+    response = requests_lib.post(LOGS_URL, json=payload)
     if response.status_code != 201:
         print(f"Failed to post record: {response.text}")
 
@@ -62,14 +60,14 @@ def post_record(record):
 def perform_data_transfer():
     try:
         # Step 1: Get the last log ID from the API
-        last_log_id = get_last_log_id()
+        last_log_id = get_last_log_id(requests_lib)
         
         # Step 2: Query MSSQL for records with ID greater than last_log_id
         records = query_mssql(last_log_id)
         
         # Step 3: Post each record to the API
         for record in records:
-            post_record(record)
+            post_record(record, requests_lib)
         
         # Clear cache
         os.system('ipconfig /flushdns')
