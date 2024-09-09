@@ -57,35 +57,33 @@ def post_record(record, requests_lib):
         print(f"Failed to post record: {response.text}")
 
 # Function to perform the data transfer
-def perform_data_transfer():
+def perform_data_transfer(requests_lib): # Pass requests as an argument
     try:
         # Step 1: Get the last log ID from the API
         last_log_id = get_last_log_id(requests_lib)
-        
+
         # Step 2: Query MSSQL for records with ID greater than last_log_id
         records = query_mssql(last_log_id)
-        
+
         # Step 3: Post each record to the API
         for record in records:
             post_record(record, requests_lib)
-        
-        # Clear cache
-        os.system('ipconfig /flushdns')
-    
+
+        # ... (rest of your function) ...
     except Exception as e:
         print(f"An error occurred: {e}")
 
 # Function to test the requests library
-def test_requests():
+def test_requests(requests_lib): # Pass requests as an argument
     try:
-        response = requests.get('https://api.github.com')
+        response = requests_lib.get('https://api.github.com')
         print('Status Code:', response.status_code)
         print('Response JSON:', response.json())
     except Exception as e:
         print('An error occurred:', e)
 
 # Schedule the data transfer to run every 10 seconds
-schedule.every(10).seconds.do(perform_data_transfer)
+schedule.every(10).seconds.do(perform_data_transfer, requests)
 
 # Main loop to keep the script running
 while True:
