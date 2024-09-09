@@ -44,7 +44,7 @@ def query_mssql(last_log_id):
     return rows
 
 # Function to post a record to the API
-def post_record(record requests_lib):
+def post_record(record, requests_lib):
     payload = {
         "employeeid": record.employeeid,
         "log_datetime": record.log_datetime.isoformat() if record.log_datetime else None,
