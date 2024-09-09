@@ -231,7 +231,6 @@ class Logs(models.Model):
 
     class Meta:   
         db_table = 'logs'
-        managed = True
         
          
 class LastLogId(models.Model):
