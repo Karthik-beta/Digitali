@@ -9,21 +9,20 @@ import tempfile
 mssql_conn_str = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=AWYWE802669\\SQLEXPRESS;DATABASE=biotime;UID=Digitali;PWD=Digitali'
 pg_conn_str = 'dbname=casa user=postgres password=password123 host=10.38.21.181 port=5432'
 
-def clear_cache():
-    temp_dir = tempfile.gettempdir()
-    for file_name in os.listdir(temp_dir):
-        file_path = os.path.join(temp_dir, file_name)
+def clear_cache(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
         try:
             if os.path.isfile(file_path):
                 os.remove(file_path)
             elif os.path.isdir(file_path):
-                # Attempt to remove only if the directory is empty
-                try:
-                    os.rmdir(file_path)
-                except OSError:
-                    print(f'Error clearing cache directory {file_path}: Directory is not empty.')
-        except OSError as e:
-            print(f'Error clearing cache file {file_path}: {e}')
+                os.rmdir(file_path)
+        except Exception as e:
+            print(f"Error clearing cache file {file_path}: {e}")
+            # Optionally, wait a moment before retrying
+            time.sleep(1)
+
+clear_cache("C:\\Users\\vvrajgo\\AppData\\Local\\Temp")
 
 def fetch_latest_id_from_postgres():
     with psycopg2.connect(pg_conn_str) as pg_conn:
