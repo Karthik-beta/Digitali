@@ -2,6 +2,7 @@ import pyodbc
 import requests
 import time
 import os
+import schedule
 
 # MSSQL connection details
 MSSQL_SERVER = 'AWYWE802669\SQLEXPRESS'
@@ -13,8 +14,8 @@ MSSQL_PASSWORD = 'Digitali'
 API_URL = 'http://10.38.21.181:8000/'
 
 # API endpoints
-LAST_LOG_ID_URL = 'last_log_id'
-LOGS_URL = 'logs'
+LAST_LOG_ID_URL = API_URL + 'last_log_id'
+LOGS_URL = API_URL + 'logs'
 
 # Function to get the last log ID from the API
 def get_last_log_id():
@@ -55,8 +56,8 @@ def post_record(record):
     if response.status_code != 201:
         print(f"Failed to post record: {response.text}")
 
-# Main loop
-while True:
+# Function to perform the data transfer
+def perform_data_transfer():
     try:
         # Step 1: Get the last log ID from the API
         last_log_id = get_last_log_id()
@@ -70,10 +71,14 @@ while True:
         
         # Clear cache
         os.system('ipconfig /flushdns')
-        
-        # Sleep for a while before the next iteration
-        time.sleep(60)  # Sleep for 60 seconds
-
+    
     except Exception as e:
         print(f"An error occurred: {e}")
-        time.sleep(60)  # Sleep for 60 seconds before retrying
+
+# Schedule the data transfer to run every 10 seconds
+schedule.every(10).seconds.do(perform_data_transfer)
+
+# Main loop to keep the script running
+while True:
+    schedule.run_pending()
+    time.sleep(1)
