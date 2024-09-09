@@ -77,6 +77,17 @@ def perform_data_transfer():
     except Exception as e:
         print(f"An error occurred: {e}")
 
+# Function to test the requests library
+def test_requests():
+    try:
+        response = requests.get('https://api.github.com')
+        print('Status Code:', response.status_code)
+        print('Response JSON:', response.json())
+    except Exception as e:
+        print('An error occurred:', e)
+
+test_requests()
+
 # Schedule the data transfer to run every 10 seconds
 schedule.every(10).seconds.do(perform_data_transfer)
 
@@ -84,3 +95,5 @@ schedule.every(10).seconds.do(perform_data_transfer)
 while True:
     schedule.run_pending()
     time.sleep(1)
+
+
