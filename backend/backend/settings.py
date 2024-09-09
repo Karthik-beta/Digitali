@@ -113,7 +113,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'skf',
+        'NAME': 'casa',
         'USER': 'postgres',
         'PASSWORD': 'password123',
         'HOST': '10.38.21.181',
