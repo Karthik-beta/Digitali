@@ -4,7 +4,7 @@ import time
 import schedule
 
 # MSSQL connection details
-MSSQL_SERVER = 'AWYWE802669\SQLEXPRESS'
+MSSQL_SERVER = 'AWYWE802669\\SQLEXPRESS'
 MSSQL_DATABASE = 'biotime'
 MSSQL_USER = 'Digitali'
 MSSQL_PASSWORD = 'Digitali'

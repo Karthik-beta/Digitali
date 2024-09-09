@@ -3,14 +3,24 @@ import psycopg2
 import schedule
 import time
 import os
+import tempfile
 
 # Database connection settings
 mssql_conn_str = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=AWYWE802669\\SQLEXPRESS;DATABASE=biotime;UID=Digitali;PWD=Digitali'
 pg_conn_str = 'dbname=casa user=postgres password=password123 host=10.38.21.181 port=5432'
 
 def clear_cache():
-    # Clear cache and residuals (adjust based on your requirements)
-    os.system('echo 3 > /proc/sys/vm/drop_caches')  # Linux example; adjust for Windows or other systems
+    # Clear temporary files in the temporary directory
+    temp_dir = tempfile.gettempdir()
+    for file_name in os.listdir(temp_dir):
+        file_path = os.path.join(temp_dir, file_name)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                os.rmdir(file_path)  # Note: os.rmdir only removes empty directories
+        except Exception as e:
+            print(f'Error clearing cache file {file_path}: {e}')
 
 def fetch_latest_id_from_postgres():
     with psycopg2.connect(pg_conn_str) as pg_conn:
