@@ -20,8 +20,6 @@ LOGS_URL = API_URL + 'logs'
 # Function to get the last log ID from the API
 def get_last_log_id():
     response = requests.get(LAST_LOG_ID_URL)
-    print(dir(requests)) 
-    print(response)
     if response.status_code == 200:
         data = response.json()
         return data.get('last_log_id', 0) or 0
@@ -86,15 +84,10 @@ def test_requests():
     except Exception as e:
         print('An error occurred:', e)
 
-
-
 # Schedule the data transfer to run every 10 seconds
 schedule.every(10).seconds.do(perform_data_transfer)
 
 # Main loop to keep the script running
 while True:
     schedule.run_pending()
-    test_requests()
     time.sleep(1)
-
-
