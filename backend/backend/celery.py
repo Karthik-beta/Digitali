@@ -8,7 +8,7 @@ from celery import Celery
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
 # app = Celery('backend', broker='amqp://guest:guest@localhost:5672')
-app = Celery('backend', broker='redis://redis:6379/0')
+app = Celery('backend', broker='redis://10.38.21.181:6379/0')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
