@@ -20,6 +20,7 @@ LOGS_URL = API_URL + 'logs'
 # Function to get the last log ID from the API
 def get_last_log_id():
     response = requests.get(LAST_LOG_ID_URL)
+    print(dir(requests)) 
     if response.status_code == 200:
         data = response.json()
         return data.get('last_log_id', 0) or 0
