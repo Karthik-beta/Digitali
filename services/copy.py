@@ -86,7 +86,7 @@ def test_requests():
     except Exception as e:
         print('An error occurred:', e)
 
-test_requests()
+
 
 # Schedule the data transfer to run every 10 seconds
 schedule.every(10).seconds.do(perform_data_transfer)
@@ -94,6 +94,7 @@ schedule.every(10).seconds.do(perform_data_transfer)
 # Main loop to keep the script running
 while True:
     schedule.run_pending()
+    test_requests()
     time.sleep(1)
 
 
