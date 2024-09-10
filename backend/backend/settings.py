@@ -11,34 +11,45 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-
+from celery import Celery
+from celery.schedules import crontab, timedelta
 import os
+from dotenv import load_dotenv
+
+# Specify the path to the .env file
+env_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env.development')
+load_dotenv(env_file_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load the correct environment file
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+
+if ENVIRONMENT == 'production':
+    load_dotenv('.env.production')
+else:
+    load_dotenv('.env.development')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^t10-9(_5o3-o(+1&&n&9qe6l(f2a70+3slz*qw-1@xu8pcog$'
+SECRET_KEY = os.getenv('SECRET_KEY', 'aMr_fe}``u4hST-W@;6o#Yc-:pQoIt')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'False'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
-from celery import Celery
-from celery.schedules import crontab, timedelta
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://redis:6379/0")
 
-# Celery settings
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://10.38.21.181:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://10.38.21.181:6379/0") 
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_ACCEPT_CONTENT = os.environ.get("CELERY_ACCEPT_CONTENT", "json").split(',')
+CELERY_TASK_SERIALIZER = os.environ.get("CELERY_TASK_SERIALIZER", "json")
+CELERY_RESULT_SERIALIZER = os.environ.get("CELERY_RESULT_SERIALIZER", "json")
+CELERY_TIMEZONE = os.environ.get("CELERY_TIMEZONE", "Asia/Kolkata")
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
@@ -55,7 +66,6 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -113,24 +123,14 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'casa',
-        'USER': 'postgres',
-        'PASSWORD': 'password123',
-        'HOST': '10.38.21.181',
-        # 'HOST': '127.0.0.1',
-        'PORT': '5432',
-    },
-    # 'Attendance_DB': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'biotime',
-    #     'USER': 'postgres',
-    #     'PASSWORD': '123456',
-    #     'HOST': '127.0.0.1',
-    #     'PORT': '7496',
-    # }
+        'NAME': os.getenv('DATABASE_NAME', 'casa'),
+        'USER': os.getenv('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'password123'),
+        'HOST': os.getenv('DATABASE_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
+    }
 }
 
-# DATABASE_ROUTERS = ['resource.db_router.LogsRouter']
 
 CACHES = {
     'default': {
