@@ -126,9 +126,12 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         attendance.shift_status = 'HD'
 
                     if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) or timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end):
-                        start_overtime = start_time_aware - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) else timedelta(0)
-                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - end_time_aware if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end) else timedelta(0)
-                        attendance.overtime = start_overtime + end_overtime
+                        start_overtime = timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - overtime_threshold_before_start) else timedelta(0)
+                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - timezone.make_aware(datetime.combine(attendance.logdate, end_time)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (timezone.make_aware(datetime.combine(attendance.logdate, end_time)) + overtime_threshold_after_end) else timedelta(0)
+                        total_overtime = start_overtime + end_overtime
+                        if total_overtime > timedelta(0):
+                            attendance.overtime = total_overtime
+                        # attendance.overtime = start_overtime + end_overtime
                 
                 else:
                     log_time = log_datetime.time()
@@ -157,9 +160,12 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         attendance.shift_status = 'HD'
 
                     if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) or timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end):
-                        start_overtime = start_time_aware - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) else timedelta(0)
-                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - end_time_aware if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end) else timedelta(0)
-                        attendance.overtime = start_overtime + end_overtime
+                        start_overtime = timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - overtime_threshold_before_start) else timedelta(0)
+                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - timezone.make_aware(datetime.combine(attendance.logdate, end_time)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (timezone.make_aware(datetime.combine(attendance.logdate, end_time)) + overtime_threshold_after_end) else timedelta(0)
+                        total_overtime = start_overtime + end_overtime
+                        if total_overtime > timedelta(0):
+                            attendance.overtime = total_overtime
+                        # attendance.overtime = start_overtime + end_overtime
 
                 try:
                     attendance.save()
