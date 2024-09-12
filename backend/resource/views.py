@@ -399,7 +399,7 @@ class ExportAttendanceExcelView(View):
             ws.cell(row=row_num, column=8, value=record.employeeid.category)
             ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
             ws.cell(row=row_num, column=10, value=record.logdate)
-            ws.cell(row=row_num, column=11, value=record.employeeid.shift if record.employeeid and record.employeeid.shift else None)
+            ws.cell(row=row_num, column=11, value=record.employeeid.shift.name if record.employeeid and record.employeeid.shift else None)
             ws.cell(row=row_num, column=12, value=record.shift_status)
             ws.cell(row=row_num, column=13, value=record.first_logtime)
             ws.cell(row=row_num, column=14, value=record.last_logtime)
