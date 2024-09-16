@@ -29,6 +29,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                 end_time = auto_shift.end_time
                 tolerance_start = auto_shift.tolerance_start_time
                 tolerance_end = auto_shift.tolerance_end_time
+                grace_period_at_start_time = auto_shift.grace_period_at_start_time
 
                 start_window = (datetime.combine(log_datetime.date(), start_time) - tolerance_start).time()
                 end_window = (datetime.combine(log_datetime.date(), start_time) + tolerance_end).time()
@@ -41,11 +42,13 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         defaults={
                             'first_logtime': log_time,
                             'shift': auto_shift.name,
-                            'direction': 'Machine'
+                            'direction': 'Machine',
+                            'shift_status': 'MP'
                         }
                     )
+                    start_time_with_grace = (datetime.combine(log_datetime.date(), start_time) + grace_period_at_start_time).time()
                     if created:
-                        if log_time > start_time:
+                        if log_time > start_time_with_grace:
                             start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
                             attendance.late_entry = log_datetime - start_time_aware
                         attendance.save()
@@ -107,6 +110,8 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     tolerance_end = AutoShift.objects.get(name=shift).tolerance_end_time
                     overtime_threshold_before_start = AutoShift.objects.get(name=shift).overtime_threshold_before_start
                     overtime_threshold_after_end = AutoShift.objects.get(name=shift).overtime_threshold_after_end
+                    grace_period_at_end_time = AutoShift.objects.get(name=shift).grace_period_at_end_time
+                    half_day_threshold = AutoShift.objects.get(name=shift).half_day_threshold
 
                     start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
                     end_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), end_time)) 
@@ -115,12 +120,13 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     attendance.direction = 'Machine'
                     # attendance.shift_status = 'P'
 
-                    if log_time < end_time:
+                    end_time_with_grace = (datetime.combine(log_datetime.date(), end_time) - grace_period_at_end_time).time()
+                    if log_time < end_time_with_grace:
                         attendance.early_exit = end_time_aware - log_datetime
 
                     attendance.total_time = log_datetime - timezone.make_aware(datetime.combine(log_datetime.date(), first_logtime))
 
-                    if attendance.total_time > ((end_time_aware - start_time_aware)/2):
+                    if attendance.total_time > half_day_threshold:
                         attendance.shift_status = 'P'
                     else: 
                         attendance.shift_status = 'HD'
@@ -141,6 +147,8 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     tolerance_end = AutoShift.objects.get(name=shift).tolerance_end_time
                     overtime_threshold_before_start = AutoShift.objects.get(name=shift).overtime_threshold_before_start
                     overtime_threshold_after_end = AutoShift.objects.get(name=shift).overtime_threshold_after_end
+                    grace_period_at_end_time = AutoShift.objects.get(name=shift).grace_period_at_end_time
+                    half_day_threshold = AutoShift.objects.get(name=shift).half_day_threshold
 
                     start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time)) 
                     end_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), end_time)) 
@@ -149,12 +157,13 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     attendance.direction = 'Machine'
                     # attendance.shift_status = 'P'
 
-                    if log_time < end_time:
+                    end_time_with_grace = (datetime.combine(log_datetime.date(), end_time) - grace_period_at_end_time).time()
+                    if log_time < end_time_with_grace:
                         attendance.early_exit = end_time_aware - log_datetime
 
                     attendance.total_time = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime) + timedelta(days=1)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime))
 
-                    if attendance.total_time > (((end_time_aware + timedelta(days=1))- start_time_aware)/2):
+                    if attendance.total_time > half_day_threshold:
                         attendance.shift_status = 'P'
                     else:
                         attendance.shift_status = 'HD'

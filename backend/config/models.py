@@ -1,5 +1,5 @@
 from django.db import models
-
+from datetime import timedelta
 
 class Company(models.Model):
     name = models.CharField(max_length=100)
@@ -154,8 +154,8 @@ class AutoShift(models.Model):
     end_time = models.TimeField()
     tolerance_start_time = models.DurationField()
     tolerance_end_time = models.DurationField()
-    # grace_period_at_start_time = models.DurationField()
-    # grace_period_at_end_time = models.DurationField()
+    grace_period_at_start_time = models.DurationField(default=timedelta(seconds=0))
+    grace_period_at_end_time = models.DurationField(default=timedelta(seconds=0))
     half_day_threshold = models.DurationField()
     full_day_threshold = models.DurationField()    
     overtime_threshold_before_start = models.DurationField()  
