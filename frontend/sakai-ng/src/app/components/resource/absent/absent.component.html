@@ -99,7 +99,7 @@
             <td>{{ item.category }}</td>
             <td>{{ item.designation_name }}</td>
             <td>{{ item.logdate | date: 'dd/MM/yyyy' }}</td>
-            <td></td>
+            <td>{{ item.shift }}</td>
             <!-- <td><span [class]="'status-badge status-' + item.shift_status">{{ item.shift_status }}</span></td> -->
             <td><span [class]="getClassForShiftStatus(item.shift_status)">{{ item.shift_status }}</span></td>
             <td>{{ item.first_logtime }}</td>
