@@ -12,6 +12,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/usr/src/app
+    restart: always
     # environment:
     #   - DATABASE_URL=postgres://postgres:password123@172.30.112.1:5432/skf
     #   - CELERY_BROKER_URL=redis://redis:6379/0
@@ -44,6 +45,7 @@ services:
       - ./frontend:/app
     depends_on:
       - django
+    restart: always
 
   # celery:
   #   container_name: celery
