@@ -11,7 +11,7 @@ backend_dir = r"C:\Getin\skf_mys\backend"
 frontend_dir = r"C:\Getin\skf_mys\frontend\sakai-ng"
 
 # Activate virtual environment and run backend commands
-activate_venv_command = r"venv\Scripts\activate && "
+# activate_venv_command = r"venv\Scripts\activate && "
 backend_commands = [
     "python manage.py runserver 0.0.0.0:8000",
     "celery -A backend worker",
@@ -20,7 +20,8 @@ backend_commands = [
 
 # Run backend deployment
 for command in backend_commands:
-    full_command = activate_venv_command + command
+    # full_command = activate_venv_command + command
+    full_command = command
     run_in_background(full_command, cwd=backend_dir)
 
 # Run frontend command
