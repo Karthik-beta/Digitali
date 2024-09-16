@@ -12,7 +12,7 @@ services:
       - postgres
       - redis
     ports:
-      - "30000:8000"
+      - "8000:8000"
     volumes:
       - ./backend:/usr/src/app
     # environment:
@@ -20,29 +20,29 @@ services:
     #   - CELERY_BROKER_URL=redis://redis:6379/0
     #   - CELERY_RESULT_BACKEND=redis://redis:6379/0
 
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: skf
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+  # postgres:
+  #   image: postgres:latest
+  #   environment:
+  #     POSTGRES_DB: skf
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password123
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
 
-  redis:
-    image: docker.io/redis:6
+  # redis:
+  #   image: docker.io/redis:6
     
-    volumes:
-      - production_redis_data:/data
+  #   volumes:
+  #     - production_redis_data:/data
 
   frontend:
     build:
       context: ./frontend
     image: frontend
     ports:
-      - "8081:80"
+      - "4200:80"
     volumes:
       - ./frontend:/app
     depends_on:
