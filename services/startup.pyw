@@ -10,10 +10,12 @@ def run_in_background(command, cwd=None):
 backend_dir = r"C:\Getin\skf_mys\backend"
 frontend_dir = r"C:\Getin\skf_mys\frontend\sakai-ng"
 
+python_path = "C:\Users\GX79297\AppData\Local\Programs\Python\Python312\python.exe"
+
 # Activate virtual environment and run backend commands
 # activate_venv_command = r"venv\Scripts\activate && "
 backend_commands = [
-    "python manage.py runserver 0.0.0.0:8000",
+    f"{python_path} manage.py runserver 0.0.0.0:8000",
     "celery -A backend worker",
     "celery -A backend beat"
 ]
