@@ -56,7 +56,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         return True
                     else:
                         # Update fields if needed
-                        if log_time > start_time:
+                        if log_time > start_time_with_grace:
                             start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
                             attendance.late_entry = log_datetime - start_time_aware
                         attendance.first_logtime = log_time
