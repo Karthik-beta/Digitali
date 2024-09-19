@@ -13,10 +13,24 @@ services:
     volumes:
       - ./backend:/usr/src/app
     restart: always
-    # environment:
-    #   - DATABASE_URL=postgres://postgres:password123@172.30.112.1:5432/skf
-    #   - CELERY_BROKER_URL=redis://redis:6379/0
-    #   - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    environment:
+      - ENVIRONMENT=local
+      - DEBUG=True
+      - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DATABASE_HOST=127.0.0.1
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=casa
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=password123
+
+      # Celery Configuration
+      - CELERY_BROKER=redis://127.0.0.1:6379/0
+      - CELERY_BACKEND=redis://127.0.0.1:6379/0
+      - CELERY_ACCEPT_CONTENT=json
+      - CELERY_TASK_SERIALIZER=json
+      - CELERY_RESULT_SERIALIZER=json
+      - CELERY_TIMEZONE=Asia/Kolkata
 
   # postgres:
   #   image: postgres:latest
