@@ -71,6 +71,7 @@ def process_logs(log_data):
             # Update LastLogId after each successful log processing
             with transaction.atomic():
                 LastLogId.objects.update(last_log_id=log_entry.id)
+                pass
 
             print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 
@@ -91,7 +92,7 @@ def scan_for_data():
             last_processed_id = last_log_id_record.last_log_id
 
             # Fetch new logs with an ID greater than the last processed ID
-            new_logs = Logs.objects.filter(id__gt=last_processed_id).order_by('id')
+            new_logs = Logs.objects.filter(id__gt=last_processed_id).order_by('log_datetime')
 
             if new_logs.exists():  # Check if there are any new logs
                 print(f"Found {new_logs.count()} new logs")

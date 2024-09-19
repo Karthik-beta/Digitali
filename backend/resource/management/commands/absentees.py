@@ -24,14 +24,20 @@ class Command(BaseCommand):
             date = today - timezone.timedelta(days=i)
             employees = Employee.objects.all()
             for employee in employees:
-                if not Attendance.objects.filter(employeeid=employee, logdate=date).exists():
+                if not date.weekday() == 6:
+                    if not Attendance.objects.filter(employeeid=employee, logdate=date).exists():
+                        Attendance.objects.create(
+                            employeeid=employee,
+                            logdate=date,
+                            shift_status='A'
+                        )
+                else:
                     Attendance.objects.create(
                         employeeid=employee,
                         logdate=date,
-                        shift_status='A'
+                        shift_status='WO'
                     )
                     # self.stdout.write(self.style.SUCCESS(f"Marked {employee.employee_name} as absent for {date}"))
-                else:
                     # self.stdout.write(self.style.SUCCESS(f"{employee.employee_name} already has an attendance entry for {date}"))
                     pass
         self.stdout.write(self.style.SUCCESS(f"Successfully marked absent employees for {num_days} days starting from {today}"))

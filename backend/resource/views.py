@@ -410,10 +410,11 @@ class ExportAttendanceExcelView(View):
 
             # Apply conditional formatting based on Shift Status
             cell = ws.cell(row=row_num, column=12)  # Column 12 is for Shift Status
-            if record.shift_status == 'P': 
+            if record.shift_status in ['P', 'WW']: 
                 # cell.font = header_font
                 cell.style = 'Good'
-
+            elif record.shift_status in ['A/P', 'P/A', 'WO']:
+                cell.style = 'Neutral'
             else: 
                 # cell.font = header_font
                 cell.style = 'Bad'
@@ -910,6 +911,7 @@ class ExportAllEmployeeAttendanceExcelView(View):
 
         total_present_days = shift_status.count('P') + shift_status.count('HD')
         total_WO_days = shift_status.count('WO')
+        total_WW_days = shift_status.count('WW')
         total_late_entry_time = sum([t for t in late_entries if t], timedelta())
         total_early_exit_time = sum([t for t in early_exits if t], timedelta())
         total_OT_time = sum([t for t in overtime if t], timedelta())
@@ -919,15 +921,17 @@ class ExportAllEmployeeAttendanceExcelView(View):
         ws.append([f"COMPANY: ", f"{employee.company.name if employee.company else ''}", "PRESENT DAYS:", f"{total_present_days}", "Status"] + shift_status)
         for idx, status in enumerate(shift_status, start=6):  # Adjust the starting index based on the row where 'shift_status' starts
             cell = ws.cell(row=start_row+3, column=idx)  # Adjust the row based on where 'shift_status' is located
-            if status == 'P':
+            if status in ['P', 'WW']:
                 cell.style = 'Good'
             elif status == 'WO': 
                 cell.style = 'Neutral'
+            elif status == '':
+                cell.style = 'Normal'
             else:
                 cell.style = 'Bad'
 
         ws.append(["LOCATION: ", f"{employee.location.name if employee.location else ''}", "WO:", f"{total_WO_days}", "Duty-In"] + first_logtime)
-        ws.append(["DEPARTMENT: ", f"{employee.department.name if employee.department else ''}", "WW:", "0", "Duty-Out"] + last_logtime)
+        ws.append(["DEPARTMENT: ", f"{employee.department.name if employee.department else ''}", "WW:", f"{total_WW_days}", "Duty-Out"] + last_logtime)
         ws.append(["DESIGNATION: ", f"{employee.designation.name if employee.designation else ''}", "FS:", "0", "Duty Hours"] + total_hours)
         ws.append(["EMP TYPE: ", f"{employee.job_type if employee.job_type else ''}", "PH:", "0", "Lunch-Out"] + [" "] * num_days)
         ws.append(["REPORTING MNG: ", f"{employee.reporting_manager.employee_name [employee.reporting_manager.employee_id] if employee.reporting_manager else ''}", "CO:", "0", "Lunch-In"] + [" "] * num_days)

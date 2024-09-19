@@ -23,4 +23,24 @@
         // color: #694382;
         color: #C63737;
     }
+
+    &.status-NA {
+        background: #BDBDBD;
+        color: #000;
+    }
+
+    &.status-HD {
+        background: #FFD54F;
+        color: #8A5340;
+    }
+
+    &.status-WO {
+        background: #FFD54F;
+        color: #8A5340;
+    }
+
+    &.status-WW {
+        background: #C8E6C9;
+        color: #256029;
+    }
 }
