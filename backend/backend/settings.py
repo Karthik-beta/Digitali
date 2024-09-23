@@ -44,8 +44,8 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://10.177.8.143:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://10.177.8.143:6379/0")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND")
 
 CELERY_ACCEPT_CONTENT = os.environ.get("CELERY_ACCEPT_CONTENT", "json").split(',')
 CELERY_TASK_SERIALIZER = os.environ.get("CELERY_TASK_SERIALIZER", "json")

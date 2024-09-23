@@ -14,7 +14,7 @@ else:
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
 # app = Celery('backend', broker='amqp://guest:guest@localhost:5672')
-app = Celery('backend', broker=os.getenv('CELERY_BROKER', 'redis://10.177.8.143:6379/0'))
+app = Celery('backend', broker=os.getenv('CELERY_BROKER'))
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
