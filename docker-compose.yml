@@ -17,16 +17,16 @@ services:
       - ENVIRONMENT=local
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
-      - ALLOWED_HOSTS=10.177.8.143
-      - DATABASE_HOST=10.177.8.143
+      - ALLOWED_HOSTS=10.38.21.181
+      - DATABASE_HOST=10.38.21.181
       - DATABASE_PORT=5432
-      - DATABASE_NAME=skf
+      - DATABASE_NAME=casa
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
       # Celery Configuration
-      - CELERY_BROKER=redis://10.177.8.143:6379/0
-      - CELERY_BACKEND=redis://10.177.8.143:6379/0
+      - CELERY_BROKER=redis://10.38.21.181:6379/0
+      - CELERY_BACKEND=redis://10.38.21.181:6379/0
       - CELERY_ACCEPT_CONTENT=json
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
