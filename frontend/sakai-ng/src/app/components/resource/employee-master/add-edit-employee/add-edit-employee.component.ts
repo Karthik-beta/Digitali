@@ -442,15 +442,20 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
         const formData = new FormData();
 
-        formData.append('profile_pic', this.image_file_post, this.image_file_post?.name || null);
-        formData.append('employee_id', this.employee_id);
-        formData.append('employee_name', this.employee_name);
-        formData.append('device_enroll_id', this.enroll_id);
-        formData.append('email', this.email);
+        // formData.append('profile_pic', this.image_file_post, this.image_file_post?.name || null);
+        if (this.image_file_post) {
+            formData.append('profile_pic', this.image_file_post, this.image_file_post.name);
+          } else {
+            console.log("No profile picture selected or file is invalid.");
+          }
+        formData.append('employee_id', this.employee_id || '');
+        formData.append('employee_name', this.employee_name || '');
+        formData.append('device_enroll_id', this.enroll_id || '');
+        formData.append('email', this.email || '');
         formData.append('phone_no', Number(this.mobile_no).toString());
-        formData.append('pf_no', this.pf_no);
-        formData.append('esi_no', this.esi_no);
-        formData.append('insurance_no', this.insurance_no);
+        formData.append('pf_no', this.pf_no || '');
+        formData.append('esi_no', this.esi_no || '');
+        formData.append('insurance_no', this.insurance_no || '');
 
         formData.append('bank_name', this.bank_name);
         formData.append('bank_branch', this.branch_name);
@@ -500,86 +505,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
         formData.append('search_next_day', this.search_next_day ? '1' : '0');
 
-
-
-        // const formData = {
-
-        //     profile_pic: this.image_file_post,
-
-        //     employee_id: this.employee_id,
-        //     employee_name: this.employee_name,
-        //     device_enroll_id: this.enroll_id,
-        //     email: this.email,
-        //     phone_no: this.mobile_no,
-        //     pf_no: this.pf_no,
-        //     esi_no: this.esi_no,
-        //     insurance_no: this.insurance_no,
-
-        //     bank_name: this.bank_name,
-        //     bank_branch: this.branch_name,
-        //     bank_account_no: this.account_no,
-        //     bank_account_name: this.account_name,
-        //     bank_account_type: this.account_type,
-        //     ifsc_code: this.ifsc_code,
-
-        //     company:  this.company,
-        //     location: this.location,
-        //     department: this.department,
-        //     designation: this.designation,
-        //     division: this.division,
-        //     subdivision: this.subdivision,
-        //     shopfloor: this.shopfloor,
-        //     job_type: this.job_type,
-        //     job_status: this.jobStatus,
-        //     date_of_joining: null,
-        //     date_of_leaving: null,
-        //     reason_for_leaving: this.reason_for_leaving,
-
-        //     emergency_contact_name: this.emergency_contact_name,
-        //     emergency_contact_no: this.emergency_contact_no,
-        //     marital_status: this.marital_status,
-        //     spouse_name: this.spouse_name,
-        //     blood_group: this.blood_group,
-        //     date_of_birth: null,
-        //     country_name: this.country_name,
-        //     country_code: this.country_code,
-        //     uid_no: this.uid_no,
-        //     pan_no: this.pan_no,
-        //     voter_id: this.voter_id,
-        //     driving_license: this.driving_license,
-        //     gender: this.gender,
-        //     present_address: this.present_address,
-        //     permanent_address: this.permanent_address,
-
-        //     flexi_time: this.flexi_time,
-        //     consider_late_entry: this.consider_late_entry,
-        //     consider_early_exit: this.consider_early_exit,
-        //     consider_extra_hours_worked: this.consider_extra_hours_worked,
-        //     consider_late_entry_on_holiday: this.consider_late_entry_on_holiday,
-        //     consider_early_exit_on_holiday: this.consider_early_exit_on_holiday,
-        //     consider_extra_hours_worked_on_holiday: this.consider_extra_hours_worked_on_holiday,
-
-        //     search_next_day: this.search_next_day,
-
-
-
-
-
-        //     additional_info: null,
-        //     graduation: null,
-        //     course_type: null,
-        //     course: null,
-        //     place_of_graduation: null,
-        //     aggregate: null,
-        //     year_of_graduation: null,
-        //     first_weekly_off: null,
-        //     second_weekly_off: null,
-        //     week_off_effective_date: null,
-
-
-        //     reporting_manager: null,
-        //     alt_reporting_manager: null
-        // }
 
         console.log("Form Data:", formData);
 

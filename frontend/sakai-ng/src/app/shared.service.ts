@@ -267,6 +267,10 @@ export class SharedService {
     return this.http.post(`${this.APIUrl}/employee_id/`, requestBody);
   }
 
+  updateEmployee(id: number, formData: any): Observable<any> {
+    return this.http.put(`${this.APIUrl}/employee/${id}/`, formData);
+  }
+
   fetchEmployee(id: number): Observable<any> {
     return this.http.get(`${this.APIUrl}/employee/${id}/`);
   }

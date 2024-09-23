@@ -81,6 +81,10 @@ class Employee(models.Model):
     pf_no = models.CharField(max_length=20, blank=True, null=True)
     esi_no = models.CharField(max_length=20, blank=True, null=True)
     insurance_no = models.CharField(max_length=20, blank=True, null=True)
+    ar_no = models.CharField(max_length=20, blank=True, null=True)
+    ap_no = models.CharField(max_length=20, blank=True, null=True)
+    cn_no = models.CharField(max_length=20, blank=True, null=True)
+
 
     # Bank Details
     bank_name = models.CharField(max_length=100, blank=True, null=True)
@@ -106,7 +110,7 @@ class Employee(models.Model):
     reporting_manager = models.ForeignKey('self', on_delete=models.SET_NULL, related_name='reports', blank=True, null=True)
     alt_reporting_manager = models.ForeignKey('self', on_delete=models.SET_NULL, related_name='alt_reports',blank=True, null=True)
     reason_for_leaving = models.TextField(blank=True, null=True)
-
+ 
     # Personal Details
     emergency_contact_name = models.CharField(max_length=100, blank=True, null=True)
     emergency_contact_no = models.PositiveBigIntegerField(blank=True, null=True)
@@ -116,7 +120,7 @@ class Employee(models.Model):
     date_of_birth = models.DateField(blank=True, null=True)
     country_name = models.CharField(max_length=100, blank=True, null=True)
     country_code = models.CharField(max_length=10, blank=True, null=True)
-    uid_no = models.CharField(max_length=20, blank=True, null=True)
+    uid_no = models.CharField(max_length=20, blank=True, null=True) #aadhar 
     pan_no = models.CharField(max_length=20, blank=True, null=True)
     voter_id = models.CharField(max_length=20, blank=True, null=True)
     driving_license = models.CharField(max_length=20, blank=True, null=True)
