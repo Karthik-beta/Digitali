@@ -13,7 +13,7 @@ import (
 // Database connection settings
 const (
 	mssqlConnStr = "server=127.0.0.1;user id=Digitali;password=Digitali;database=biotime"
-	pgConnStr    = "host=10.38.21.181 port=5432 user=postgres password=password123 dbname=skf sslmode=disable"
+	pgConnStr    = "host=10.38.21.181 port=5432 user=postgres password=password123 dbname=casa sslmode=disable"
 )
 
 func fetchLatestIDFromPostgres() (int, error) {
