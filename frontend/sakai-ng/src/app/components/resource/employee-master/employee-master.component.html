@@ -291,8 +291,8 @@
                     </td> -->
                     <td style="padding: 0em">
                         <div class="">
-                            <p-button icon="pi pi-search" [rounded]="true" [text]="true" [routerLink]="['/view_edit_employee', item.id]"></p-button>
-                            <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="warning "></p-button>
+                            <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" [routerLink]="['/view_edit_employee', item.id]"></p-button>
+                            <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="warning" (click)="deleteEmployee(item.id)"></p-button>
                         </div>
                     </td>
                 </tr>
@@ -310,3 +310,6 @@
         </p-table>
     </div>
 </div>
+
+<p-toast></p-toast>
+<p-confirmDialog />

@@ -249,10 +249,10 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     selectedAccountType: any;
     selectedCategory: any;
     selectedJobType: any;
-    selectedCompany: any;
-    selectedLocation: any;
-    selectedDepartment: any;
-    selectedDesignation: any;
+    selectedCompany: number | null;
+    selectedLocation: number | null;
+    selectedDepartment: number | null;
+    selectedDesignation: number | null;
     selectedDivision: any;
     selectedSubDivision: any;
     selectedShopfloor: any;
@@ -267,7 +267,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     // Method to assign the selected company's ID to the 'selectedCompanyId' variable
     assignCompanyId(selectedCompany: any) {
         this.company = selectedCompany ? selectedCompany.id : null;
-        console.log("Selected Company ID:", this.company);
+        // console.log("Selected Company ID:", this.company);
     }
 
     assignLocationId(selectedLocation: any) {
@@ -351,6 +351,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     ifsc_code: string = '';
 
     shift!: number;
+    auto_shift: boolean = true;
     company!: number;
     location!: number;
     category: string = '';
@@ -452,7 +453,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('employee_name', this.employee_name || '');
         formData.append('device_enroll_id', this.enroll_id || '');
         formData.append('email', this.email || '');
-        formData.append('phone_no', Number(this.mobile_no).toString());
+        // formData.append('phone_no', Number(this.mobile_no).toString());
         formData.append('pf_no', this.pf_no || '');
         formData.append('esi_no', this.esi_no || '');
         formData.append('insurance_no', this.insurance_no || '');
@@ -470,8 +471,8 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('department', Number(this.department).toString());
         formData.append('designation', Number(this.designation).toString());
         formData.append('division', Number(this.division).toString());
-        formData.append('subdivision', Number(this.subdivision).toString());
-        formData.append('shopfloor', Number(this.shopfloor).toString());
+        // formData.append('subdivision', Number(this.subdivision).toString());
+        // formData.append('shopfloor', Number(this.shopfloor).toString());
         formData.append('job_type', this.job_type);
         formData.append('job_status', this.jobStatus);
         formData.append('date_of_joining', this.datePipe.transform(this.date_of_joining, 'yyyy-MM-dd') || '');
@@ -479,7 +480,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('reason_for_leaving', this.reason_for_leaving);
 
         formData.append('emergency_contact_name', this.emergency_contact_name);
-        formData.append('emergency_contact_no', Number(this.emergency_contact_no).toString());
+        // formData.append('emergency_contact_no', Number(this.emergency_contact_no).toString());
         formData.append('marital_status', this.marital_status);
         formData.append('spouse_name', this.spouse_name);
         formData.append('blood_group', this.blood_group);
@@ -494,7 +495,8 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('present_address', this.present_address);
         formData.append('permanent_address', this.permanent_address);
 
-        formData.append('shift', this.shift ? '1' : '0');
+        formData.append('shift', this.shift ? '1' : '');
+        formData.append('auto_shift', this.auto_shift ? '1' : '0');
         formData.append('flexi_time', this.flexi_time ? '1' : '0');
         formData.append('consider_late_entry', this.consider_late_entry ? '1' : '0');
         formData.append('consider_early_exit', this.consider_early_exit ? '1' : '0');
@@ -526,6 +528,95 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
             }
         });
 
+    }
+
+    updateEmployee(): void {
+        const formData = new FormData();
+
+        // formData.append('profile_pic', this.image_file_post, this.image_file_post?.name || null);
+        if (this.image_file_post) {
+            formData.append('profile_pic', this.image_file_post, this.image_file_post.name);
+          } else {
+            console.log("No profile picture selected or file is invalid.");
+          }
+        formData.append('employee_id', this.employee_id || '');
+        formData.append('employee_name', this.employee_name || '');
+        formData.append('device_enroll_id', this.enroll_id || '');
+        formData.append('email', this.email || '');
+        // formData.append('phone_no', Number(this.mobile_no).toString());
+        formData.append('pf_no', this.pf_no || '');
+        formData.append('esi_no', this.esi_no || '');
+        formData.append('insurance_no', this.insurance_no || '');
+
+        formData.append('bank_name', this.bank_name);
+        formData.append('bank_branch', this.branch_name);
+        formData.append('bank_account_no', this.account_no);
+        formData.append('bank_account_name', this.account_name);
+        formData.append('bank_account_type', this.account_type);
+        formData.append('ifsc_code', this.ifsc_code);
+
+        // formData.append('company', Number(this.company).toString());
+        // formData.append('location', Number(this.location).toString());
+        formData.append('category', this.category);
+        // formData.append('department', Number(this.department).toString());
+        // formData.append('designation', Number(this.designation).toString());
+        // formData.append('division', Number(this.division).toString());
+        // formData.append('subdivision', Number(this.subdivision).toString());
+        // formData.append('shopfloor', Number(this.shopfloor).toString());
+        formData.append('job_type', this.job_type);
+        formData.append('job_status', this.jobStatus);
+        formData.append('date_of_joining', this.datePipe.transform(this.date_of_joining, 'yyyy-MM-dd') || '');
+        formData.append('date_of_leaving', this.datePipe.transform(this.date_of_leaving, 'yyyy-MM-dd') || '');
+        formData.append('reason_for_leaving', this.reason_for_leaving);
+
+        formData.append('emergency_contact_name', this.emergency_contact_name);
+        // formData.append('emergency_contact_no', Number(this.emergency_contact_no).toString());
+        formData.append('marital_status', this.marital_status);
+        formData.append('spouse_name', this.spouse_name);
+        formData.append('blood_group', this.blood_group);
+        formData.append('date_of_birth', this.datePipe.transform(this.date_of_birth, 'yyyy-MM-dd') || '');
+        formData.append('country_name', this.country_name);
+        formData.append('country_code', this.country_code);
+        formData.append('uid_no', this.uid_no);
+        formData.append('pan_no', this.pan_no);
+        formData.append('voter_id', this.voter_id);
+        formData.append('driving_license', this.driving_license);
+        formData.append('gender', this.gender);
+        formData.append('present_address', this.present_address);
+        formData.append('permanent_address', this.permanent_address);
+
+        formData.append('shift', this.shift ? '1' : '');
+        formData.append('auto_shift', this.auto_shift ? '1' : '0');
+        formData.append('flexi_time', this.flexi_time ? '1' : '0');
+        formData.append('consider_late_entry', this.consider_late_entry ? '1' : '0');
+        formData.append('consider_early_exit', this.consider_early_exit ? '1' : '0');
+        formData.append('consider_extra_hours_worked', this.consider_extra_hours_worked ? '1' : '0');
+        formData.append('consider_late_entry_on_holiday', this.consider_late_entry_on_holiday ? '1' : '0');
+        formData.append('consider_early_exit_on_holiday', this.consider_early_exit_on_holiday ? '1' : '0');
+        formData.append('consider_extra_hours_worked_on_holiday', this.consider_extra_hours_worked_on_holiday ? '1' : '0');
+
+        formData.append('search_next_day', this.search_next_day ? '1' : '0');
+
+
+        console.log("Form Data:", formData);
+
+        this.service.updateEmployee(this.id, formData).subscribe({
+            next: (data) => {
+
+                this.resetForm();
+
+                this.activeStepperNumber = 0;
+
+                this.getEmployeeId();
+
+                console.log("Employee Updated:", data);
+                this.messageService.add({severity: 'success', summary: 'Employee Updated', detail: 'Employee Updated successfully'});
+            },
+            error: (error) => {
+                console.log("Error:", error);
+                this.messageService.add({severity: 'error', summary: 'Error', detail: 'Error Updating employee'});
+            }
+        });
     }
 
 

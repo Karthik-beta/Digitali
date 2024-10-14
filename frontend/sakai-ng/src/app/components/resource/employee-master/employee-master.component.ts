@@ -104,6 +104,39 @@ export class EmployeeMasterComponent implements OnInit, OnDestroy {
         });
     }
 
+    deleteEmployee(id: number): void {
+
+        console.log('Deleting employee with id:', id);
+        this.confirmationService.confirm({
+            message: 'Are you sure you want to delete this employee?',
+            header: 'Delete Employee',
+            icon: 'pi pi-exclamation-triangle',
+            acceptButtonStyleClass:"p-button-danger p-button-text",
+            rejectButtonStyleClass:"p-button-text p-button-text",
+            accept: () => {
+                this.service.deleteEmployee(id).subscribe({
+                    next: (response) => {
+                        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Employee deleted successfully' });
+                        this.getEmployeesList({ first: 0, rows: this.rows });
+                    },
+                    error: (error) => {
+                        this.messageService.add({ severity: 'warn', summary: 'Error', detail: 'Failed to delete employee' });
+                    }
+                });
+            },
+            reject: (type: any) => {
+                switch (type) {
+                    case ConfirmEventType.REJECT:
+                        this.messageService.add({ severity: 'info', summary: 'Info', detail: 'Delete operation cancelled' });
+                        break;
+                    case ConfirmEventType.CANCEL:
+                        this.messageService.add({ severity: 'warn', summary: 'Warn', detail: 'Delete operation cancelled' });
+                        break;
+                }
+            }
+        });
+    }
+
     onSearchChange(query: string): void {
         this.searchQuery = query;
         this.dt.filterGlobal(query, 'contains');

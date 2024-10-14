@@ -794,7 +794,8 @@
                 </div>
                 <div class="flex pt-4 justify-content-between">
                     <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" (onClick)="prevCallback.emit()" />
-                    <p-button label="Save" icon="pi pi-save" severity="success" (click)="PostEmployee()" /></div
+                    <p-button label="Save" *ngIf="id == null" icon="pi pi-save" severity="success" (click)="PostEmployee()" />
+                    <p-button label="Update" *ngIf="id !== null" icon="pi pi-pencil" severity="info" (click)="updateEmployee()" /></div
             ></ng-template>
         </p-stepperPanel>
 

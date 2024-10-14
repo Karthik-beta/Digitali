@@ -81,9 +81,9 @@ class Employee(models.Model):
     pf_no = models.CharField(max_length=20, blank=True, null=True)
     esi_no = models.CharField(max_length=20, blank=True, null=True)
     insurance_no = models.CharField(max_length=20, blank=True, null=True)
-    ar_no = models.CharField(max_length=20, blank=True, null=True)
-    ap_no = models.CharField(max_length=20, blank=True, null=True)
-    cn_no = models.CharField(max_length=20, blank=True, null=True)
+    # ar_no = models.CharField(max_length=20, blank=True, null=True)
+    # ap_no = models.CharField(max_length=20, blank=True, null=True)
+    # cn_no = models.CharField(max_length=20, blank=True, null=True)
 
 
     # Bank Details

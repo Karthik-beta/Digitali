@@ -82,6 +82,8 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     
 
                     return True
+                else:
+                    continue
                     
                     break  # Exit loop after creating attendance record
 
@@ -111,9 +113,51 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
                 except Attendance.DoesNotExist:
                     logger.warning(f"No IN log found for employee {employee.employee_id} on {log_datetime.date()}")
-                    return False
+
+                    created = False
+
+                    for auto_shift in AutoShift.objects.all():  # Iterate over all AutoShift objects
+                        log_time = log_datetime.time()
+                        logdate = log_datetime.date()
+                        end_time = auto_shift.end_time
+                        tolerance_start = auto_shift.tolerance_start_time
+                        tolerance_end = auto_shift.tolerance_end_time
+                        grace_period_at_end_time = auto_shift.grace_period_at_end_time
+
+                        end_time_aware = timezone.make_aware(datetime.combine(logdate, end_time))
+
+                        start_window = (datetime.combine(log_datetime.date(), end_time) - tolerance_start).time()
+                        end_window = (datetime.combine(log_datetime.date(), end_time) + tolerance_end).time()
+                        end_time_with_grace = (datetime.combine(log_datetime.date(), end_time) - grace_period_at_end_time).time()
+
+                        print(f"Log time: {log_time}, Start window: {start_window}, End window: {end_window}")
+
+                        if start_window <= log_time <= end_window:
+                            # Create an Attendance record if not existing
+                            if log_datetime.weekday() not in week_off:
+                                attendance, created = Attendance.objects.update_or_create(
+                                    employeeid=employee,
+                                    logdate=log_datetime.date(),
+                                    defaults={
+                                        'last_logtime': log_time,
+                                        'shift': auto_shift.name,
+                                        'direction': 'Machine',
+                                        'shift_status': 'MP'
+                                    }
+                                )
+
+                            end_time_with_grace = end_time_aware - grace_period_at_end_time
+                            
+                            if created:
+                                if log_datetime < end_time_with_grace:
+                                    attendance.early_exit = end_time_aware - log_datetime
+                                attendance.save()
+                                print(f"Attendance record created for employee {employeeid} on {log_datetime.date()}")
+                                return True 
+                    return True
+                    
             
-            if attendance:
+            if attendance and log_datetime > timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)):
                 shift = attendance.shift
                 night_shift = AutoShift.objects.get(name=shift).night_shift if shift else False
                 first_logtime = attendance.first_logtime
@@ -220,7 +264,11 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     return True 
                 except Exception as e:
                     logger.error(f"Error saving attendance record for employee {employeeid}: {e}")
-                    return False      
+                    return False    
+
+            
+
+                  
 
 
         
