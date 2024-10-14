@@ -20,7 +20,7 @@ services:
       - ALLOWED_HOSTS=10.177.8.143
       - DATABASE_HOST=10.177.8.143
       - DATABASE_PORT=5432
-      - DATABASE_NAME=casa
+      - DATABASE_NAME=skf
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
