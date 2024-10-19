@@ -107,9 +107,7 @@ def process_logs():
                         # Ensure out_time is greater than in_time
                         if out_time < in_time:
                             print(f"Warning: out_time {out_time} is less than in_time {in_time} for shift {i}.")
-                            in_time = datetime.combine(log_date, duty_in)
-                            out_time = log.log_datetime  # Use the log's datetime instead
-                            total_time = out_time - in_time  # Or any default value you'd like, like 0
+                            total_time = timedelta()  # Or any default value you'd like, like 0
                         else:
                             total_time = out_time - in_time
 
