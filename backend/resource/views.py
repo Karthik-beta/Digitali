@@ -1135,9 +1135,15 @@ class ManDaysWorkedExcelExport(View):
             ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
             ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
             ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
+            if record.employeeid and record.employeeid.designation.name:
+                ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
+            else:
+                ws.cell(row=row_num, column=7, value="")
             ws.cell(row=row_num, column=8, value=record.employeeid.category)
-            ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
+            if record.employeeid and record.employeeid.designation.name:
+                ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
+            else:
+                ws.cell(row=row_num, column=9, value="")
             ws.cell(row=row_num, column=10, value=record.logdate)
             ws.cell(row=row_num, column=11, value=record.duty_in_1)
             ws.cell(row=row_num, column=12, value=record.duty_out_1)
