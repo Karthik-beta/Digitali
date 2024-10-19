@@ -137,7 +137,7 @@ def process_logs():
 
                 # Now you can safely save the last_log if it's a valid instance
                 last_log.last_log_id = last_log_id  # Set the last_log_id
-                # last_log.save()
+                last_log.save()
 
     except Exception as e:
         # Handle exceptions, such as rollback the transaction
