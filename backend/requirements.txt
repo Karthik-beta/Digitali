@@ -41,7 +41,8 @@ python-crontab==3.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.1
-pywin32==306
+# Only install pywin32 on Windows
+pywin32==306; platform_system == "Windows"
 rpyc==6.0.0
 six==1.16.0
 sqlparse==0.5.0
