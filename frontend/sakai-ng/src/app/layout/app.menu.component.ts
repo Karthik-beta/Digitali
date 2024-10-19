@@ -134,6 +134,7 @@ export class AppMenuComponent implements OnInit {
                                         label: 'Daily Info', icon: 'fa-solid fa-calendar-days',
                                         items: [
                                             { label: 'Daily Status', icon: 'fa-solid fa-chart-line', routerLink: ['/daily_report'] },
+                                            { label: 'Mandays Report', icon: 'fa-solid fa-user-group', routerLink: ['/mandays_report'] },
                                             { label: 'Present Report', icon: 'fa-solid fa-user-check', routerLink: ['/present_report'] },
                                             { label: 'Absent Report', icon: 'fa-solid fa-user-times', routerLink: ['/absent_report'] },
                                             { label: 'Late Entry Report', icon: 'fa-solid fa-clock', routerLink: ['/late_entry_report'] },

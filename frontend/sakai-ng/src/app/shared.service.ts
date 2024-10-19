@@ -376,4 +376,48 @@ export class SharedService {
         });
     }
 
+    getMandaysAttendanceList(params: any): Observable<any> {
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+          if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/mandays/`, { params: httpParams });
+    }
+
+    downloadMandaysAttendanceReport(params: any): Observable<any> {
+
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+        if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+        }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/mandays/report/`, {
+            params: httpParams,
+            responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+        });
+    }
+
+    downloadMandaysWorkedReport(params: any): Observable<any> {
+
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+        if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+        }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/mandays/work_report/`, {
+            params: httpParams,
+            responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+        });
+    }
+
 }

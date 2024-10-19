@@ -20,6 +20,7 @@ import { OvertimeComponent } from './components/resource/overtime/overtime.compo
 import { PresentComponent } from './components/resource/present/present.component';
 import { MissedPunchReportComponent } from './components/resource/missed-punch-report/missed-punch-report.component';
 import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
+import { MandaysComponent } from './components/resource/mandays/mandays.component';
 
 @NgModule({
     imports: [
@@ -53,6 +54,7 @@ import { InsufficientHoursReportComponent } from './components/resource/insuffic
                     { path: 'shift_strength', component: ShiftStrengthComponent, canActivate: [authGuard] },
                     { path: 'evacuation', component: EvacuationComponent, canActivate: [authGuard] },
                     { path: 'missed_punch', component: MissedPunchComponent, canActivate: [authGuard] },
+                    { path: 'mandays_report', component: MandaysComponent, canActivate: [authGuard] },
 
 
                     // Configuration

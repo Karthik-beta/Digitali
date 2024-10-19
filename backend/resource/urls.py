@@ -3,7 +3,8 @@ from resource.views import (
                             EmployeeListCreate, EmployeeRetrieveUpdateDestroy, EmployeeIdGet, 
                             AttendanceListCreate, ExportAttendanceExcelView, AttendanceMetricsAPIView,
                             AttendanceMonthlyMetricsAPIView, LogsListCreate, LogsRetrieveUpdateDestroy,
-                            EmployeeDropdownList, ExportEmployeeAttendanceExcelView, ExportAllEmployeeAttendanceExcelView, LastLogIdView)
+                            EmployeeDropdownList, ExportEmployeeAttendanceExcelView, ExportAllEmployeeAttendanceExcelView, 
+                            LastLogIdView, MandaysAttendanceListCreate, ManDaysAttendanceExcelExport, ManDaysWorkedExcelExport )
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -33,5 +34,11 @@ urlpatterns = [
     re_path(r'^attendance/export/allemployees/$', ExportAllEmployeeAttendanceExcelView.as_view(), name='attendance-export'),
 
     re_path(r'^last_log_id/$', LastLogIdView.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/mandays/$', MandaysAttendanceListCreate.as_view(), name='logs-list-create'),
+
+    re_path(r'^attendance/mandays/report/$', ManDaysAttendanceExcelExport.as_view(), name='logs-list-create'),
+
+    re_path(r'^attendance/mandays/work_report/$', ManDaysWorkedExcelExport.as_view(), name='logs-list-create'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

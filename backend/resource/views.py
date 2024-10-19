@@ -19,7 +19,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 
-from resource.models import Employee, Attendance, Logs, LastLogId
+from resource.models import Employee, Attendance, Logs, LastLogId,ManDaysAttendance
 from . import serializers
 from .services import generate_unique_ids, check_employee_id
 
@@ -987,3 +987,166 @@ class LastLogIdView(APIView):
         last_log = LastLogId.objects.first()  # or .last() if you want the last record
         serializer = serializers.LastLogIdSerializer(last_log)
         return Response(serializer.data)
+    
+class MandaysAttendanceListCreate(generics.ListCreateAPIView):
+    """
+    API view for listing and creating mandays attendance records.
+    """
+    queryset = ManDaysAttendance.objects.order_by('-logdate').all()
+    serializer_class = serializers.ManDaysAttendanceSerializer
+    pagination_class = DefaultPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['employeeid', 'logdate']
+    search_fields = ['employeeid', 'logdate']
+
+class ManDaysAttendanceExcelExport(View):
+
+    def get(self, request, *args, **kwargs):
+        employee_id = request.GET.get('employee_id')
+        date_str = request.GET.get('date')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        queryset = ManDaysAttendance.objects.order_by('-logdate').all()
+
+        if employee_id:
+            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+        if date_str:
+            queryset = queryset.filter(logdate=date_str)
+        if month:
+            queryset = queryset.filter(logdate__month=month)
+        if year:
+            queryset = queryset.filter(logdate__year=year)
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Mandays Attendance Report"
+
+        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Log Date", "Duty In 1", "Duty Out 1", "Total Hours", 
+                   "Duty In 2", "Duty Out 2", "Total Hours", "Duty In 3", "Duty Out 3", "Total Hours", "Duty In 4", "Duty Out 4", "Total Hours", 
+                   "Duty In 5", "Duty Out 5", "Total Hours", "Duty In 6", "Duty Out 6", "Total Hours", "Duty In 7", "Duty Out 7", "Total Hours", 
+                   "Duty In 8", "Duty Out 8", "Total Hours", "Duty In 9", "Duty Out 9", "Total Hours", "Duty In 10", "Duty Out 10", "Mandays Worked Hours"]
+        
+        row_num = 1
+
+        # Set font style and background color for headers
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
+        ws.freeze_panes = 'A2'
+
+        for row_num, record in enumerate(queryset, 2):
+            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
+            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
+            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
+            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
+            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
+            ws.cell(row=row_num, column=6, value=record.logdate)
+            ws.cell(row=row_num, column=7, value=record.duty_in_1)
+            ws.cell(row=row_num, column=8, value=record.duty_out_1)
+            ws.cell(row=row_num, column=9, value=record.total_time_1)
+            ws.cell(row=row_num, column=10, value=record.duty_in_2)
+            ws.cell(row=row_num, column=11, value=record.duty_out_2)
+            ws.cell(row=row_num, column=12, value=record.total_time_2)
+            ws.cell(row=row_num, column=13, value=record.duty_in_3)
+            ws.cell(row=row_num, column=14, value=record.duty_out_3)
+            ws.cell(row=row_num, column=15, value=record.total_time_3)
+            ws.cell(row=row_num, column=16, value=record.duty_in_4)
+            ws.cell(row=row_num, column=17, value=record.duty_out_4)
+            ws.cell(row=row_num, column=18, value=record.total_time_4)
+            ws.cell(row=row_num, column=19, value=record.duty_in_5)
+            ws.cell(row=row_num, column=20, value=record.duty_out_5)
+            ws.cell(row=row_num, column=21, value=record.total_time_5)
+            ws.cell(row=row_num, column=22, value=record.duty_in_6)
+            ws.cell(row=row_num, column=23, value=record.duty_out_6)
+            ws.cell(row=row_num, column=24, value=record.total_time_6)
+            ws.cell(row=row_num, column=25, value=record.duty_in_7)
+            ws.cell(row=row_num, column=26, value=record.duty_out_7)
+            ws.cell(row=row_num, column=27, value=record.total_time_7)
+            ws.cell(row=row_num, column=28, value=record.duty_in_8)
+            ws.cell(row=row_num, column=29, value=record.duty_out_8)
+            ws.cell(row=row_num, column=30, value=record.total_time_8)
+            ws.cell(row=row_num, column=31, value=record.duty_in_9)
+            ws.cell(row=row_num, column=32, value=record.duty_out_9)
+            ws.cell(row=row_num, column=33, value=record.total_time_9)
+            ws.cell(row=row_num, column=34, value=record.duty_in_10)
+            ws.cell(row=row_num, column=35, value=record.duty_out_10)
+            ws.cell(row=row_num, column=33, value=record.total_time_10)
+            ws.cell(row=row_num, column=36, value=record.total_hours_worked)
+
+            cell.alignment = Alignment(horizontal='center')
+
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
+        wb.save(response)
+
+        return response        
+    
+class ManDaysWorkedExcelExport(View):
+    """
+    API view for exporting the mandays worked data to an Excel file.
+    """
+
+    def get(self, request, *args, **kwargs):
+        employee_id = request.GET.get('employee_id')
+        date_str = request.GET.get('date')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        queryset = ManDaysAttendance.objects.order_by('-logdate').all()
+
+        if employee_id:
+            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+        if date_str:
+            queryset = queryset.filter(logdate=date_str)
+        if month:
+            queryset = queryset.filter(logdate__month=month)
+        if year:
+            queryset = queryset.filter(logdate__year=year)
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Mandays Worked Report"
+
+        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Jobtype", "Department", "Employee Type", "Designation", "Log Date", "Duty In First", "Duty Out Last", "Mandays Worked Hours"]
+
+        row_num = 1
+
+        # Set font style and background color for headers
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
+        ws.freeze_panes = 'A2'
+
+        for row_num, record in enumerate(queryset, 2):
+            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
+            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
+            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
+            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
+            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
+            ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
+            ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
+            ws.cell(row=row_num, column=8, value=record.employeeid.category)
+            ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
+            ws.cell(row=row_num, column=10, value=record.logdate)
+            ws.cell(row=row_num, column=11, value=record.duty_in_1)
+            ws.cell(row=row_num, column=12, value=record.duty_out_1)
+            ws.cell(row=row_num, column=13, value=record.total_hours_worked)
+
+            cell.alignment = Alignment(horizontal='center')
+
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
+        wb.save(response)
+
+        return response  

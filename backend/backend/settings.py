@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'django_celery_beat',
+    'django_apscheduler',
 
     'config',
     'resource',

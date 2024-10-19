@@ -243,6 +243,12 @@ class LastLogId(models.Model):
     class Meta:
         db_table = 'last_log_id'
 
+class LastLogIdMandays(models.Model):
+    last_log_id = models.IntegerField(default=0, editable=True)
+    
+    class Meta:
+        db_table = 'last_log_id_mandays'
+
 class Attendance(models.Model):
     employeeid = models.ForeignKey(Employee, on_delete=models.SET_NULL, blank=True, null=True)
     logdate = models.DateField()
@@ -270,3 +276,43 @@ class Attendance(models.Model):
     #             setattr(self, field_name, None)
         
     #     super(Attendance, self).save(*args, **kwargs)
+
+class ManDaysAttendance(models.Model):
+    employeeid = models.ForeignKey(Employee, on_delete=models.SET_NULL, blank=True, null=True)
+    shift = models.CharField(max_length=50, blank=True, null=True)
+    shift_status = models.CharField(max_length=50, blank=True, null=True)
+    logdate = models.DateField()
+    duty_in_1 = models.TimeField(blank=True, null=True)
+    duty_out_1 = models.TimeField(blank=True, null=True)
+    total_time_1 = models.DurationField(blank=True, null=True)
+    duty_in_2 = models.TimeField(blank=True, null=True)
+    duty_out_2 = models.TimeField(blank=True, null=True)
+    total_time_2 = models.DurationField(blank=True, null=True)
+    duty_in_3 = models.TimeField(blank=True, null=True)
+    duty_out_3 = models.TimeField(blank=True, null=True)
+    total_time_3 = models.DurationField(blank=True, null=True)
+    duty_in_4 = models.TimeField(blank=True, null=True)
+    duty_out_4 = models.TimeField(blank=True, null=True)
+    total_time_4 = models.DurationField(blank=True, null=True)
+    duty_in_5 = models.TimeField(blank=True, null=True)
+    duty_out_5 = models.TimeField(blank=True, null=True)
+    total_time_5 = models.DurationField(blank=True, null=True)
+    duty_in_6 = models.TimeField(blank=True, null=True)
+    duty_out_6 = models.TimeField(blank=True, null=True)
+    total_time_6 = models.DurationField(blank=True, null=True)
+    duty_in_7 = models.TimeField(blank=True, null=True)
+    duty_out_7 = models.TimeField(blank=True, null=True)
+    total_time_7 = models.DurationField(blank=True, null=True)
+    duty_in_8 = models.TimeField(blank=True, null=True)
+    duty_out_8 = models.TimeField(blank=True, null=True)
+    total_time_8 = models.DurationField(blank=True, null=True)
+    duty_in_9 = models.TimeField(blank=True, null=True)
+    duty_out_9 = models.TimeField(blank=True, null=True)
+    total_time_9 = models.DurationField(blank=True, null=True)
+    duty_in_10 = models.TimeField(blank=True, null=True)
+    duty_out_10 = models.TimeField(blank=True, null=True)
+    total_time_10 = models.DurationField(blank=True, null=True)
+    total_hours_worked = models.DurationField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'mandays_attendance'

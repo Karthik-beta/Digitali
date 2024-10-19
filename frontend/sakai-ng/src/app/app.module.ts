@@ -148,6 +148,7 @@ import { OvertimeComponent } from './components/resource/overtime/overtime.compo
 import { PresentComponent } from './components/resource/present/present.component';
 import { MissedPunchReportComponent } from './components/resource/missed-punch-report/missed-punch-report.component';
 import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
+import { MandaysComponent } from './components/resource/mandays/mandays.component';
 
 
 
@@ -165,7 +166,8 @@ import { InsufficientHoursReportComponent } from './components/resource/insuffic
         OvertimeComponent,
         PresentComponent,
         MissedPunchReportComponent,
-        InsufficientHoursReportComponent
+        InsufficientHoursReportComponent,
+        MandaysComponent
     ],
     imports: [
         AppRoutingModule,
