@@ -1135,12 +1135,12 @@ class ManDaysWorkedExcelExport(View):
             ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
             ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
             ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            if record.employeeid and record.employeeid.designation.name:
+            if record.employeeid.designation is not None:
                 ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
             else:
                 ws.cell(row=row_num, column=7, value="")
             ws.cell(row=row_num, column=8, value=record.employeeid.category)
-            if record.employeeid and record.employeeid.designation.name:
+            if record.employeeid.designation is not None:
                 ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
             else:
                 ws.cell(row=row_num, column=9, value="")
