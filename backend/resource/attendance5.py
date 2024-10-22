@@ -50,7 +50,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
     try:
         employee = Employee.objects.get(employee_id=employeeid)
     except Employee.DoesNotExist:
-        logger.error(f"Employee with ID: {employeeid} not found.")
+        # logger.error(f"Employee with ID: {employeeid} not found.")
         return False
 
     week_off = [6]
@@ -90,7 +90,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                                 start_time_aware = timezone.make_aware(datetime.combine(log_date, start_time))
                                 attendance.late_entry = log_datetime - start_time_aware
                             attendance.save()
-                            logger.info(f"Attendance record created for employee {employeeid} on {log_date}")
+                            # logger.info(f"Attendance record created for employee {employeeid} on {log_date}")
                         else:
                             if log_time > start_time_with_grace:
                                 start_time_aware = timezone.make_aware(datetime.combine(log_date, start_time))
@@ -113,7 +113,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         )
                     return True
 
-            logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
+            # logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
             return False
 
         elif direction == 'Out Device':
@@ -133,9 +133,9 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         logdate=previous_day,
                         first_logtime__isnull=False
                     )
-                    logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
+                    # logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
                 except Attendance.DoesNotExist:
-                    logger.warning(f"No IN log found for employee {employee.employee_id} on {log_date}")
+                    # logger.warning(f"No IN log found for employee {employee.employee_id} on {log_date}")
                     # Logic for creating an attendance record if no IN log is found
                     return handle_out_device_log(employee, log_datetime, auto_shifts, week_off)
 
@@ -152,10 +152,10 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
 
                 try:
                     attendance.save()
-                    logger.info(f"Attendance processed for employee: {employeeid} at {log_datetime}")
+                    # logger.info(f"Attendance processed for employee: {employeeid} at {log_datetime}")
                     return True 
                 except Exception as e:
-                    logger.error(f"Error saving attendance record for employee {employeeid}: {e}")
+                    # logger.error(f"Error saving attendance record for employee {employeeid}: {e}")
                     return False
 
     return True  

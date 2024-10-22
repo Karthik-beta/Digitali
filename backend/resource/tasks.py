@@ -77,7 +77,7 @@ def process_logs(log_data):
 
                 # print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 
-    print("Logs processed.", log_data.count())
+    # print("Logs processed.", log_data.count())
     return process_success  # Return the overall processing success flag
 
 @shared_task
