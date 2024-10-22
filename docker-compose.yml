@@ -17,8 +17,8 @@ services:
       - ENVIRONMENT=local
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
-      - ALLOWED_HOSTS=192.168.0.108
-      - DATABASE_HOST=192.168.0.108
+      - ALLOWED_HOSTS=*
+      - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=decan
       - DATABASE_USER=postgres
@@ -59,7 +59,10 @@ services:
       - ./frontend:/app
     depends_on:
       - django
+    environment:
+      - API_URL=http://django:8000
     restart: always
+
 
   # celery:
   #   container_name: celery
