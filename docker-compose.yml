@@ -17,8 +17,8 @@ services:
       - ENVIRONMENT=local
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
-      - ALLOWED_HOSTS=192.168.0.124
-      - DATABASE_HOST=192.168.0.124
+      - ALLOWED_HOSTS=192.168.0.108
+      - DATABASE_HOST=192.168.0.108
       - DATABASE_PORT=5432
       - DATABASE_NAME=decan
       - DATABASE_USER=postgres
@@ -32,16 +32,16 @@ services:
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_TIMEZONE=Asia/Kolkata
 
-  # postgres:
-  #   image: postgres:latest
-  #   environment:
-  #     POSTGRES_DB: skf
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: password123
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: decan
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   redis:
     image: docker.io/redis:6
