@@ -151,7 +151,7 @@ def process_logs():
             if attendance_updates:
                 ManDaysAttendance.objects.bulk_update(
                     attendance_updates.values(),
-                    ['duty_in_1', 'duty_in_2', 'duty_out_1', 'total_hours_worked']  # Include all fields you need to update
+                    ['duty_in_1', 'duty_out_1', 'total_time_1', 'duty_in_2', 'duty_out_2', 'total_time_2', 'duty_in_3', 'duty_out_3', 'total_time_3', 'duty_in_4', 'duty_out_4', 'total_time_4', 'duty_in_5', 'duty_out_5', 'total_time_5', 'duty_in_6', 'duty_out_6', 'total_time_6', 'duty_in_7', 'duty_out_7', 'total_time_7', 'duty_in_8', 'duty_out_8', 'total_time_8', 'duty_in_9', 'duty_out_9', 'total_time_9', 'duty_in_10', 'duty_out_10', 'total_time_10', 'total_hours_worked']
                 )
 
             # Invalidate cache after successful processing
