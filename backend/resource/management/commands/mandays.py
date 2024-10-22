@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand, CommandError
 from resource.models import Logs, LastLogId  # Import your models
-from resource.attendance4 import process_logs   # Import the function to execute
+from resource.attendance3 import process_logs   # Import the function to execute
 
 class Command(BaseCommand):
     help = 'Processes new logs from the database.'

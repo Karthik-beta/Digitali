@@ -6,7 +6,7 @@ from celery import shared_task
 
 # from resource.attendance import AttendanceCalculator
 from resource.attendance import AttendanceService
-from resource.attendance5 import process_attendance
+from resource.attendance2 import process_attendance
 from tqdm import tqdm
 
 # Set up logging
