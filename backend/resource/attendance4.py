@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import Q
 from datetime import timedelta, datetime
 from resource.models import Logs, LastLogIdMandays, ManDaysAttendance, Employee
+from tqdm import tqdm
 
 def process_logs():
     try:
@@ -25,15 +26,17 @@ def process_logs():
 
             # Initialize a dictionary to collect attendance updates
             attendance_updates = {}
+            
 
-            # Process logs for each employee
-            for log in new_logs:
+            # Process logs for each employee with a progress bar
+            total_new_logs = new_logs.count()  # Count the total new logs for tqdm
+            for log in tqdm(new_logs, desc="Processing new logs", total=total_new_logs, unit="log"):
                 employee_id = log.employeeid
 
                 # Use cached employees data
                 employee = employees.get(employee_id)
                 if not employee:
-                    print(f"Error: Employee with ID {employee_id} does not exist. Skipping log ID {log.id}.")
+                    # print(f"Error: Employee with ID {employee_id} does not exist. Skipping log ID {log.id}.")
                     continue  # Skip this log if the employee doesn't exist
 
                 log_date = log.log_datetime.date()
@@ -94,7 +97,7 @@ def process_logs():
 
                     # If still no valid "In Device", log the error and skip
                     if not last_duty_in:
-                        print(f"Error: No duty_in found for employee {employee_id} on {log_date} or previous days. Skipping log ID {log.id}.")
+                        # print(f"Error: No duty_in found for employee {employee_id} on {log_date} or previous days. Skipping log ID {log.id}.")
                         continue
 
                     # Find the first available duty_out (duty_out_1, duty_out_2, etc.)
@@ -121,7 +124,7 @@ def process_logs():
 
                         # Ensure out_time is greater than in_time
                         if out_time < in_time:
-                            print(f"Warning: out_time {out_time} is less than in_time {in_time} for shift {i}.")
+                            # print(f"Warning: out_time {out_time} is less than in_time {in_time} for shift {i}.")
                             total_time = timedelta()  # Or any default value you'd like
                         else:
                             total_time = out_time - in_time
