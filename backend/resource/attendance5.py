@@ -5,7 +5,6 @@ from django.db import models
 from django.utils import timezone
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from tqdm import tqdm  # Import tqdm for progress bar
 
 from config.models import Shift, AutoShift
 from resource.models import Employee, Attendance
@@ -41,32 +40,22 @@ def on_auto_shift_change():
     """Function to call when AutoShift records are modified."""
     invalidate_cache()
 
-def process_attendance(logs: List[Dict]) -> bool:
-    """Process attendance based on logs."""
-    if not logs:
+def process_attendance(employeeid: str, log_datetime: datetime, direction: str) -> bool:
+    if not employeeid:
         return False
-    
+
     # Fetch all required AutoShifts once
     auto_shifts = list(AutoShift.objects.all())
 
-    # Initialize progress bar with tqdm
-    for log in tqdm(logs, desc="Processing Attendance Logs", unit="log"):
-        employeeid = log.get('employeeid')
-        log_datetime = log.get('log_datetime')
-        direction = log.get('direction')
+    try:
+        employee = Employee.objects.get(employee_id=employeeid)
+    except Employee.DoesNotExist:
+        logger.error(f"Employee with ID: {employeeid} not found.")
+        return False
 
-        if not employeeid:
-            logger.warning("Employee ID is missing in the log. Skipping...")
-            continue
+    week_off = [6]
 
-        try:
-            employee = Employee.objects.get(employee_id=employeeid)
-        except Employee.DoesNotExist:
-            logger.error(f"Employee with ID: {employeeid} not found.")
-            continue  # Skip this log if employee not found
-
-        week_off = [6]
-
+    if employee.shift is None:
         log_time = log_datetime.time()
         log_date = log_datetime.date()
 
@@ -122,11 +111,10 @@ def process_attendance(logs: List[Dict]) -> bool:
                                 'shift_status': 'WW'
                             }
                         )
-                    break  # Break after processing the valid auto shift
+                    return True
 
-            else:
-                logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
-                continue
+            logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
+            return False
 
         elif direction == 'Out Device':
             # Try to get the attendance record for the current date
@@ -149,8 +137,7 @@ def process_attendance(logs: List[Dict]) -> bool:
                 except Attendance.DoesNotExist:
                     logger.warning(f"No IN log found for employee {employee.employee_id} on {log_date}")
                     # Logic for creating an attendance record if no IN log is found
-                    handle_out_device_log(employee, log_datetime, auto_shifts, week_off)
-                    continue  # Skip processing further if no IN log found
+                    return handle_out_device_log(employee, log_datetime, auto_shifts, week_off)
 
             if attendance and log_datetime > timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)):
                 shift = attendance.shift
@@ -166,8 +153,10 @@ def process_attendance(logs: List[Dict]) -> bool:
                 try:
                     attendance.save()
                     logger.info(f"Attendance processed for employee: {employeeid} at {log_datetime}")
+                    return True 
                 except Exception as e:
                     logger.error(f"Error saving attendance record for employee {employeeid}: {e}")
+                    return False
 
     return True  
 
@@ -236,17 +225,19 @@ def update_night_shift_attendance(attendance, log_datetime, week_off):
     attendance.total_time = timezone.make_aware(datetime.combine(log_date, attendance.last_logtime)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime))
 
     if attendance.logdate.weekday() not in week_off:
-        # Set shift status based on total_time
-        attendance.shift_status = 'P' if attendance.total_time >= timedelta(hours=4) else 'HD'
+        # Set shift status and calculate overtime if needed
+        attendance.shift_status = 'P' if attendance.total_time > AutoShift.objects.get(name=attendance.shift).half_day_threshold else 'HD'
     else:
         attendance.shift_status = 'WW'
 
+# Connect signals to invalidate cache on AutoShift changes
 @receiver(post_save, sender=AutoShift)
-def auto_shift_saved(sender, **kwargs):
-    """Signal handler for AutoShift save events."""
+def auto_shift_saved(sender, instance, created, **kwargs):
     on_auto_shift_change()
 
 @receiver(post_delete, sender=AutoShift)
-def auto_shift_deleted(sender, **kwargs):
-    """Signal handler for AutoShift delete events."""
+def auto_shift_deleted(sender, instance, **kwargs):
     on_auto_shift_change()
+
+# Load AutoShifts into cache initially
+load_auto_shifts()
