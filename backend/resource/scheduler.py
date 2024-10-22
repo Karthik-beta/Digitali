@@ -18,12 +18,25 @@ def start():
     scheduler = BackgroundScheduler()
     scheduler.add_jobstore(DjangoJobStore(), "default")
 
-    # Schedule the job to run every minute
+    # Schedule the job with max_instances and misfire_grace_time
     try:
-        scheduler.add_job(run_my_command, trigger=IntervalTrigger(minutes=1), id="my_job", replace_existing=True)
+        scheduler.add_job(
+            run_my_command,
+            trigger=IntervalTrigger(minutes=1),
+            id="my_job",
+            replace_existing=True,
+            max_instances=1,  # Prevent overlap
+            misfire_grace_time=30  # Allow a grace period of 30 seconds
+        )
     except JobLookupError:
         print("Job 'my_job' not found. Adding it again.")
-        scheduler.add_job(run_my_command, trigger=IntervalTrigger(minutes=1), id="my_job")
+        scheduler.add_job(
+            run_my_command,
+            trigger=IntervalTrigger(minutes=1),
+            id="my_job",
+            max_instances=1,
+            misfire_grace_time=30
+        )
 
     # Register the job and events
     register_events(scheduler)

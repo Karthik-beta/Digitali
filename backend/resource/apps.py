@@ -14,7 +14,6 @@ class ResourceConfig(AppConfig):
             # Delayed scheduler start after migrations are checked/applied
             try:
                 call_command('migrate', interactive=False)  # Ensure all migrations are applied
-                scheduler.start()  # Now start the scheduler
-                print("Scheduler started.")
+                scheduler.start()
             except Exception as e:
                 print(f"Scheduler failed to start: {e}")
