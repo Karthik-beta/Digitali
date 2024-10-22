@@ -71,10 +71,6 @@ services:
     environment:
       - API_URL=http://django:8000
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1'  # Adjust as needed
 
 
   # celery:
