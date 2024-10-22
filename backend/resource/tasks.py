@@ -62,7 +62,7 @@ def process_logs(log_data):
             )
 
             if not success:  # If processing failed, break the loop
-                print(f"Error processing log for employee: {log_entry.employeeid}")
+                # print(f"Error processing log for employee: {log_entry.employeeid}")
                 # transaction.set_rollback(True)  # Rollback the transaction
                 # process_success = False  # Set the flag to False indicating failure
                 # break  # Stop processing further logs
@@ -73,7 +73,7 @@ def process_logs(log_data):
                 LastLogId.objects.update(last_log_id=log_entry.id)
                 pass
 
-            print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
+            # print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 
     print("Logs processed.", log_data.count())
     return process_success  # Return the overall processing success flag
@@ -95,16 +95,17 @@ def scan_for_data():
             new_logs = Logs.objects.filter(id__gt=last_processed_id).order_by('log_datetime')
 
             if new_logs.exists():  # Check if there are any new logs
-                print(f"Found {new_logs.count()} new logs")
-                logger.info(f"Found {new_logs.count()} new logs")
+                # print(f"Found {new_logs.count()} new logs")
+                # logger.info(f"Found {new_logs.count()} new logs")
 
                 # Process logs one by one with success check
                 all_logs_processed_successfully = process_logs(new_logs)
                 if all_logs_processed_successfully:
-                    print("Successfully processed logs.")
+                    # print("Successfully processed logs.")
+                    logger.info("Successfully processed logs.")
 
             else:
-                print("No new logs found.")
+                # print("No new logs found.")
                 logger.info("No new logs found.")
 
     except LastLogId.DoesNotExist:

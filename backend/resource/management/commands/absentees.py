@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import F, Q
 from django.utils import timezone
 from resource.models import Attendance, Employee
+from tqdm import tqdm
 
 class Command(BaseCommand):
     help = "Creates new fields in Attendance model and marks absent employees for a given number of days starting from today"
@@ -23,7 +24,8 @@ class Command(BaseCommand):
         for i in range(num_days):
             date = today - timezone.timedelta(days=i)
             employees = Employee.objects.all()
-            for employee in employees:
+
+            for employee in tqdm(employees, desc=f"Processing Date: {date}", unit="employee"):
                 if not date.weekday() == 6:
                     if not Attendance.objects.filter(employeeid=employee, logdate=date).exists():
                         Attendance.objects.create(
