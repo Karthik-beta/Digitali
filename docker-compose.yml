@@ -25,8 +25,8 @@ services:
       - DATABASE_PASSWORD=password123
 
       # Celery Configuration
-      - CELERY_BROKER=redis://192.168.0.124:6379/0
-      - CELERY_BACKEND=redis://192.168.0.124:6379/0
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
       - CELERY_ACCEPT_CONTENT=json
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
@@ -43,11 +43,11 @@ services:
   #   ports:
   #     - "5432:5432"
 
-  # redis:
-  #   image: docker.io/redis:6
+  redis:
+    image: docker.io/redis:6
     
-  #   volumes:
-  #     - production_redis_data:/data
+    volumes:
+      - production_redis_data:/data
 
   frontend:
     build:
