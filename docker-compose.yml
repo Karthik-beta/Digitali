@@ -31,6 +31,10 @@ services:
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_TIMEZONE=Asia/Kolkata
+    deploy:
+      resources:
+        limits:
+          cpus: '1'  # Limit to 0.5 CPUs (can adjust based on needs)
 
   postgres:
     image: postgres:latest
@@ -42,6 +46,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'  # Adjust as needed
 
   redis:
     image: docker.io/redis:6
@@ -62,6 +70,10 @@ services:
     environment:
       - API_URL=http://django:8000
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'  # Adjust as needed
 
 
   # celery:
