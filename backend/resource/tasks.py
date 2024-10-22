@@ -6,7 +6,7 @@ from celery import shared_task
 
 # from resource.attendance import AttendanceCalculator
 from resource.attendance import AttendanceService
-from resource.attendance2 import process_attendance
+from resource.attendance5 import process_attendance
 
 # Set up logging
 logger = logging.getLogger(__name__)
