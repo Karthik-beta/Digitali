@@ -13,7 +13,7 @@ def process_logs():
             last_log_id = last_log.last_log_id if last_log else 0
 
             # Fetch new logs greater than last_log_id
-            new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('id')
+            new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
 
             # Caching employee data
             employees_cache_key = 'employees_cache'
@@ -22,6 +22,9 @@ def process_logs():
             if employees is None:
                 employees = {emp.employee_id: emp for emp in Employee.objects.all()}
                 cache.set(employees_cache_key, employees)
+
+            # Initialize a dictionary to collect attendance updates
+            attendance_updates = {}
 
             # Process logs for each employee
             for log in new_logs:
@@ -35,11 +38,9 @@ def process_logs():
 
                 log_date = log.log_datetime.date()
 
-                # Fetch ManDaysAttendance from cache or DB
-                attendance_cache_key = f'attendance_{employee_id}_{log_date}'
-                attendance = cache.get(attendance_cache_key)
-
-                if attendance is None:
+                # Fetch or create ManDaysAttendance in memory
+                attendance_key = (employee_id, log_date)
+                if attendance_key not in attendance_updates:
                     attendance, created = ManDaysAttendance.objects.get_or_create(
                         employeeid=employee,
                         logdate=log_date,
@@ -48,8 +49,9 @@ def process_logs():
                             'shift_status': ''
                         }
                     )
-                    # Cache the attendance record
-                    cache.set(attendance_cache_key, attendance)
+                    attendance_updates[attendance_key] = attendance
+                else:
+                    attendance = attendance_updates[attendance_key]
 
                 # Update duty_in or duty_out based on 'In Device' or 'Out Device'
                 if log.direction == 'In Device':
@@ -133,9 +135,6 @@ def process_logs():
                 # Update total_hours_worked after all shifts are processed
                 attendance.total_hours_worked = total_hours_worked
 
-                # Save the attendance record
-                attendance.save()
-
                 # Update last_log_id after successful processing of this log
                 if last_log:
                     last_log_id = log.id
@@ -147,6 +146,13 @@ def process_logs():
                 # Now you can safely save the last_log if it's a valid instance
                 last_log.last_log_id = last_log_id  # Set the last_log_id
                 last_log.save()
+
+            # Bulk save all attendance records
+            if attendance_updates:
+                ManDaysAttendance.objects.bulk_update(
+                    attendance_updates.values(),
+                    ['duty_in_1', 'duty_in_2', 'duty_out_1', 'total_hours_worked']  # Include all fields you need to update
+                )
 
             # Invalidate cache after successful processing
             cache.delete(employees_cache_key)
