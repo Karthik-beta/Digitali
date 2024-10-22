@@ -31,10 +31,6 @@ services:
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_TIMEZONE=Asia/Kolkata
-    deploy:
-      resources:
-        limits:
-          cpus: '2'  # Limit to 2 CPUs (can adjust based on needs)
 
   postgres:
     image: postgres:latest
@@ -47,10 +43,6 @@ services:
     ports:
       - "5432:5432"
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '2'  # Adjust as needed
 
   redis:
     image: docker.io/redis:6
