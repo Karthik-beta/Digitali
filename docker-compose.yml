@@ -46,6 +46,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: always
     deploy:
       resources:
         limits:
@@ -53,7 +54,7 @@ services:
 
   redis:
     image: docker.io/redis:6
-    
+    restart: always    
     volumes:
       - production_redis_data:/data
 
