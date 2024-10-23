@@ -61,8 +61,8 @@ services:
       - ./frontend:/app
     depends_on:
       - django
-    # environment:
-    #   - API_URL=http://django:8000
+    environment:
+      - API_URL=http://django:8000
     restart: always
 
 
