@@ -164,8 +164,8 @@ class Employee(models.Model):
         return self.employee_name
     
     def save(self, *args, **kwargs):
-        self.employee_id = self.employee_id.upper()
-        self.employee_name = self.employee_name.title()
+        if self.employee_name is not None:
+            self.employee_name = self.employee_name.title()
 
         if self.device_enroll_id is not None:
             self.device_enroll_id = self.device_enroll_id.upper()

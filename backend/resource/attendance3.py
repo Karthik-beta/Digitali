@@ -12,7 +12,7 @@ def process_logs():
             last_log_id = last_log.last_log_id if last_log else 0
 
             # Fetch new logs greater than last_log_id
-            new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('id')
+            new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
 
             # Process logs for each employee
             for log in new_logs:
@@ -81,12 +81,48 @@ def process_logs():
                         print(f"Error: No duty_in found for employee {employee_id} on {log_date} or previous days. Skipping log ID {log.id}.")
                         continue
 
+                    found_duty_out = False  # Flag to track if duty_out is found
+
                     # Find the first available duty_out (duty_out_1, duty_out_2, etc.)
                     for i in range(1, 11):
                         duty_out_field = f'duty_out_{i}'
-                        if not getattr(attendance, duty_out_field):  # If field is empty
-                            setattr(attendance, duty_out_field, log.log_datetime.time())
-                            break
+                        duty_in_field = f'duty_in_{i}'
+                        # if not getattr(attendance, duty_out_field):
+                        #     if last_duty_in and log.log_datetime.time() > last_duty_in:  # Validate
+                        #         setattr(attendance, duty_out_field, log.log_datetime.time())
+                        #         break
+                        #     elif last_duty_in:
+                        #         print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}")
+                        #         continue # Skip this log and check the next
+
+                        if not getattr(attendance, duty_out_field) and last_duty_in:
+                            # Check for subsequent duty_in entries
+                            next_duty_in = None
+                            for j in range(i + 1, 11):  # Check from next shift onwards
+                                next_duty_in_field = f'duty_in_{j}'
+                                if getattr(attendance, next_duty_in_field):
+                                    next_duty_in = getattr(attendance, next_duty_in_field)
+                                    break  # Found a subsequent duty_in
+
+                            if next_duty_in: # Means there's already a duty_in_2 entry before duty_out_1, that needs to be handled
+                                if last_duty_in and log.log_datetime.time() > last_duty_in and log.log_datetime.time() <= next_duty_in:
+                                    setattr(attendance, duty_out_field, log.log_datetime.time())
+                                    found_duty_out = True
+                                    break
+                                elif last_duty_in:
+                                    print(f"Error: duty_out time {log.log_datetime.time()} falls after duty_in_{j}. Skipping log ID {log.id}")
+                                    found_duty_out = True # this is a problem in this case as duty_out_1 doesn't fall before duty_in_2, hence duty_out_1 shouldn't be considered
+                                    break
+                            elif last_duty_in and log.log_datetime.time() > last_duty_in:  # Check if duty_out is greater than duty_in
+                                setattr(attendance, duty_out_field, log.log_datetime.time())
+                                found_duty_out = True
+                                break
+                            else:
+                                print(f"Error: duty_out time {log.log_datetime.time()} is before duty_in. Skipping log ID {log.id}")
+                                continue # Skip this log entry and check the next
+
+                    if not found_duty_out and last_duty_in:
+                        print(f"Warning: No suitable duty_out slot found for log ID {log.id} after duty_in {last_duty_in}")
 
 
                 # After processing the In/Out, recalculate total_hours_worked
@@ -102,7 +138,8 @@ def process_logs():
                     if duty_in and duty_out:
                         # Combine the date from log_date with the duty_in time
                         in_time = datetime.combine(log_date, duty_in)
-                        out_time = datetime.combine(log_date, log.log_datetime.time())
+                        # out_time = datetime.combine(log_date, log.log_datetime.time())
+                        out_time = datetime.combine(log_date, duty_out)
 
                         # Ensure out_time is greater than in_time
                         if out_time < in_time:
@@ -135,7 +172,7 @@ def process_logs():
 
                 # Now you can safely save the last_log if it's a valid instance
                 last_log.last_log_id = last_log_id  # Set the last_log_id
-                last_log.save()
+                # last_log.save()
 
     except Exception as e:
         # Handle exceptions, such as rollback the transaction

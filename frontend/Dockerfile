@@ -13,8 +13,10 @@ RUN npm install --legacy-peer-deps
 # Copy the entire Angular project into the container
 COPY sakai-ng/ .
 
+ARG API_URL=http://django:8000 # Default value, can be overridden
+
 # Build the app with production configuration
-RUN npm run build -- --configuration production --aot
+RUN npm run build -- --configuration production --base-href=/ --deploy-url=/ --output-path=dist --replace="USE_API_URL_FROM_DOCKER_BUILD='${API_URL}'"  # Inject the value
 
 # Stage 2: Create the final Nginx image
 FROM nginx:stable
