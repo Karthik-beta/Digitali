@@ -429,7 +429,7 @@ export class SharedService {
             }
             }
 
-        return this.http.get(`${this.APIUrl}/logs/`);
+        return this.http.get(`${this.APIUrl}/logs/`, { params: httpParams });
     }
 
 }

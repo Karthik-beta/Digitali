@@ -691,12 +691,13 @@ class LogsListCreate(generics.ListCreateAPIView):
     """
     API view for listing and creating logs.
     """
-    queryset = Logs.objects.order_by('-log_datetime').all()
+    queryset = Logs.objects.all()
     serializer_class = serializers.LogsSerializer
     pagination_class = DefaultPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     filterset_fields = ['employeeid']
     search_fields = ['employeeid']
+    ordering_fields = '__all__'
 
 class LogsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """

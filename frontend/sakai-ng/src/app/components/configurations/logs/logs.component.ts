@@ -27,14 +27,19 @@ export class LogsComponent implements OnInit {
     loading: boolean = false;
     searchQuery: string = '';
 
+    onSearchChange(query: string): void {
+        this.searchQuery = query;
+        this.dt.filterGlobal(query, 'contains');
+    }
+
     getLogReport(event: LazyLoadEvent): void {
         this.loading = true;
 
         const params: any = {
             page: ((event.first || 0 ) / (event.rows || 5) + 1).toString(),
             page_size: (event.rows || 10).toString(),
-            sortField: event.sortField || '',
-            ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '',
+            sortField: event.sortField || 'log_datetime',
+            ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '-log_datetime',
             search: this.searchQuery || '',
         };
 
@@ -43,6 +48,8 @@ export class LogsComponent implements OnInit {
             this.totalRecords = data.count;
             this.loading = false;
         });
+
+        console.log('getLogReport', params);
 
     }
 

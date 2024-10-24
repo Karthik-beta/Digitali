@@ -1,6 +1,6 @@
 <div class="card">
     <p-table #dt [lazy]="true" [paginator]="true" [rows]="rows" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} - {last} of {totalRecords} Entries"
-    [globalFilterFields]="['employee_name', 'logdate']" responsiveScroll="true" [totalRecords]="totalRecords" [loading]="loading" (onLazyLoad)="getLogReport($event)"
+    responsiveScroll="true" [totalRecords]="totalRecords" [loading]="loading" (onLazyLoad)="getLogReport($event)"
     responsiveLayout="scroll" [value]="logList" styleClass="p-datatable-sm p-datatable-gridlines" [rowsPerPageOptions]="rowsPerPageOptions"
     >
     <ng-template pTemplate="caption">

@@ -72,6 +72,8 @@ export class DepartmentComponent implements OnInit, OnDestroy {
             this.totalRecords = data.count;
             this.loading = false;
         });
+
+        console.log('getLogReport', params);
     }
 
     onSearchChange(query: string): void {
