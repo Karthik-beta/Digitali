@@ -420,4 +420,16 @@ export class SharedService {
         });
     }
 
+    getLogReport(params: any): Observable<any> {
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                httpParams = httpParams.append(key, params[key]);
+            }
+            }
+
+        return this.http.get(`${this.APIUrl}/logs/`);
+    }
+
 }

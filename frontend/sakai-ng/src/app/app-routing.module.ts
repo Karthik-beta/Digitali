@@ -21,6 +21,7 @@ import { PresentComponent } from './components/resource/present/present.componen
 import { MissedPunchReportComponent } from './components/resource/missed-punch-report/missed-punch-report.component';
 import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
 import { MandaysComponent } from './components/resource/mandays/mandays.component';
+import { LogsComponent } from './components/configurations/logs/logs.component';
 
 @NgModule({
     imports: [
@@ -59,6 +60,7 @@ import { MandaysComponent } from './components/resource/mandays/mandays.componen
 
                     // Configuration
                     { path: 'configuration', component: ConfigComponent, canActivate: [authGuard] },
+                    { path: 'configuration/logs', component: LogsComponent, canActivate: [authGuard] },
                 ]
             },
             { path: 'auth', loadChildren: () => import('./demo/components/auth/auth.module').then(m => m.AuthModule) },

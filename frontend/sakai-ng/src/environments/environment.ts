@@ -4,8 +4,7 @@
 
 export const environment = {
     production: false,
-    //   APIUrl: 'http://127.0.0.1:8000'
-    APIUrl: process.env['API_URL'] || 'http://localhost:8000'
+      APIUrl: 'http://127.0.0.1:8000'
 };
 
 /*

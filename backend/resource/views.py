@@ -1082,7 +1082,7 @@ class ManDaysAttendanceExcelExport(View):
             cell.alignment = Alignment(horizontal='center')
 
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
+        response["Content-Disposition"] = "attachment; filename=Mandays_1Attendance_Report.xlsx"
         wb.save(response)
 
         return response        

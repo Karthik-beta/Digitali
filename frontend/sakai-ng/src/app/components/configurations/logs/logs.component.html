@@ -1,0 +1,65 @@
+<div class="card">
+    <p-table #dt [lazy]="true" [paginator]="true" [rows]="rows" [showCurrentPageReport]="true" currentPageReportTemplate="Showing {first} - {last} of {totalRecords} Entries"
+    [globalFilterFields]="['employee_name', 'logdate']" responsiveScroll="true" [totalRecords]="totalRecords" [loading]="loading" (onLazyLoad)="getLogReport($event)"
+    responsiveLayout="scroll" [value]="logList" styleClass="p-datatable-sm p-datatable-gridlines" [rowsPerPageOptions]="rowsPerPageOptions"
+    >
+    <ng-template pTemplate="caption">
+        <div class="flex justify-content-between flex-column sm:flex-row">
+            <div>
+                <button pButton label="Clear" class="p-button-outlined mb-2" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+            </div>
+
+            <span class="p-input-icon-left mb-2">
+                <i class="pi pi-search"></i>
+                <input pInputText type="text" #searchInput (input)="onSearchChange(searchInput.value)" placeholder="Search Keyword" class="w-full" />
+            </span>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr style="white-space: nowrap;">
+            <th>
+                #
+            </th>
+            <th>
+                ID
+            </th>
+            <th>
+                Employee ID
+            </th>
+            <th>
+                Direction
+            </th>
+            <th>
+                Shortname
+            </th>
+            <th>
+                Serial No
+            </th>
+            <th>
+                Log Datetime
+            </th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-item let-i="rowIndex">
+        <tr style="white-space: nowrap;">
+            <td>{{ i + 1 }}</td>
+            <td>{{ item.id }}</td>
+            <td>{{ item.employeeid }}</td>
+            <td>{{ item.direction }}</td>
+            <td>{{ item.shortname }}</td>
+            <td>{{ item.serialno }}</td>
+            <td>{{ item.log_datetime | date: 'dd/MM/yyyy HH:mm:ss' : 'UTC' }}</td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="20">No Data found.</td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+        <tr>
+            <td colspan="20">Loading data. Please wait.</td>
+        </tr>
+    </ng-template>
+    </p-table>
+</div>
