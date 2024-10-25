@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.db.models import Q
-from datetime import timedelta, datetime, date
+from datetime import timedelta, datetime
+from tqdm import tqdm
 from resource.models import Logs, LastLogIdMandays, ManDaysAttendance, Employee
 
 
@@ -8,7 +9,7 @@ def process_employee_log(log, last_log, last_log_id):
     """Process a single employee log."""
     employee = Employee.objects.filter(employee_id=log.employeeid).first()
     if not employee:
-        print(f"Error: Employee with ID {log.employeeid} does not exist. Skipping log ID {log.id}.")
+        # print(f"Error: Employee with ID {log.employeeid} does not exist. Skipping log ID {log.id}.")
         return
 
     log_date = log.log_datetime.date()
@@ -31,29 +32,25 @@ def process_employee_log(log, last_log, last_log_id):
 
 
 def handle_duty_in(log, attendance):
-    """Handle 'In Device' logs and set the first available duty_in."""
-    # Check if the previous duty_in has a corresponding duty_out
-    last_duty_in_index = find_last_duty_in_index(attendance)
-    if last_duty_in_index:
-        duty_out_field = f'duty_out_{last_duty_in_index}'
-        duty_in_field = f'duty_in_{last_duty_in_index}'
-        
-        if not getattr(attendance, duty_out_field):
-            # Previous duty_in doesn't have a duty_out, treat this as a new shift
-            # Find the next available duty_in slot
-            for i in range(1, 11):
-                duty_in_field = f'duty_in_{i}'
-                if not getattr(attendance, duty_in_field):
-                    setattr(attendance, duty_in_field, log.log_datetime.time())
-                    return  # Exit after setting the new duty_in
-        elif not getattr(attendance, duty_in_field) and log.log_datetime.time() > getattr(attendance, duty_out_field):
-            # Previous duty_out without duty_in and current log_datetime is greater, skip this duty_in
-            print(f"Warning: Possible missed clock-in for employee {attendance.employeeid.employee_id} on {log.log_datetime.date()}. "
-                  f"Skipping this duty_in and proceeding to the next shift.")
-            return  # Exit to proceed to the next shift
-
-    # No previous duty_in or it has a duty_out, treat this as a new shift
+    """Handles 'In Device' logs, managing overlapping shifts."""
     for i in range(1, 11):
+        duty_in_field = f'duty_in_{i}'
+        duty_out_field = f'duty_out_{i}'
+
+        if not getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):  # Empty duty_in slot
+            setattr(attendance, duty_in_field, log.log_datetime.time())
+            return
+
+        elif getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):
+            # Previous duty_in exists without duty_out, handle overlapping shift. This is where we can handle a duty_in before duty_out
+            # Here we decide how to deal with overlapping shifts. For example:
+            # 1. Ignore the new duty_in (as implemented below)
+            # 2. Overwrite previous duty_in (if it makes sense in your business logic)
+            # print(f"Overlapping shift detected for employee {attendance.employeeid.employee_id} on {attendance.logdate}. Ignoring new duty_in.")
+            return
+
+    # No previous duty_in or previous has duty_out, start a new shift  
+    for i in range(1, 11):  
         duty_in_field = f'duty_in_{i}'
         if not getattr(attendance, duty_in_field):
             setattr(attendance, duty_in_field, log.log_datetime.time())
@@ -61,40 +58,26 @@ def handle_duty_in(log, attendance):
 
 
 def handle_duty_out(log, attendance, employee, log_date):
-    """Handle 'Out Device' logs and find the corresponding duty_in."""
-    last_duty_in_index = find_last_duty_in_index(attendance)
+    """Handles 'Out Device' logs, skipping if no corresponding duty_in."""
 
-    if not last_duty_in_index:
-        previous_attendance = find_previous_attendance(employee, log_date)
-        if previous_attendance:
-            last_duty_in_index = find_last_duty_in_index(previous_attendance)
-            attendance = previous_attendance
+    has_open_duty_in = False # flag to track open duty_in
+    for i in range(1, 11):
+        duty_in_field = f'duty_in_{i}'
+        duty_out_field = f'duty_out_{i}'
 
-    if not last_duty_in_index:
-        print(f"Error: No duty_in found for employee {employee.employee_id} on {log_date} or previous days. Skipping log ID {log.id}.")
+        if getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):
+            has_open_duty_in = True
+            if log.log_datetime.time() > getattr(attendance, duty_in_field):
+                setattr(attendance, duty_out_field, log.log_datetime.time())
+                return  # Exit after setting a duty_out
+            else:
+                #  print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {getattr(attendance, duty_in_field)}. Skipping log ID {log.id}.")
+                 return #Added a return here, to prevent a scenario where a duty_out could still be registered after an invalid time
+
+
+    if not has_open_duty_in:
+        # print(f"Skipping 'Out Device' log with ID {log.id} as no corresponding 'In Device' log found.")
         return
-
-    duty_in_field = f'duty_in_{last_duty_in_index}'
-    last_duty_in = getattr(attendance, duty_in_field)
-
-    duty_out_field = f'duty_out_{last_duty_in_index}'
-    if getattr(attendance, duty_out_field):
-        # If the duty_out is already set, find the next empty duty_out slot
-        for i in range(last_duty_in_index + 1, 11):
-            duty_out_field = f'duty_out_{i}'
-            if not getattr(attendance, duty_out_field):
-                # Check if duty_out is greater than duty_in before setting it
-                if log.log_datetime.time() > last_duty_in:
-                    setattr(attendance, duty_out_field, log.log_datetime.time())
-                else:
-                    print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}.")
-                return  # Exit after setting the duty_out or skipping due to invalid time
-    else:
-        # If duty_out is not set, check if it's greater than duty_in
-        if log.log_datetime.time() > last_duty_in:
-            setattr(attendance, duty_out_field, log.log_datetime.time())
-        else:
-            print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}.")
 
 
 def find_last_duty_in(attendance, log_date):
@@ -128,7 +111,8 @@ def set_duty_out(log, attendance, last_duty_in):
             if log.log_datetime.time() > last_duty_in:
                 setattr(attendance, duty_out_field, log.log_datetime.time())
             else:
-                print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}.")
+                # print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}.")
+                continue
             break
 
 
@@ -146,17 +130,11 @@ def calculate_total_hours(attendance, log_date):
             
             # Handle cases where out_time is on the next day
             if out_time < in_time:
-                # out_time += timedelta(days=1) 
-                total_time = None
+                out_time += timedelta(days=1) 
 
-            if out_time > in_time:
-                total_time = out_time - in_time
-                setattr(attendance, f'total_time_{i}', total_time)
-                total_hours_worked += total_time
-            else:
-                print(f"Warning: out_time {out_time} is less than in_time {in_time} for shift {i}.")
-                total_time = None
-                setattr(attendance, f'total_time_{i}', total_time)
+            total_time = out_time - in_time
+            setattr(attendance, f'total_time_{i}', total_time)
+            total_hours_worked += total_time
 
     attendance.total_hours_worked = total_hours_worked
 
@@ -170,8 +148,11 @@ def process_logs():
 
             new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
 
-            for log in new_logs:
-                process_employee_log(log, last_log, last_log_id)
+            # Use tqdm to wrap the iterable (new_logs)
+            with tqdm(total=new_logs.count(), desc="Processing Logs", unit="log") as pbar:
+                for log in new_logs:
+                    process_employee_log(log, last_log, last_log_id)
+                    pbar.update(1)
 
     except Exception as e:
         print(f"Error occurred during log processing: {e}")

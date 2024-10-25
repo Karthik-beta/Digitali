@@ -1,6 +1,11 @@
 from django.apps import AppConfig
 from django.core.management import call_command
 import sys
+import os
+from dotenv import load_dotenv
+
+# Load the correct environment file
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 
 class ResourceConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -13,7 +18,8 @@ class ResourceConfig(AppConfig):
             from . import scheduler
             # Delayed scheduler start after migrations are checked/applied
             try:
-                call_command('migrate', interactive=False)  # Ensure all migrations are applied
-                scheduler.start()
+                if ENVIRONMENT != 'local':
+                    call_command('migrate', interactive=False)  # Ensure all migrations are applied
+                    scheduler.start()
             except Exception as e:
                 print(f"Scheduler failed to start: {e}")

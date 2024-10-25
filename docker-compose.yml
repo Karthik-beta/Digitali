@@ -14,7 +14,7 @@ services:
       - ./backend:/usr/src/app
     restart: always
     environment:
-      - ENVIRONMENT=local
+      - ENVIRONMENT=production
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
