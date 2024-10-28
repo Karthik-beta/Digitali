@@ -21,7 +21,7 @@ services:
       - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
       - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
+      - DATABASE_PORT=5123
       - DATABASE_NAME=decan
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
@@ -47,7 +47,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5123:5432"
     restart: always
 
   redis:
