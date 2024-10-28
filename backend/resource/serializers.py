@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from resource.models import (Employee, Attendance, Logs, LastLogId, ManDaysAttendance)
+from resource.models import (Employee, Attendance, Logs, LastLogId, ManDaysAttendance, ManDaysMissedPunchAttendance)
 
 # from config import models as config
 # from config.models import config
@@ -79,4 +79,19 @@ class ManDaysAttendanceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ManDaysAttendance
+        fields = '__all__'
+
+class ManDaysMissedPunchAttendanceSerializer(serializers.ModelSerializer):
+    employee_id_id = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.employee_id')
+    profile_pic = serializers.ImageField(read_only=True, source='employeeid.profile_pic') 
+    employee_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.employee_name')
+    device_enroll_id = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.device_enroll_id')
+    company_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.company.name')
+    location_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.location.name')
+    job_type = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.job_type')
+    department_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.department.name')
+    category = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.category')
+    
+    class Meta:
+        model = ManDaysMissedPunchAttendance
         fields = '__all__'

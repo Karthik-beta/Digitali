@@ -1,0 +1,41 @@
+# Exclude node_modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Exclude build output
+dist/
+out-tsc/
+coverage/
+
+# Exclude environment files
+*.env
+*.local
+
+# Exclude temporary files
+*.tmp
+*.log
+
+# Exclude IDE/editor specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Exclude version control directories
+.git/
+.gitignore
+
+# Exclude Docker-related files if not needed
+Dockerfile
+docker-compose.yml
+*.dockerignore
+
+# Exclude other files that are not needed in the image
+src/**/*.spec.ts
+src/**/*.test.ts
+src/**/*.spec.ts.map
+src/**/*.test.ts.map
+src/**/*.stories.ts
+README.md
+LICENSE

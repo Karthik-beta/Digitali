@@ -8,36 +8,34 @@ services:
   django: &django
     build:
       context: ./backend
+    container_name: backend
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/usr/src/app
     restart: always
+    env_file: .env
     environment:
       - ENVIRONMENT=production
-      - DEBUG=True
-      - SECRET_KEY='}Z(=*+t(]!&&-"!-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=decan
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=password123
-
-      # Celery Configuration
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
-      - CELERY_ACCEPT_CONTENT=json
-      - CELERY_TASK_SERIALIZER=json
-      - CELERY_RESULT_SERIALIZER=json
-      - CELERY_TIMEZONE=Asia/Kolkata
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    
 
   postgres:
-    image: postgres:latest
+    image: postgres:16-alpine
+    container_name: db
     environment:
-      POSTGRES_DB: decan
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -45,7 +43,8 @@ services:
     restart: always
 
   redis:
-    image: docker.io/redis:6
+    image: redis:6-alpine
+    container_name: redis
     restart: always    
     volumes:
       - production_redis_data:/data
@@ -53,7 +52,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    image: frontend
+    container_name: frontend
     ports:
       - "4200:80"
       - "443:443"  # Map HTTPS port

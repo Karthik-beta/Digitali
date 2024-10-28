@@ -1,5 +1,5 @@
 # Stage 1: Build the Angular application
-FROM node:18 AS build
+FROM node:18-slim AS build
 
 # Set the working directory to /app
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY sakai-ng/ .
 RUN npm run build -- --configuration production --aot
 
 # Stage 2: Create the final Nginx image
-FROM nginx:stable
+FROM nginx:stable-alpine
 
 # Copy the Nginx configuration file and SSL/TLS certificate and key files
 COPY nginx/nginx.conf /etc/nginx/nginx.conf

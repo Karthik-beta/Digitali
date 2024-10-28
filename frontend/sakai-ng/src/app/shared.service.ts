@@ -420,6 +420,22 @@ export class SharedService {
         });
     }
 
+    downloadMandaysMissedPunchReport(params: any): Observable<any> {
+
+            let httpParams = new HttpParams();
+
+            for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                httpParams = httpParams.append(key, params[key]);
+            }
+            }
+
+            return this.http.get(`${this.APIUrl}/attendance/mandays/missed_punch_report/`, {
+                params: httpParams,
+                responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+            });
+        }
+
     getLogReport(params: any): Observable<any> {
         let httpParams = new HttpParams();
 

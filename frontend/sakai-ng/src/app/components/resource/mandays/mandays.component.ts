@@ -32,6 +32,7 @@ export class MandaysComponent implements OnInit {
             // { label: 'Import', icon: 'fas fa-file-import' },
             { label: 'Export Mandays Movements', icon: 'fas fa-download', command: () => this.downloadMandaysAttendanceReport() },
             { label: 'Export Mandays Worked', icon: 'fas fa-download', command: () => this.downloadMandaysWorkedReport() },
+            { label: 'Export Mandays Missed Punch', icon: 'fas fa-download', command: () => this.downloadMandaysMissedPunchReport() },
             // { separator: true },
         ];
     }
@@ -132,6 +133,64 @@ export class MandaysComponent implements OnInit {
 
                 // Define the filename
                 const filename = `Mandays_Report_${formattedDate}.xlsx`;
+                a.download = filename;
+
+                // Append the link to the body, trigger the click, and remove the link
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Set visibility to false and show success message
+                this.visible = false;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Report Downloaded',
+                    detail: 'Report is ready to download'
+                });
+            },
+            error: (error) => {
+                // Handle any error that might occur during the download
+                console.error('Error downloading attendance report:', error);
+
+                // Set visibility to false and show error message
+                this.visible = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error downloading the report'
+                });
+            }
+        });
+    }
+
+    downloadMandaysMissedPunchReport() {
+        this.visible = true;
+
+        const params: any = {
+            date: this.date,
+        };
+
+        this.service.downloadMandaysMissedPunchReport(params).subscribe({
+            next: (data) => {
+                // Show dialog or perform any pre-download actions
+
+                // Create a Blob object from the response data
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                // Create a URL for the Blob
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a link element and set up the download
+                const a = document.createElement('a');
+                a.href = url;
+
+                // Get the current date and format it
+                const currentDate = new Date();
+                const formattedDate = currentDate.toISOString().split('T')[0];
+
+                // Define the filename
+                const filename = `Mandays_Missed_Punch_${formattedDate}.xlsx`;
                 a.download = filename;
 
                 // Append the link to the body, trigger the click, and remove the link

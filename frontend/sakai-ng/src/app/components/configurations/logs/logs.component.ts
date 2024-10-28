@@ -29,7 +29,7 @@ export class LogsComponent implements OnInit {
 
     onSearchChange(query: string): void {
         this.searchQuery = query;
-        this.dt.filterGlobal(query, 'contains');
+        this.dt.filterGlobal(query, 'exact');
     }
 
     getLogReport(event: LazyLoadEvent): void {
@@ -39,9 +39,13 @@ export class LogsComponent implements OnInit {
             page: ((event.first || 0 ) / (event.rows || 5) + 1).toString(),
             page_size: (event.rows || 10).toString(),
             sortField: event.sortField || 'log_datetime',
-            ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '-log_datetime',
-            search: this.searchQuery || '',
+            ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '-log_datetime'
         };
+
+        // Include employeeid in the params if it exists
+        if (this.searchQuery) {
+            params.employeeid = this.searchQuery;  // Set employeeid directly
+        }
 
         this.service.getLogReport(params).subscribe((data: any) => {
             this.logList = data.results;

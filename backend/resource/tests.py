@@ -1,88 +1,95 @@
 from django.test import TestCase
-from datetime import datetime, timedelta
-from resource.models import Logs, LastLogIdMandays, ManDaysAttendance, Employee
 from django.utils import timezone
-from resource.attendance3 import process_logs  # Import your function
+from .models import Employee, Logs, LastLogIdMandays, ManDaysAttendance
+from resource.attendance4 import process_attendance_data, find_available_slot, find_last_used_slot
+from datetime import datetime, timedelta
 
-class ProcessLogsTestCase(TestCase):
+class AttendanceProcessorTestCase(TestCase):
+
     def setUp(self):
-        # Create a test employee
-        self.employee = Employee.objects.create(employee_id=123, employee_name="Test Employee")
+        self.employee = Employee.objects.create(employee_id="12345", employee_name="Test Employee")
+        LastLogIdMandays.objects.create(pk=1, last_log_id=0)
 
-        # Create a LastLogIdMandays instance (optional, but good practice)
-        self.last_log = LastLogIdMandays.objects.create(last_log_id=0)
+    def test_process_attendance_data_new_logs(self):
+        # Create some logs
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now(), direction="In Device")
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now() + timedelta(hours=8), direction="Out Device")
 
-    def test_process_logs_single_in_out(self):
-        # Create a single In and Out log
-        log_in = Logs.objects.create(
-            id=1,
-            employeeid=123,
-            log_datetime=timezone.make_aware(datetime(2024, 11, 1, 9, 0, 0)),
-            direction="In Device",
-        )
-        log_out = Logs.objects.create(
-            id=2,
-            employeeid=123,
-            log_datetime=timezone.make_aware(datetime(2024, 11, 1, 17, 0, 0)),
-            direction="Out Device",
-        )
+        # Process the data
+        process_attendance_data()
 
-        process_logs()
+        # Check that the ManDaysAttendance record was created correctly
+        attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=timezone.now().date())
+        self.assertEqual(attendance.duty_in_1.hour, timezone.now().hour)
+        self.assertEqual(attendance.duty_out_1.hour, (timezone.now() + timedelta(hours=8)).hour)
+        self.assertEqual(LastLogIdMandays.objects.get(pk=1).last_log_id, 2)
 
-        attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=datetime(2024, 11, 1).date())
-        self.assertEqual(attendance.duty_in_1, log_in.log_datetime.time())
-        self.assertEqual(attendance.duty_out_1, log_out.log_datetime.time())
-        self.assertEqual(attendance.total_hours_worked, timedelta(hours=8))
-        self.assertEqual(attendance.total_time_1, timedelta(hours=8))
-        self.assertEqual(LastLogIdMandays.objects.first().last_log_id, 2) # Check if last_log_id is updated
+    def test_process_attendance_data_no_new_logs(self):
+        # Update last processed log id
+        last_log_obj = LastLogIdMandays.objects.get(pk=1)
+        last_log_obj.last_log_id = 1
+        last_log_obj.save()
 
-    def test_process_logs_multiple_in_out(self):
-        # Create multiple In and Out logs for the same day
-        logs = [
-            Logs(id=i, employeeid=123, log_datetime=datetime(2024, 11, 2, 9 + i, 0, 0), direction="In Device" if i % 2 == 0 else "Out Device")
-            for i in range(1, 7)
-        ]
-        Logs.objects.bulk_create(logs) # Bulk create for efficiency
+        # Process the data (shouldn't do anything)
+        process_attendance_data()
 
-        process_logs()
+        # Check that no new ManDaysAttendance records were created
+        self.assertEqual(ManDaysAttendance.objects.count(), 0)
+        self.assertEqual(LastLogIdMandays.objects.get(pk=1).last_log_id, 1)
 
-        attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=datetime(2024, 11, 2).date())
-        self.assertEqual(attendance.duty_in_1.hour, 9+1)
-        self.assertEqual(attendance.duty_out_1.hour, 9+2)
-        self.assertEqual(attendance.duty_in_2.hour, 9+3)
-        self.assertEqual(attendance.duty_out_2.hour, 9+4)
-        self.assertEqual(attendance.duty_in_3.hour, 9+5)
-        self.assertEqual(attendance.duty_out_3.hour, 9+6)
+    def test_process_attendance_data_multiple_checkins(self):
+        # Create multiple check-in/check-out logs for the same day
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now(), direction="In Device")
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now() + timedelta(hours=2), direction="Out Device")
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now() + timedelta(hours=3), direction="In Device")
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now() + timedelta(hours=9), direction="Out Device")
 
+        # Process the data
+        process_attendance_data()
 
-        self.assertEqual(attendance.total_hours_worked, timedelta(hours=3))  # 3 shifts of 1 hour each
-
-        self.assertEqual(LastLogIdMandays.objects.first().last_log_id, 6) # Check if last_log_id is updated
+        # Check that the ManDaysAttendance record was created correctly
+        attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=timezone.now().date())
+        self.assertEqual(attendance.duty_in_1.hour, timezone.now().hour)
+        self.assertEqual(attendance.duty_out_1.hour, (timezone.now() + timedelta(hours=2)).hour)
+        self.assertEqual(attendance.duty_in_2.hour, (timezone.now() + timedelta(hours=3)).hour)
+        self.assertEqual(attendance.duty_out_2.hour, (timezone.now() + timedelta(hours=9)).hour)
+        self.assertEqual(LastLogIdMandays.objects.get(pk=1).last_log_id, 4)
 
 
+    def test_process_attendance_data_night_shift(self):
+        # Create logs for a night shift spanning two days
+        yesterday = timezone.now() - timedelta(days=1)
+        Logs.objects.create(employeeid="12345", log_datetime=yesterday.replace(hour=22), direction="In Device")
+        Logs.objects.create(employeeid="12345", log_datetime=timezone.now().replace(hour=6), direction="Out Device")
 
-    def test_process_logs_overnight_shift(self):
-        # Test an overnight shift
-        log_in = Logs.objects.create(
-            id=1,
-            employeeid=123,
-            log_datetime=timezone.make_aware(datetime(2024, 11, 3, 22, 0, 0)), # 10 PM
-            direction="In Device",
-        )
-        log_out = Logs.objects.create(
-            id=2,
-            employeeid=123,
-            log_datetime=timezone.make_aware(datetime(2024, 11, 4, 6, 0, 0)),  # 6 AM next day
-            direction="Out Device",
-        )
+        # Process the data
+        process_attendance_data()
 
-        process_logs()
-
-        # Check the previous day's record 
-        attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=log_in.log_datetime.date())
-        self.assertEqual(attendance.duty_in_1, log_in.log_datetime.time())
-        self.assertEqual(attendance.total_hours_worked, timedelta(hours=8))
+        # Check that the ManDaysAttendance records for both days are correct
+        yesterday_attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=yesterday.date())
+        today_attendance = ManDaysAttendance.objects.get(employeeid=self.employee, logdate=timezone.now().date())
+        self.assertEqual(yesterday_attendance.duty_in_1.hour, 22)
+        self.assertEqual(yesterday_attendance.duty_out_1.hour, 6)
+        self.assertIsNone(today_attendance.duty_in_1) 
+        self.assertIsNone(today_attendance.duty_out_1)
+        self.assertEqual(LastLogIdMandays.objects.get(pk=1).last_log_id, 2)
 
 
+    def test_find_available_slot(self):
+        attendance = ManDaysAttendance(employeeid=self.employee, logdate=timezone.now().date())
+        self.assertEqual(find_available_slot(attendance), 1)
+        attendance.duty_in_1 = timezone.now().time()
+        self.assertEqual(find_available_slot(attendance), 2)
 
-    # Add more test cases as needed (e.g., missing employee, multiple days, etc.)
+        # Fill all slots
+        for i in range(1, 11):
+            setattr(attendance, f"duty_in_{i}", timezone.now().time())
+        self.assertIsNone(find_available_slot(attendance))
+
+    def test_find_last_used_slot(self):
+        attendance = ManDaysAttendance(employeeid=self.employee, logdate=timezone.now().date())
+        self.assertIsNone(find_last_used_slot(attendance))
+        attendance.duty_in_5 = timezone.now().time()
+        self.assertEqual(find_last_used_slot(attendance), 5)
+        attendance.duty_out_10 = timezone.now().time()
+        self.assertEqual(find_last_used_slot(attendance), 10)

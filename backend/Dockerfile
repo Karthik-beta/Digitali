@@ -1,36 +1,37 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11.7
+# Use the official Python slim image to reduce image size
+FROM python:3.11.7-slim AS builder
 
 # Set environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt /app/
+# Install system dependencies needed for building packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install any needed packages specified in requirements.txt
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
 RUN pip install --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-COPY . /app/
+# Use a smaller final image
+FROM python:3.11.7-slim
 
-# Expose port 8000 to the outside world
+# Copy installed dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy the application code
+WORKDIR /app
+COPY . .
+
+# Expose port 8000
 EXPOSE 8000
 
-# # Add an entrypoint script to handle migrations and server startup
-# COPY entrypoint.sh /app/
-
-# # Ensure the entrypoint script is executable
-# RUN chmod +x /app/entrypoint.sh
-
-# # Set the entrypoint for the container
-# ENTRYPOINT ["/app/entrypoint.sh"]
-
-
 # Default command to run the Django application
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

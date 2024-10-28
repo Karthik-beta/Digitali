@@ -316,3 +316,32 @@ class ManDaysAttendance(models.Model):
 
     class Meta:
         db_table = 'mandays_attendance'
+
+class ManDaysMissedPunchAttendance(models.Model):
+    employeeid = models.ForeignKey(Employee, on_delete=models.SET_NULL, blank=True, null=True)
+    shift = models.CharField(max_length=50, blank=True, null=True)
+    shift_status = models.CharField(max_length=50, blank=True, null=True)
+    logdate = models.DateField()
+    duty_in_1 = models.TimeField(blank=True, null=True)
+    duty_out_1 = models.TimeField(blank=True, null=True)
+    duty_in_2 = models.TimeField(blank=True, null=True)
+    duty_out_2 = models.TimeField(blank=True, null=True)
+    duty_in_3 = models.TimeField(blank=True, null=True)
+    duty_out_3 = models.TimeField(blank=True, null=True)
+    duty_in_4 = models.TimeField(blank=True, null=True)
+    duty_out_4 = models.TimeField(blank=True, null=True)
+    duty_in_5 = models.TimeField(blank=True, null=True)
+    duty_out_5 = models.TimeField(blank=True, null=True)
+    duty_in_6 = models.TimeField(blank=True, null=True)
+    duty_out_6 = models.TimeField(blank=True, null=True)
+    duty_in_7 = models.TimeField(blank=True, null=True)
+    duty_out_7 = models.TimeField(blank=True, null=True)
+    duty_in_8 = models.TimeField(blank=True, null=True)
+    duty_out_8 = models.TimeField(blank=True, null=True)
+    duty_in_9 = models.TimeField(blank=True, null=True)
+    duty_out_9 = models.TimeField(blank=True, null=True)
+    duty_in_10 = models.TimeField(blank=True, null=True)
+    duty_out_10 = models.TimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'mandays_missed_punch_attendance'
