@@ -30,7 +30,7 @@ services:
     
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:latest
     container_name: db
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
