@@ -19,7 +19,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
         employee = Employee.objects.get(employee_id=employeeid)
     except Employee.DoesNotExist:
         logger.error(f"Employee with ID: {employeeid} not found.")
-        return False
+        return True
 
     if employee.shift is None:
         matching_auto_shifts = []
@@ -100,7 +100,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
                 except Attendance.DoesNotExist:
                     logger.warning(f"No IN log found for employee {employee.employee_id} on {log_datetime.date()}")
-                    return False
+                    return True
             
             if attendance:
                 shift = attendance.shift
