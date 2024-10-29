@@ -18,7 +18,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
     try:
         employee = Employee.objects.get(employee_id=employeeid)
     except Employee.DoesNotExist:
-        # logger.error(f"Employee with ID: {employeeid} not found.")
+        logger.error(f"Employee with ID: {employeeid} not found.")
         return False
 
     if employee.shift is None:
@@ -29,7 +29,6 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                 end_time = auto_shift.end_time
                 tolerance_start = auto_shift.tolerance_start_time
                 tolerance_end = auto_shift.tolerance_end_time
-                grace_period_at_start_time = auto_shift.grace_period_at_start_time
 
                 start_window = (datetime.combine(log_datetime.date(), start_time) - tolerance_start).time()
                 end_window = (datetime.combine(log_datetime.date(), start_time) + tolerance_end).time()
@@ -42,17 +41,15 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         defaults={
                             'first_logtime': log_time,
                             'shift': auto_shift.name,
-                            'direction': 'Machine',
-                            'shift_status': 'MP'
+                            'direction': 'Machine'
                         }
                     )
-                    start_time_with_grace = (datetime.combine(log_datetime.date(), start_time) + grace_period_at_start_time).time()
                     if created:
-                        if log_time > start_time_with_grace:
+                        if log_time > start_time:
                             start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
                             attendance.late_entry = log_datetime - start_time_aware
                         attendance.save()
-                        # print(f"Attendance record created for employee {employeeid} on {log_datetime.date()}")
+                        print(f"Attendance record created for employee {employeeid} on {log_datetime.date()}")
                         return True
                     else:
                         # Update fields if needed
@@ -63,7 +60,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         attendance.shift = auto_shift.name
                         attendance.direction = 'Machine'
                         attendance.save()
-                        # print(f"Attendance record updated for employee {employeeid} on {log_datetime.date()}")
+                        print(f"Attendance record updated for employee {employeeid} on {log_datetime.date()}")
 
                     return True
                     
@@ -71,7 +68,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
 
             # If no matching AutoShift was found, log a warning
             if auto_shift is None:
-                # logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
+                logger.warning(f"No matching AutoShift found for employee {employeeid} with first log time {log_datetime}")
                 pass
                 
 
@@ -92,9 +89,9 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         logdate=previous_day,
                         first_logtime__isnull=False
                     )
-                    # logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
+                    logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
                 except Attendance.DoesNotExist:
-                    # logger.warning(f"No IN log found for employee {employee.employee_id} on {log_datetime.date()}")
+                    logger.warning(f"No IN log found for employee {employee.employee_id} on {log_datetime.date()}")
                     return False
             
             if attendance:
@@ -110,8 +107,6 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     tolerance_end = AutoShift.objects.get(name=shift).tolerance_end_time
                     overtime_threshold_before_start = AutoShift.objects.get(name=shift).overtime_threshold_before_start
                     overtime_threshold_after_end = AutoShift.objects.get(name=shift).overtime_threshold_after_end
-                    grace_period_at_end_time = AutoShift.objects.get(name=shift).grace_period_at_end_time
-                    half_day_threshold = AutoShift.objects.get(name=shift).half_day_threshold
 
                     start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
                     end_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), end_time)) 
@@ -120,24 +115,20 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     attendance.direction = 'Machine'
                     # attendance.shift_status = 'P'
 
-                    end_time_with_grace = (datetime.combine(log_datetime.date(), end_time) - grace_period_at_end_time).time()
-                    if log_time < end_time_with_grace:
+                    if log_time < end_time:
                         attendance.early_exit = end_time_aware - log_datetime
 
                     attendance.total_time = log_datetime - timezone.make_aware(datetime.combine(log_datetime.date(), first_logtime))
 
-                    if attendance.total_time > half_day_threshold:
+                    if attendance.total_time > ((end_time_aware - start_time_aware)/2):
                         attendance.shift_status = 'P'
                     else: 
                         attendance.shift_status = 'HD'
 
                     if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) or timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end):
-                        start_overtime = timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - overtime_threshold_before_start) else timedelta(0)
-                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - timezone.make_aware(datetime.combine(attendance.logdate, end_time)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (timezone.make_aware(datetime.combine(attendance.logdate, end_time)) + overtime_threshold_after_end) else timedelta(0)
-                        total_overtime = start_overtime + end_overtime
-                        if total_overtime > timedelta(0):
-                            attendance.overtime = total_overtime
-                        # attendance.overtime = start_overtime + end_overtime
+                        start_overtime = start_time_aware - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) else timedelta(0)
+                        end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - end_time_aware if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end) else timedelta(0)
+                        attendance.overtime = start_overtime + end_overtime
                 
                 else:
                     log_time = log_datetime.time()
@@ -147,8 +138,6 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     tolerance_end = AutoShift.objects.get(name=shift).tolerance_end_time
                     overtime_threshold_before_start = AutoShift.objects.get(name=shift).overtime_threshold_before_start
                     overtime_threshold_after_end = AutoShift.objects.get(name=shift).overtime_threshold_after_end
-                    grace_period_at_end_time = AutoShift.objects.get(name=shift).grace_period_at_end_time
-                    half_day_threshold = AutoShift.objects.get(name=shift).half_day_threshold
 
                     start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time)) 
                     end_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), end_time)) 
@@ -157,13 +146,12 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     attendance.direction = 'Machine'
                     # attendance.shift_status = 'P'
 
-                    end_time_with_grace = (datetime.combine(log_datetime.date(), end_time) - grace_period_at_end_time).time()
-                    if log_time < end_time_with_grace:
+                    if log_time < end_time:
                         attendance.early_exit = end_time_aware - log_datetime
 
                     attendance.total_time = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime) + timedelta(days=1)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime))
 
-                    if attendance.total_time > half_day_threshold:
+                    if attendance.total_time > (((end_time_aware + timedelta(days=1))- start_time_aware)/2):
                         attendance.shift_status = 'P'
                     else:
                         attendance.shift_status = 'HD'
@@ -171,15 +159,15 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                     if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (start_time_aware - overtime_threshold_before_start) or timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (end_time_aware + overtime_threshold_after_end):
                         start_overtime = timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime)) < (timezone.make_aware(datetime.combine(attendance.logdate, start_time)) - overtime_threshold_before_start) else timedelta(0)
                         end_overtime = timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) - timezone.make_aware(datetime.combine(attendance.logdate, end_time)) if timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime)) > (timezone.make_aware(datetime.combine(attendance.logdate, end_time)) + overtime_threshold_after_end) else timedelta(0)
-                        total_overtime = start_overtime + end_overtime
-                        if total_overtime > timedelta(0):
-                            attendance.overtime = total_overtime
-                        # attendance.overtime = start_overtime + end_overtime
+                        attendance.overtime = start_overtime + end_overtime
 
                 try:
                     attendance.save()
-                    # logger.info(f"Attendance processed for employee: {employeeid} at {log_datetime}")
+                    logger.info(f"Attendance processed for employee: {employeeid} at {log_datetime}")
                     return True 
                 except Exception as e:
                     logger.error(f"Error saving attendance record for employee {employeeid}: {e}")
-                    return False
+                    return False      
+
+
+        
