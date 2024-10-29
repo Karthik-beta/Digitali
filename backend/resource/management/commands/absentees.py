@@ -21,11 +21,12 @@ class Command(BaseCommand):
         num_days = options['days']
         today = timezone.now().date()
         
-        for i in range(num_days):
+        # Apply tqdm to the outer loop that iterates through days
+        for i in tqdm(range(num_days), desc="Processing Days", unit="day"):
             date = today - timezone.timedelta(days=i)
             employees = Employee.objects.all()
 
-            for employee in tqdm(employees, desc=f"Processing Date: {date}", unit="employee"):
+            for employee in employees:
                 if not date.weekday() == 6:
                     if not Attendance.objects.filter(employeeid=employee, logdate=date).exists():
                         Attendance.objects.create(
