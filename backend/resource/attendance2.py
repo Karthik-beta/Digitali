@@ -22,6 +22,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
         return False
 
     if employee.shift is None:
+        matching_auto_shifts = []
         if direction == 'In Device':
             for auto_shift in AutoShift.objects.all():  # Iterate over all AutoShift objects
                 log_time = log_datetime.time()
@@ -33,6 +34,13 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                 start_window = (datetime.combine(log_datetime.date(), start_time) - tolerance_start).time()
                 end_window = (datetime.combine(log_datetime.date(), start_time) + tolerance_end).time()
 
+                matching_auto_shifts.append(auto_shift)
+
+                if matching_auto_shifts:
+                    # Choose the BEST matching auto_shift based on your logic.
+                    # Example: Choose the shift with the earliest start time.
+                    best_match = min(matching_auto_shifts, key=lambda shift: shift.start_time)
+
                 if start_window <= log_time <= end_window:
                     # Create an Attendance record if not existing
                     attendance, created = Attendance.objects.update_or_create(
@@ -40,7 +48,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                         logdate=log_datetime.date(),
                         defaults={
                             'first_logtime': log_time,
-                            'shift': auto_shift.name,
+                            'shift': best_match.name,
                             'direction': 'Machine'
                         }
                     )
