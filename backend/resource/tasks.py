@@ -57,27 +57,32 @@ def process_logs(log_data):
     with tqdm(total=log_data.count(), desc="Processing Logs", unit="log") as pbar:
         for log_entry in log_data:  # Iterate through each Logs object in the QuerySet
             if process_success:
-                # Update LastLogId before processing each log entry
-                with transaction.atomic():
-                    LastLogId.objects.update(last_log_id=log_entry.id)
+                try:
+                    # Update LastLogId before processing each log entry
+                    with transaction.atomic():
+                        LastLogId.objects.update(last_log_id=log_entry.id)
 
-                success = process_attendance(
-                    log_entry.employeeid,  # Access attributes directly
-                    log_entry.log_datetime,
-                    log_entry.direction
-                )
+                    success = process_attendance(
+                        log_entry.employeeid,  # Access attributes directly
+                        log_entry.log_datetime,
+                        log_entry.direction
+                    )
 
-                if not success:  # If processing failed, break the loop
-                    # print(f"Error processing log for employee: {log_entry.employeeid}")
-                    # transaction.set_rollback(True)  # Rollback the transaction
-                    # process_success = False  # Set the flag to False indicating failure
-                    # break  # Stop processing further logs
-                    continue
+                    if not success:  # If processing failed, break the loop
+                        # print(f"Error processing log for employee: {log_entry.employeeid}")
+                        # transaction.set_rollback(True)  # Rollback the transaction
+                        # process_success = False  # Set the flag to False indicating failure
+                        # break  # Stop processing further logs
+                        continue
 
                 # Update LastLogId after each successful log processing
                 
-                # Update the progress bar
-                pbar.update(1)
+                    # Update the progress bar
+                    pbar.update(1)
+                
+                except Attendance.MultipleObjectsReturned:
+                    # Skip to the next log entry if multiple objects are found
+                    continue
 
                 # print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")
 

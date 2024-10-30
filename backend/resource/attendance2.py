@@ -53,6 +53,7 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
                                 'direction': 'Machine'
                             }
                         )
+                        attendance.save()
                     except Attendance.MultipleObjectsReturned:
                         # logger.error(f"Multiple attendance records found for employee {employeeid} on {log_datetime.date()}")
                         return True
