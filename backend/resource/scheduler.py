@@ -6,13 +6,14 @@ from resource.tasks import scan_for_data
 from apscheduler.jobstores.base import JobLookupError
 
 def run_my_command():
-    try:
-        # Your commands here
-        call_command('absentees')
-        call_command('task')
-        call_command('mandays')
-    except Exception as e:
-        print(f"Error executing commands: {e}")
+    commands = ['absentees', 'task', 'mandays']
+    
+    for command in commands:
+        try:
+            call_command(command)
+            print(f"Successfully executed command: {command}")
+        except Exception as e:
+            print(f"Error executing commands: {e}")
 
 def start():
     scheduler = BackgroundScheduler()
