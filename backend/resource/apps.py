@@ -21,5 +21,6 @@ class ResourceConfig(AppConfig):
                 if ENVIRONMENT != 'local':
                     call_command('migrate', interactive=False)  # Ensure all migrations are applied
                     scheduler.start()
+                    print("Scheduler started.")
             except Exception as e:
                 print(f"Scheduler failed to start: {e}")
