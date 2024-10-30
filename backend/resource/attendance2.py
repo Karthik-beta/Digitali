@@ -82,21 +82,30 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
 
         elif direction == 'Out Device':   
             try:
-                # Try to get the attendance record for the current date
-                attendance = Attendance.objects.get(
-                    employeeid=employee,
-                    logdate=log_datetime.date(),
-                    first_logtime__isnull=False
-                )
+                try:
+                    # Try to get the attendance record for the current date
+                    attendance = Attendance.objects.get(
+                        employeeid=employee,
+                        logdate=log_datetime.date(),
+                        first_logtime__isnull=False
+                    )
+                except Attendance.MultipleObjectsReturned:
+                    # If multiple records are found, get the latest one
+                    return True
             except Attendance.DoesNotExist:
                 # If not found, check for the previous day (useful for night shifts)
                 previous_day = log_datetime.date() - timedelta(days=1)
                 try:
-                    attendance = Attendance.objects.get(
-                        employeeid=employee,
-                        logdate=previous_day,
-                        first_logtime__isnull=False
-                    )
+                    try:
+                        attendance = Attendance.objects.get(
+                            employeeid=employee,
+                            logdate=previous_day,
+                            first_logtime__isnull=False
+                        )
+
+                    except Attendance.MultipleObjectsReturned:
+                        return True
+                    
                     logger.info(f"Attendance record found for the previous day {previous_day} for employee {employee.employee_id}")
                 except Attendance.DoesNotExist:
                     logger.warning(f"No IN log found for employee {employee.employee_id} on {log_datetime.date()}")

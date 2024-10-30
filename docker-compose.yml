@@ -18,11 +18,11 @@ services:
     environment:
       - ENVIRONMENT=production
       - DEBUG=True
-      - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!-.pO{*/q8/IFkx)'
+      - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=192.168.0.108
-      - DATABASE_PORT=5123
-      - DATABASE_NAME=decan
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=skf
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
@@ -41,13 +41,13 @@ services:
   postgres:
     image: postgres:latest
     environment:
-      POSTGRES_DB: decan
+      POSTGRES_DB: skf
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5123:5432"
+      - "5432:5432"
     restart: always
 
   redis:
