@@ -72,7 +72,7 @@ def process_logs(log_data):
 
                 # Update LastLogId after each successful log processing
                 with transaction.atomic():
-                    # LastLogId.objects.update(last_log_id=log_entry.id)
+                    LastLogId.objects.update(last_log_id=log_entry.id)
                     pbar.update(1)
                     pass
 
