@@ -43,15 +43,19 @@ def process_attendance(employeeid: str, log_datetime: datetime, direction: str) 
 
                 if start_window <= log_time <= end_window:
                     # Create an Attendance record if not existing
-                    attendance, created = Attendance.objects.update_or_create(
-                        employeeid=employee,
-                        logdate=log_datetime.date(),
-                        defaults={
-                            'first_logtime': log_time,
-                            'shift': best_match.name,
-                            'direction': 'Machine'
-                        }
-                    )
+                    try:
+                        attendance, created = Attendance.objects.update_or_create(
+                            employeeid=employee,
+                            logdate=log_datetime.date(),
+                            defaults={
+                                'first_logtime': log_time,
+                                'shift': best_match.name,
+                                'direction': 'Machine'
+                            }
+                        )
+                    except Attendance.MultipleObjectsReturned:
+                        # logger.error(f"Multiple attendance records found for employee {employeeid} on {log_datetime.date()}")
+                        return True
                     if created:
                         if log_time > start_time:
                             start_time_aware = timezone.make_aware(datetime.combine(log_datetime.date(), start_time))
