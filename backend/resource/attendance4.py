@@ -21,7 +21,7 @@ def process_attendance_data():
         logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
 
         if not logs:
-            print("No new logs found.")
+            # print("No new logs found.")
             return
 
         # Use tqdm for progress bar
@@ -33,7 +33,7 @@ def process_attendance_data():
             try:
                 employee = Employee.objects.get(employee_id=employee_id)
             except Employee.DoesNotExist:
-                print(f"Employee with ID {employee_id} not found. Skipping log.")
+                # print(f"Employee with ID {employee_id} not found. Skipping log.")
                 continue
 
             # Get existing attendance record for the date, if any
@@ -47,7 +47,7 @@ def process_attendance_data():
             slot = find_available_slot(attendance)
 
             if slot is None:
-                print(f"No available slots for employee {employee_id} on {log_date}. Skipping log.")
+                # print(f"No available slots for employee {employee_id} on {log_date}. Skipping log.")
                 continue
 
             # Handle night shift scenario
