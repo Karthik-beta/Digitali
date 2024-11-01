@@ -171,6 +171,3 @@ class ManDaysAttendanceProcessor:
             defaults={'last_log_id': log_id}
         )
 
-def process_mandays_attendance():
-    processor = ManDaysAttendanceProcessor()
-    processor.process_logs()
