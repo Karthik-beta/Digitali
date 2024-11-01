@@ -80,8 +80,13 @@ def process_logs(log_data):
                     # Update the progress bar
                     pbar.update(1)
                 
-                except Attendance.MultipleObjectsReturned:
-                    # Skip to the next log entry if multiple objects are found
+                # except Attendance.MultipleObjectsReturned:
+                #     # Skip to the next log entry if multiple objects are found
+                #     continue
+
+                except Exception as e:
+                    # Log the exception and continue to the next log entry
+                    logger.error(f"Error processing log for employee: {log_entry.employeeid}. {e}")
                     continue
 
                 # print(f"Log processed for employee: {log_entry.direction} at {log_entry.log_datetime}")

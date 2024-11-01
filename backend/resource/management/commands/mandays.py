@@ -10,15 +10,13 @@ logger = logging.getLogger(__name__)
 
 from django.core.management.base import BaseCommand, CommandError
 from resource.models import Logs, LastLogId  # Import your models
-from resource.attendance3 import process_logs   # Import the function to execute
-from resource.attendance4 import process_attendance_data
-from resource.attendance5 import process_missed_punches
+from resource.attendance3 import ManDaysAttendanceProcessor
 
 class Command(BaseCommand):
     help = 'Processes new logs from the database.'
 
     def handle(self, *args, **options):
-        process_logs()
-        # process_attendance_data()
-        process_missed_punches()
+        # process_attendance()
+        processor = ManDaysAttendanceProcessor()
+        processor.process_logs()
         self.stdout.write(self.style.SUCCESS('Successfully processed logs.'))

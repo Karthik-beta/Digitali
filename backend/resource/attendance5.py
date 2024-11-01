@@ -1,96 +1,104 @@
-from .models import Logs, ManDaysMissedPunchAttendance, Employee
+from .models import Logs, ManDaysMissedPunchAttendance, Employee, LastLogId, Attendance
+from config.models import AutoShift
 from django.db.models import Q
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from collections import defaultdict
 
-def process_missed_punches():
-    """
-    Processes logs to identify and store ONLY missed punches in 
-    ManDaysMissedPunchAttendance, separating records by day.
-    """
+def process_attendance():
+    # Start a transaction block
+    with transaction.atomic():
 
-    logs = Logs.objects.all().order_by('employeeid', 'log_datetime')
+        In_Direction = "In Device"
+        Out_Direction = "Out Device"
 
-    missed_punches_data = {}
+        # Get all the employees into a dictionary
+        employees = {employee.employee_id: employee for employee in Employee.objects.all()}
+        # print(f"Processing attendance for {len(employees)} employees...", employees)
 
-    for log in logs:
-        try:
-            employee_id = Employee.objects.get(employee_id=log.employeeid)
-        except ObjectDoesNotExist:
-            # Handle the case where Employee is not found (e.g., log it, skip it)
-            print(f"Warning: Employee with employee_id '{log.employeeid}' not found. Skipping log entry.")
-            continue  # Skip to the next log entry
+        auto_shifts = [auto_shift for auto_shift in AutoShift.objects.all()]
+        for entry in auto_shifts:
+            print(f"Auto Shifts: {entry.name} - {entry.start_time} - {entry.end_time}")
+        # print(f"Processing attendance for {len(auto_shifts)} auto shifts... {auto_shifts.name}", auto_shifts)
 
-        log_date = log.log_datetime.date()
+        # Get the last log ID
+        last_log_id_record = LastLogId.objects.select_for_update().first()
+        last_log_id = last_log_id_record.last_log_id if last_log_id_record else 0
 
-        if employee_id not in missed_punches_data:
-            missed_punches_data[employee_id] = {}
+        # Fetch logs greater than the last log ID
+        logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
 
-        if log_date not in missed_punches_data[employee_id]:
-            missed_punches_data[employee_id][log_date] = {
-                'duty_times': [],
-                'in_out_counter': 0,
-                'last_direction': None,  # Track the last direction (In/Out)
+        # Bind logs to a list
+        logs_list = list(logs)
+        # print(f"Processing {len(logs_list)} logs...", logs_list)
+
+        if logs_list:
+            # Get the lowest log_date from logs
+            lowest_log_date = min(log.log_datetime.date() for log in logs_list)
+
+            # Fetch all attendance records starting from the lowest log_date
+            attendance_records = Attendance.objects.filter(logdate__gte=lowest_log_date).order_by('logdate')
+
+            attendance_dict = {
+                record.employeeid.employee_id: {
+                    "log_date": record.logdate,
+                    "first_logtime": record.first_logtime,
+                    "last_logtime": record.last_logtime,
+                    "direction": record.direction,
+                    "shortname": record.shortname,
+                    "total_time": record.total_time,
+                    "late_entry": record.late_entry,
+                    "early_exit": record.early_exit,
+                    "overtime": record.overtime,
+                    "shift": record.shift,
+                    "shift_status": record.shift_status,
+                }
+                for record in attendance_records
             }
 
-        data = missed_punches_data[employee_id][log_date]
-        counter = data['in_out_counter']
-        last_direction = data['last_direction']
+            print(f"Processing {len(attendance_records)} attendance records...", attendance_dict)
 
-        # Limit to 10 In/Out pairs
-        if counter >= 10:
-            continue  # Skip this log entry if we've already reached the limit
+            # Create a dictionary to hold log entries grouped by employee and date
+            log_entries = defaultdict(list)
 
-        if log.direction == 'In Device':
-            if last_direction == 'In Device':  # Missed punch (consecutive In)
-                if len(data['duty_times']) <= counter:
-                    data['duty_times'].append({'in': log.log_datetime.time(), 'out': None})
-                else:
-                    if data['duty_times'][counter]['in'] is None:
-                        data['duty_times'][counter]['in'] = log.log_datetime.time()
-                        if counter < 9:
-                            data['in_out_counter'] += 1
-                    else:
-                        if counter < 9:  # Only increment if counter is less than 9
-                            data['in_out_counter'] += 1
-                        data['duty_times'].append({'in': log.log_datetime.time(), 'out': None})  # Append regardless of counter limit
-            
+            # Group logs by employee ID and date
+            for log in logs_list:
+                log_date = log.log_datetime.date()
+                log_entries[(log.employeeid, log_date)].append(log)
 
-            data['last_direction'] = 'In Device'
+            # Prepare the final attendance array
+            attendance_array = []
 
-        elif log.direction == 'Out Device':
-            if last_direction == 'Out Device' or last_direction is None:  # Missed punch (consecutive Out or first Out without In)
-                if len(data['duty_times']) <= counter:
-                    data['duty_times'].append({'in': None, 'out': log.log_datetime.time()})
-                else:
-                    if data['duty_times'][counter]['out'] is None:
-                        data['duty_times'][counter]['out'] = log.log_datetime.time()
-                        if counter < 9:  # Only increment if counter is less than 9
-                            data['in_out_counter'] += 1
-                    else:
-                        if counter < 9:  # Only increment if counter is less than 9
-                            data['in_out_counter'] += 1
-                        data['duty_times'].append({'in': None, 'out': log.log_datetime.time()})  # Append regardless of counter limit
+            # Iterate over the grouped log entries to match log_in and log_out
+            for (employee_id, log_date), entries in log_entries.items():
+                # Sort entries by log_datetime to ensure correct pairing
+                entries.sort(key=lambda x: x.log_datetime)
 
-            elif last_direction == 'In Device':
-                if len(data['duty_times']) > counter and data['duty_times'][counter]['out'] is None:
-                    data['duty_times'][counter]['out'] = log.log_datetime.time()
-                    if counter < 9:  # Only increment if counter is less than 9
-                        data['in_out_counter'] += 1
+                # Initialize variables to store log_in and log_out
+                log_in = None
+                log_out = None
 
-            data['last_direction'] = 'Out Device'
+                # Find the first log_in and the last log_out of the day
+                for entry in entries:
+                    if entry.direction.lower() == In_Direction and log_in is None:
+                        log_in = entry  # Set log_in only if it hasn't been set yet
+                    elif entry.direction.lower() == Out_Direction:
+                        log_out = entry  # Keep updating log_out, so the last entry is captured
 
-    for employee_id, dates_data in missed_punches_data.items():
-        for log_date, data in dates_data.items():
-            duty_times = data['duty_times'][:10]  # Limit duty_times to the first 10 entries
-            # Create ManDaysMissedPunchAttendance instance with dynamic duty times (up to 10)
-            attendance_data = {
-                'employeeid': employee_id,
-                'logdate': log_date,
-            }
-            for i, times in enumerate(duty_times):
-                attendance_data[f'duty_in_{i + 1}'] = times['in']
-                attendance_data[f'duty_out_{i + 1}'] = times['out']
+                # Store the log details, even if only one of them is present
+                attendance_entry = {
+                    "employee_id": employee_id,
+                    "log_date": log_date,
+                    "log_in": log_in.log_datetime if log_in else None,
+                    "log_out": log_out.log_datetime if log_out else None
+                }
+                attendance_array.append(attendance_entry)
 
-            if any(times['in'] is not None or times['out'] is not None for times in duty_times):  # Check if there are any duty times
-                ManDaysMissedPunchAttendance.objects.create(**attendance_data)
+                # for entry in attendance_array:
+                #     print(f"{entry['employee_id']} - Date : {entry['log_date']} - In : {entry['log_in']} - Out : {entry['log_out']}")
+
+            return attendance_array  # Return the array of attendance records if needed
+        else:
+            print("No logs found after the last log ID.")
+            return []

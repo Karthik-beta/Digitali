@@ -1,158 +1,176 @@
-from django.db import transaction
+from datetime import datetime, timedelta, date, time
 from django.db.models import Q
-from datetime import timedelta, datetime
-from tqdm import tqdm
-from resource.models import Logs, LastLogIdMandays, ManDaysAttendance, Employee
+from django.db import transaction
+from typing import List, Dict, Tuple
+import logging
 
+from resource.models import Logs, Employee, ManDaysAttendance, LastLogIdMandays
 
-def process_employee_log(log, last_log, last_log_id):
-    """Process a single employee log."""
-    employee = Employee.objects.filter(employee_id=log.employeeid).first()
-    if not employee:
-        # print(f"Error: Employee with ID {log.employeeid} does not exist. Skipping log ID {log.id}.")
-        return
+logger = logging.getLogger(__name__)
 
-    log_date = log.log_datetime.date()
-    attendance, created = ManDaysAttendance.objects.get_or_create(
-        employeeid=employee,
-        logdate=log_date,
-        defaults={'shift': '', 'shift_status': ''}
-    )
+class ManDaysAttendanceProcessor:
+    def __init__(self):
+        self.last_processed_id = self._get_last_processed_id()
+        self.valid_employee_ids = self._get_valid_employee_ids()
+        
+    def _get_last_processed_id(self) -> int:
+        last_log = LastLogIdMandays.objects.first()
+        return last_log.last_log_id if last_log else 0
+    
+    def _get_valid_employee_ids(self) -> set:
+        return set(Employee.objects.values_list('id', flat=True))
+    
+    def _get_new_logs(self) -> List:
+        return (Logs.objects
+                .filter(id__gt=self.last_processed_id)
+                .order_by('log_datetime', 'id')
+                .values('id', 'employeeid', 'log_datetime', 'direction'))
 
-    if log.direction == 'In Device':
-        handle_duty_in(log, attendance)
-    elif log.direction == 'Out Device':
-        handle_duty_out(log, attendance, employee, log_date)
-
-    calculate_total_hours(attendance, log_date)
-    attendance.save()
-
-    last_log.last_log_id = log.id
-    # last_log.save()
-
-
-def handle_duty_in(log, attendance):
-    """Handles 'In Device' logs, managing overlapping shifts."""
-    for i in range(1, 11):
-        duty_in_field = f'duty_in_{i}'
-        duty_out_field = f'duty_out_{i}'
-
-        if not getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):  # Empty duty_in slot
-            setattr(attendance, duty_in_field, log.log_datetime.time())
-            return
-
-        elif getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):
-            # Previous duty_in exists without duty_out, handle overlapping shift. This is where we can handle a duty_in before duty_out
-            # Here we decide how to deal with overlapping shifts. For example:
-            # 1. Ignore the new duty_in (as implemented below)
-            # 2. Overwrite previous duty_in (if it makes sense in your business logic)
-            # print(f"Overlapping shift detected for employee {attendance.employeeid.employee_id} on {attendance.logdate}. Ignoring new duty_in.")
-            return
-
-    # No previous duty_in or previous has duty_out, start a new shift  
-    for i in range(1, 11):  
-        duty_in_field = f'duty_in_{i}'
-        if not getattr(attendance, duty_in_field):
-            setattr(attendance, duty_in_field, log.log_datetime.time())
-            break
-
-
-def handle_duty_out(log, attendance, employee, log_date):
-    """Handles 'Out Device' logs, skipping if no corresponding duty_in."""
-
-    has_open_duty_in = False # flag to track open duty_in
-    for i in range(1, 11):
-        duty_in_field = f'duty_in_{i}'
-        duty_out_field = f'duty_out_{i}'
-
-        if getattr(attendance, duty_in_field) and not getattr(attendance, duty_out_field):
-            has_open_duty_in = True
-            if log.log_datetime.time() > getattr(attendance, duty_in_field):
-                setattr(attendance, duty_out_field, log.log_datetime.time())
-                return  # Exit after setting a duty_out
-            else:
-                #  print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {getattr(attendance, duty_in_field)}. Skipping log ID {log.id}.")
-                 return #Added a return here, to prevent a scenario where a duty_out could still be registered after an invalid time
-
-
-    if not has_open_duty_in:
-        # print(f"Skipping 'Out Device' log with ID {log.id} as no corresponding 'In Device' log found.")
-        return
-
-
-def find_last_duty_in(attendance, log_date):
-    """Find the most recent duty_in time for an attendance record."""
-    for i in range(10, 0, -1):
-        duty_in_field = f'duty_in_{i}'
-        if getattr(attendance, duty_in_field):
-            return getattr(attendance, duty_in_field)
-    return None
-
-
-def find_last_duty_in_index(attendance):
-    """Find the index of the most recent duty_in time."""
-    for i in range(10, 0, -1):
-        duty_in_field = f'duty_in_{i}'
-        if getattr(attendance, duty_in_field):
-            return i
-    return None
-
-
-def find_previous_attendance(employee, log_date):
-    """Find the most recent attendance record before the current log date."""
-    return ManDaysAttendance.objects.filter(employeeid=employee, logdate__lt=log_date).order_by('-logdate').first()
-
-
-def set_duty_out(log, attendance, last_duty_in):
-    """Set duty_out if the time is valid, otherwise log an error."""
-    for i in range(1, 11):
-        duty_out_field = f'duty_out_{i}'
-        if not getattr(attendance, duty_out_field):
-            if log.log_datetime.time() > last_duty_in:
-                setattr(attendance, duty_out_field, log.log_datetime.time())
-            else:
-                # print(f"Error: duty_out time {log.log_datetime.time()} is before or equal to duty_in time {last_duty_in}. Skipping log ID {log.id}.")
-                continue
-            break
-
-
-def calculate_total_hours(attendance, log_date):
-    """Calculate total hours worked based on the duty_in and duty_out times."""
-    total_hours_worked = timedelta()
-
-    for i in range(1, 11):
-        duty_in = getattr(attendance, f'duty_in_{i}')
-        duty_out = getattr(attendance, f'duty_out_{i}')
-
-        if duty_in and duty_out:
-            in_time = datetime.combine(log_date, duty_in)
-            out_time = datetime.combine(log_date, duty_out)
+    def _process_day_logs(self, logs: List) -> List[Dict]:
+        """Process logs for a single day in chronological order."""
+        processed_logs = []
+        slot_index = 1
+        
+        # Sort logs chronologically
+        sorted_logs = sorted(logs, key=lambda x: x['log_datetime'])
+        
+        for log in sorted_logs:
+            log_time = log['log_datetime'].time()
             
-            # Handle cases where out_time is on the next day
-            if out_time < in_time:
-                out_time += timedelta(days=1) 
+            if slot_index > 10:  # Limit to 10 pairs
+                break
+                
+            if log['direction'] == 'In Device':
+                processed_logs.append({
+                    'slot': slot_index,
+                    'duty_in': log_time,
+                    'duty_out': None,
+                    'total_time': None
+                })
+                slot_index += 1
+            else:  # Out Device
+                # Find the last incomplete entry
+                for entry in reversed(processed_logs):
+                    if entry['duty_out'] is None:
+                        entry['duty_out'] = log_time
+                        if entry['duty_in']:
+                            # Calculate duration only if we have both in and out
+                            in_dt = datetime.combine(date.today(), entry['duty_in'])
+                            out_dt = datetime.combine(date.today(), log_time)
+                            if out_dt < in_dt:  # Handle midnight crossing
+                                out_dt += timedelta(days=1)
+                            if out_dt > in_dt:
+                                entry['total_time'] = out_dt - in_dt
+                        break
+                else:
+                    # If no incomplete entry found, create new entry with only out time
+                    processed_logs.append({
+                        'slot': slot_index,
+                        'duty_in': None,
+                        'duty_out': log_time,
+                        'total_time': None
+                    })
+                    slot_index += 1
+                    
+        return processed_logs
 
-            total_time = out_time - in_time
-            setattr(attendance, f'total_time_{i}', total_time)
-            total_hours_worked += total_time
+    def _group_logs_by_employee_and_date(self, logs: List) -> Dict:
+        grouped_logs = {}
+        for log in logs:
+            emp_id = log['employeeid']
+            
+            if not self._is_valid_employee(emp_id):
+                logger.warning(f"Skipping logs for invalid employee ID: {emp_id}")
+                continue
+                
+            log_date = log['log_datetime'].date()
+            
+            if emp_id not in grouped_logs:
+                grouped_logs[emp_id] = {}
+            if log_date not in grouped_logs[emp_id]:
+                grouped_logs[emp_id][log_date] = []
+                
+            grouped_logs[emp_id][log_date].append(log)
+        
+        return grouped_logs
 
-    attendance.total_hours_worked = total_hours_worked
+    def _create_attendance_record(self, emp_id: str, log_date: date, 
+                                processed_logs: List[Dict]) -> None:
+        try:
+            if not self._is_valid_employee(emp_id):
+                logger.warning(f"Skipping attendance record for invalid employee ID: {emp_id}")
+                return
+                
+            attendance_data = {
+                'employeeid_id': emp_id,
+                'logdate': log_date,
+                'shift': '',
+                'shift_status': ''
+            }
+            
+            total_hours = timedelta()
+            
+            # Map processed logs to attendance record fields
+            for log in processed_logs:
+                slot = log['slot']
+                if slot > 10:
+                    break
+                    
+                if log['duty_in']:
+                    attendance_data[f'duty_in_{slot}'] = log['duty_in']
+                if log['duty_out']:
+                    attendance_data[f'duty_out_{slot}'] = log['duty_out']
+                if log['total_time']:
+                    attendance_data[f'total_time_{slot}'] = log['total_time']
+                    total_hours += log['total_time']
+            
+            attendance_data['total_hours_worked'] = total_hours
+            
+            # Create or update record
+            ManDaysAttendance.objects.update_or_create(
+                employeeid_id=emp_id,
+                logdate=log_date,
+                defaults=attendance_data
+            )
+            
+        except Exception as e:
+            logger.error(f"Error creating attendance record for employee {emp_id}: {str(e)}")
 
+    def _is_valid_employee(self, emp_id: str) -> bool:
+        try:
+            emp_id = int(emp_id)
+            return emp_id in self.valid_employee_ids
+        except (ValueError, TypeError):
+            return False
 
-def process_logs():
-    """Main function to process all logs."""
-    try:
-        with transaction.atomic():
-            last_log = LastLogIdMandays.objects.first() or LastLogIdMandays(last_log_id=0)
-            last_log_id = last_log.last_log_id
+    @transaction.atomic
+    def process_logs(self) -> None:
+        try:
+            new_logs = self._get_new_logs()
+            if not new_logs:
+                logger.info("No new logs to process")
+                return
+                
+            grouped_logs = self._group_logs_by_employee_and_date(new_logs)
+            
+            for emp_id, date_logs in grouped_logs.items():
+                for log_date, logs in date_logs.items():
+                    processed_logs = self._process_day_logs(logs)
+                    if processed_logs:
+                        self._create_attendance_record(emp_id, log_date, processed_logs)
+            
+            # if new_logs:
+            #     self._update_last_processed_id(new_logs.last()['id'])
+                
+        except Exception as e:
+            logger.error(f"Error processing logs: {str(e)}")
+            raise
 
-            new_logs = Logs.objects.filter(id__gt=last_log_id).order_by('log_datetime')
+    def _update_last_processed_id(self, log_id: int) -> None:
+        LastLogIdMandays.objects.update_or_create(
+            defaults={'last_log_id': log_id}
+        )
 
-            # Use tqdm to wrap the iterable (new_logs)
-            with tqdm(total=new_logs.count(), desc="Processing Logs", unit="log") as pbar:
-                for log in new_logs:
-                    process_employee_log(log, last_log, last_log_id)
-                    pbar.update(1)
-
-    except Exception as e:
-        print(f"Error occurred during log processing: {e}")
+def process_mandays_attendance():
+    processor = ManDaysAttendanceProcessor()
+    processor.process_logs()
