@@ -284,148 +284,167 @@ class AttendanceListCreate(generics.ListCreateAPIView):
 # # Pre-load data into cache
 # cache.get_or_set('attendance', Attendance.objects.order_by('-logdate').all(), timeout=3600)
 
+from django.views import View
+from django.http import HttpResponse
+from django.db.models import Q
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from datetime import datetime
+
 class ExportAttendanceExcelView(View):
-    def get(self, request, *args, **kwargs):
+    HEADERS = (
+        "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
+        "Job Type", "Department", "Employee Type", "Desination", "Log Date", 
+        "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
+        "Late Entry", "Early Exit", "OT Hours"
+    )
 
-        employee_id = request.GET.get('employee_id')
-        employee_name = request.GET.get('employee_name')
-        shift_status = self.request.GET.get('shift_status')
-        company_names = self.request.GET.get('company_name')
-        location_names = self.request.GET.get('location_name') 
-        department_names = self.request.GET.get('department_name')
-        designation_names = self.request.GET.get('designation_name')
+    SHIFT_STATUS_STYLES = {
+        'P': 'Good',
+        'WW': 'Good',
+        'A/P': 'Neutral',
+        'P/A': 'Neutral',
+        'WO': 'Neutral',
+    }
 
-        late_entry_not_null = self.request.GET.get('late_entry')
-        early_exit_not_null = self.request.GET.get('early_exit')
-        overtime_not_null = self.request.GET.get('overtime')
-        missed_punch = self.request.GET.get('missed_punch')
-        insufficient_duty_hours = self.request.GET.get('insufficient_duty_hours')
+    def get_filtered_queryset(self, request):
+        """Get optimized and filtered queryset"""
+        # Use select_related for all foreign key relationships
+        queryset = Attendance.objects.select_related(
+            'employeeid',
+            'employeeid__company',
+            'employeeid__location',
+            'employeeid__department',
+            'employeeid__designation',
+            'employeeid__shift'
+        ).order_by('-logdate')
 
-        # Get date range parameters
-        date_from = self.request.GET.get('date_from') 
-        date_to = self.request.GET.get('date_to') 
-
-        queryset = Attendance.objects.order_by('-logdate').all()
-        # queryset = cache.get('attendance')
-        if queryset is None:
-            print("Fetching queryset from the database.")
-            queryset = Attendance.objects.order_by('-logdate').all()
-            cache.set('attendance', queryset)
-        else:
-            print(f"Fetching queryset from the cache.")
-
-        # queryset = Attendance.objects.order_by('-logdate')
-
+        # Date range filter
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
         if date_from and date_to:
             try:
                 date_from_obj = datetime.strptime(date_from, '%m-%d-%Y').date()
                 date_to_obj = datetime.strptime(date_to, '%m-%d-%Y').date()
                 queryset = queryset.filter(logdate__range=[date_from_obj, date_to_obj]).order_by('logdate')
             except ValueError:
-                pass 
+                pass
 
-        if employee_id:
-            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+        # Direct filters
+        filters = {}
+        if request.GET.get('employee_id'):
+            filters['employeeid__employee_id__iexact'] = request.GET.get('employee_id')
+        if request.GET.get('employee_name'):
+            filters['employeeid__employee_name__icontains'] = request.GET.get('employee_name')
+        if request.GET.get('shift_status'):
+            filters['shift_status'] = request.GET.get('shift_status')
 
-        if employee_name:
-            queryset = queryset.filter(Q(employeeid__employee_name__icontains=employee_name))
+        # Apply direct filters
+        if filters:
+            queryset = queryset.filter(**filters)
 
-        if shift_status:
-            queryset = queryset.filter(shift_status=shift_status)
+        # Handle comma-separated values
+        for param, field in {
+            'company_name': 'employeeid__company__name__in',
+            'location_name': 'employeeid__location__name__in',
+            'department_name': 'employeeid__department__name__in',
+            'designation_name': 'employeeid__designation__name__in'
+        }.items():
+            values = request.GET.get(param)
+            if values:
+                queryset = queryset.filter(**{field: [name.strip() for name in values.split(',')]})
 
-        if company_names:
-            company_names_list = [name.strip() for name in company_names.split(',')]
-            queryset = queryset.filter(employeeid__company__name__in=company_names_list)
-        
-        if location_names:
-            location_names_list = [name.strip() for name in location_names.split(',')]
-            queryset = queryset.filter(employeeid__location__name__in=location_names_list)
-
-        if department_names:
-            department_names_list = [name.strip() for name in department_names.split(',')]
-            queryset = queryset.filter(employeeid__department__name__in=department_names_list)
-
-        if designation_names:
-            designation_names_list = [name.strip() for name in designation_names.split(',')]
-            queryset = queryset.filter(employeeid__designation__name__in=designation_names_list)
-        
-        if late_entry_not_null == 'true':
+        # Special filters
+        if request.GET.get('late_entry') == 'true':
             queryset = queryset.exclude(late_entry__isnull=True).exclude(late_entry='00:00:00')
-
-        if early_exit_not_null == 'true':
+        if request.GET.get('early_exit') == 'true':
             queryset = queryset.exclude(early_exit__isnull=True).exclude(early_exit='00:00:00')
-
-        if overtime_not_null == 'true':
+        if request.GET.get('overtime') == 'true':
             queryset = queryset.exclude(overtime__isnull=True).exclude(overtime='00:00:00')
-
-        if missed_punch == 'true':
+        if request.GET.get('missed_punch') == 'true':
             queryset = queryset.exclude(first_logtime__isnull=True).exclude(last_logtime__isnull=False)
-        
-        if insufficient_duty_hours == 'true':
+        if request.GET.get('insufficient_duty_hours') == 'true':
             queryset = queryset.filter(total_time__lt='08:00:00')
 
-        wb = openpyxl.Workbook()
+        return queryset
+
+    def setup_worksheet(self, wb):
+        """Initialize worksheet with headers and styling"""
         ws = wb.active
         ws.title = "Attendance Report"
-
-        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Job Type", "Department", 
-                   "Employee Type", "Desination", "Log Date", "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
-                   "Late Entry", "Early Exit", "OT Hours"]
-
-        row_num = 1
-
-        # Set font style and background color for headers
+        
+        # Cache styles
         header_font = Font(size=14, bold=True)
         header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 
-        footer_font = Font(bold=True)
-        footer_fill = PatternFill(start_color="799184", end_color="799184", fill_type="solid")
-
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=row_num, column=col_num, value=header)
+        # Write headers
+        for col_num, header in enumerate(self.HEADERS, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
             cell.font = header_font
             cell.fill = header_fill
-            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
+            ws.column_dimensions[cell.column_letter].width = len(header) + 7
+
         ws.freeze_panes = 'A2'
+        return ws
 
-        for row_num, record in enumerate(queryset, 2):
-            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
-            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
-            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
-            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
-            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
-            ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
-            ws.cell(row=row_num, column=8, value=record.employeeid.category)
-            ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
-            ws.cell(row=row_num, column=10, value=record.logdate)
-            ws.cell(row=row_num, column=11, value=record.employeeid.shift.name if record.employeeid and record.employeeid.shift else None)
-            ws.cell(row=row_num, column=12, value=record.shift_status)
-            ws.cell(row=row_num, column=13, value=record.first_logtime)
-            ws.cell(row=row_num, column=14, value=record.last_logtime)
-            ws.cell(row=row_num, column=15, value=record.total_time)
-            ws.cell(row=row_num, column=16, value=record.late_entry)
-            ws.cell(row=row_num, column=17, value=record.early_exit)
-            ws.cell(row=row_num, column=18, value=record.overtime)
+    def get_record_data(self, record):
+        """Extract record data into tuple for faster access"""
+        return (
+            record.employeeid.employee_id,
+            record.employeeid.device_enroll_id,
+            record.employeeid.employee_name,
+            record.employeeid.company.name,
+            record.employeeid.location.name,
+            record.employeeid.job_type,
+            record.employeeid.department.name if record.employeeid.department else None,
+            record.employeeid.category if record.employeeid.category else None,
+            record.employeeid.designation.name if record.employeeid.designation else None,
+            record.logdate,
+            record.employeeid.shift.name if record.employeeid.shift else None,
+            record.shift_status,
+            record.first_logtime,
+            record.last_logtime,
+            record.total_time,
+            record.late_entry,
+            record.early_exit,
+            record.overtime
+        )
 
-            # Apply conditional formatting based on Shift Status
-            cell = ws.cell(row=row_num, column=12)  # Column 12 is for Shift Status
-            if record.shift_status in ['P', 'WW']: 
-                # cell.font = header_font
-                cell.style = 'Good'
-            elif record.shift_status in ['A/P', 'P/A', 'WO']:
-                cell.style = 'Neutral'
-            else: 
-                # cell.font = header_font
-                cell.style = 'Bad'
-                
+    def write_record(self, ws, row_num, record_data):
+        """Write a single record to worksheet with styling"""
+        for col_num, value in enumerate(record_data, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
             cell.alignment = Alignment(horizontal='center')
+            
+            # Apply shift status styling (column 12)
+            if col_num == 12:  # Shift Status column
+                cell.style = self.SHIFT_STATUS_STYLES.get(value, 'Bad')
 
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    def get(self, request, *args, **kwargs):
+        # Get filtered queryset with all related data
+        queryset = self.get_filtered_queryset(request)
+        
+        # Convert queryset to tuple of tuples for better performance
+        records = tuple(
+            self.get_record_data(record) for record in queryset
+        )
+
+        # Create workbook and setup worksheet
+        wb = openpyxl.Workbook()
+        ws = self.setup_worksheet(wb)
+
+        # Write all records
+        for row_num, record_data in enumerate(records, 2):
+            self.write_record(ws, row_num, record_data)
+
+        # Create response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         response["Content-Disposition"] = "attachment; filename=Attendance_Report.xlsx"
         wb.save(response)
 
-        return response 
+        return response
     
 ''' Second Iteration for Excel Workbook '''
 # class ExportAttendanceExcelView(View):
@@ -1010,15 +1029,32 @@ class MandaysAttendanceListCreate(generics.ListCreateAPIView):
         return queryset
 
 class ManDaysAttendanceExcelExport(View):
+    HEADERS = (
+        "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
+        "Log Date", "Duty In 1", "Duty Out 1", "Total Hours", "Duty In 2", 
+        "Duty Out 2", "Total Hours", "Duty In 3", "Duty Out 3", "Total Hours",
+        "Duty In 4", "Duty Out 4", "Total Hours", "Duty In 5", "Duty Out 5",
+        "Total Hours", "Duty In 6", "Duty Out 6", "Total Hours", "Duty In 7",
+        "Duty Out 7", "Total Hours", "Duty In 8", "Duty Out 8", "Total Hours",
+        "Duty In 9", "Duty Out 9", "Total Hours", "Duty In 10", "Duty Out 10",
+        "Mandays Worked Hours"
+    )
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self, request):
+        """Get filtered queryset with all related fields"""
         employee_id = request.GET.get('employee_id')
         date_str = request.GET.get('date')
         month = request.GET.get('month')
         year = request.GET.get('year')
 
-        queryset = ManDaysAttendance.objects.order_by('-logdate').all()
+        # Use select_related for foreign key relationships
+        queryset = ManDaysAttendance.objects.select_related(
+            'employeeid',
+            'employeeid__company',
+            'employeeid__location'
+        ).order_by('-logdate')
 
+        # Apply filters
         if employee_id:
             queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
         if date_str:
@@ -1028,74 +1064,102 @@ class ManDaysAttendanceExcelExport(View):
         if year:
             queryset = queryset.filter(logdate__year=year)
 
-        wb = openpyxl.Workbook()
+        return queryset
+
+    def format_timedelta(self, td):
+        """Format timedelta or return empty string"""
+        return td if td and td != timedelta(0) else ""
+
+    def setup_worksheet(self, wb):
+        """Setup worksheet with headers and styling"""
         ws = wb.active
         ws.title = "Mandays Attendance Report"
-
-        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Log Date", "Duty In 1", "Duty Out 1", "Total Hours", 
-                   "Duty In 2", "Duty Out 2", "Total Hours", "Duty In 3", "Duty Out 3", "Total Hours", "Duty In 4", "Duty Out 4", "Total Hours", 
-                   "Duty In 5", "Duty Out 5", "Total Hours", "Duty In 6", "Duty Out 6", "Total Hours", "Duty In 7", "Duty Out 7", "Total Hours", 
-                   "Duty In 8", "Duty Out 8", "Total Hours", "Duty In 9", "Duty Out 9", "Total Hours", "Duty In 10", "Duty Out 10", "Mandays Worked Hours"]
         
-        row_num = 1
-
-        # Set font style and background color for headers
+        # Cache styles
         header_font = Font(size=14, bold=True)
         header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=row_num, column=col_num, value=header)
+        
+        # Write headers
+        for col_num, header in enumerate(self.HEADERS, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
             cell.font = header_font
             cell.fill = header_fill
-            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
+            ws.column_dimensions[cell.column_letter].width = len(header) + 7
+
         ws.freeze_panes = 'A2'
+        return ws
 
-        for row_num, record in enumerate(queryset, 2):
-            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
-            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
-            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
-            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
-            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
-            ws.cell(row=row_num, column=6, value=record.logdate)
-            ws.cell(row=row_num, column=7, value=record.duty_in_1)
-            ws.cell(row=row_num, column=8, value=record.duty_out_1)
-            ws.cell(row=row_num, column=9, value=record.total_time_1 if record.total_time_1 and record.total_time_1 != timedelta(0) else "")
-            ws.cell(row=row_num, column=10, value=record.duty_in_2)
-            ws.cell(row=row_num, column=11, value=record.duty_out_2)
-            ws.cell(row=row_num, column=12, value=record.total_time_2 if record.total_time_2 and record.total_time_2 != timedelta(0) else "")
-            ws.cell(row=row_num, column=13, value=record.duty_in_3)
-            ws.cell(row=row_num, column=14, value=record.duty_out_3)
-            ws.cell(row=row_num, column=15, value=record.total_time_3 if record.total_time_3 and record.total_time_3 != timedelta(0) else "")
-            ws.cell(row=row_num, column=16, value=record.duty_in_4)
-            ws.cell(row=row_num, column=17, value=record.duty_out_4)
-            ws.cell(row=row_num, column=18, value=record.total_time_4 if record.total_time_4 and record.total_time_4 != timedelta(0) else "")
-            ws.cell(row=row_num, column=19, value=record.duty_in_5)
-            ws.cell(row=row_num, column=20, value=record.duty_out_5)
-            ws.cell(row=row_num, column=21, value=record.total_time_5 if record.total_time_5 and record.total_time_5 != timedelta(0) else "")
-            ws.cell(row=row_num, column=22, value=record.duty_in_6)
-            ws.cell(row=row_num, column=23, value=record.duty_out_6)
-            ws.cell(row=row_num, column=24, value=record.total_time_6 if record.total_time_6 and record.total_time_6 != timedelta(0) else "")
-            ws.cell(row=row_num, column=25, value=record.duty_in_7)
-            ws.cell(row=row_num, column=26, value=record.duty_out_7)
-            ws.cell(row=row_num, column=27, value=record.total_time_7 if record.total_time_7 and record.total_time_7 != timedelta(0) else "")
-            ws.cell(row=row_num, column=28, value=record.duty_in_8)
-            ws.cell(row=row_num, column=29, value=record.duty_out_8)
-            ws.cell(row=row_num, column=30, value=record.total_time_8 if record.total_time_8 and record.total_time_8 != timedelta(0) else "")
-            ws.cell(row=row_num, column=31, value=record.duty_in_9)
-            ws.cell(row=row_num, column=32, value=record.duty_out_9)
-            ws.cell(row=row_num, column=33, value=record.total_time_9 if record.total_time_9 and record.total_time_9 != timedelta(0) else "")
-            ws.cell(row=row_num, column=34, value=record.duty_in_10)
-            ws.cell(row=row_num, column=35, value=record.duty_out_10)
-            ws.cell(row=row_num, column=33, value=record.total_time_10 if record.total_time_10 and record.total_time_10 != timedelta(0) else "")
-            ws.cell(row=row_num, column=36, value=record.total_hours_worked if record.total_hours_worked and record.total_hours_worked != timedelta(0) else "")
+    def get_record_data(self, record):
+        """Extract data from record into tuple"""
+        return (
+            record.employeeid.employee_id,
+            record.employeeid.device_enroll_id,
+            record.employeeid.employee_name,
+            record.employeeid.company.name,
+            record.employeeid.location.name,
+            record.logdate,
+            record.duty_in_1,
+            record.duty_out_1,
+            self.format_timedelta(record.total_time_1),
+            record.duty_in_2,
+            record.duty_out_2,
+            self.format_timedelta(record.total_time_2),
+            record.duty_in_3,
+            record.duty_out_3,
+            self.format_timedelta(record.total_time_3),
+            record.duty_in_4,
+            record.duty_out_4,
+            self.format_timedelta(record.total_time_4),
+            record.duty_in_5,
+            record.duty_out_5,
+            self.format_timedelta(record.total_time_5),
+            record.duty_in_6,
+            record.duty_out_6,
+            self.format_timedelta(record.total_time_6),
+            record.duty_in_7,
+            record.duty_out_7,
+            self.format_timedelta(record.total_time_7),
+            record.duty_in_8,
+            record.duty_out_8,
+            self.format_timedelta(record.total_time_8),
+            record.duty_in_9,
+            record.duty_out_9,
+            self.format_timedelta(record.total_time_9),
+            record.duty_in_10,
+            record.duty_out_10,
+            self.format_timedelta(record.total_hours_worked)
+        )
 
-            cell.alignment = Alignment(horizontal='center')
+    def get(self, request, *args, **kwargs):
+        # Get filtered queryset
+        queryset = self.get_queryset(request)
+        
+        # Convert queryset to tuple of tuples for better performance
+        records = tuple(
+            self.get_record_data(record) for record in queryset
+        )
 
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = "attachment; filename=Mandays_1Attendance_Report.xlsx"
+        # Create workbook and setup worksheet
+        wb = openpyxl.Workbook()
+        ws = self.setup_worksheet(wb)
+        
+        # Cache alignment style
+        center_alignment = Alignment(horizontal='center')
+
+        # Write data efficiently
+        for row_num, record_data in enumerate(records, 2):
+            for col_num, value in enumerate(record_data, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                cell.alignment = center_alignment
+
+        # Create response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
         wb.save(response)
 
-        return response        
+        return response      
     
 class ManDaysWorkedExcelExport(View):
     """
@@ -1243,3 +1307,50 @@ class ManDaysMissedPunchExcelExport(View):
         wb.save(response)
 
         return response      
+
+class ExportLogsExcelView(View):
+    def get(self, request, *args, **kwargs):
+        # Get all data as tuples - values_list() already returns tuples
+        logs_data = tuple(Logs.objects.order_by('-log_datetime').values_list(
+            'id', 'employeeid', 'direction', 'log_datetime'
+        ))
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Logs"
+
+        # Use tuple for headers
+        headers = ("ID", "Employee ID", "Direction", "Datetime")
+
+        # Cache styles
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        center_alignment = Alignment(horizontal='center')
+
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_alignment
+            ws.column_dimensions[cell.column_letter].width = len(header) + 7
+
+        # Write data - direct tuple access is faster
+        for row_num, record in enumerate(logs_data, 2):
+            # No need to unpack - direct tuple access is faster
+            ws.cell(row=row_num, column=1, value=record[0])
+            ws.cell(row=row_num, column=2, value=record[1])
+            ws.cell(row=row_num, column=3, value=record[2])
+            ws.cell(row=row_num, column=4, value=record[3].replace(tzinfo=None) if record[3] else None)
+            
+            # Set alignment for all cells in the row
+            for col in range(1, 5):
+                ws.cell(row=row_num, column=col).alignment = center_alignment
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = "attachment; filename=Logs.xlsx"
+        wb.save(response)
+
+        return response
