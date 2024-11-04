@@ -1165,6 +1165,13 @@ class ManDaysWorkedExcelExport(View):
     """
     API view for exporting the mandays worked data to an Excel file.
     """
+    def get_first_non_none_value(self, values):
+        """Helper method to get the first non-None value from a list of values"""
+        return next((value for value in values if value is not None), "")
+    
+    def get_last_non_none_value(self, values):
+        """Helper method to get the last non-None value from a list of values"""
+        return next((value for value in reversed(values) if value is not None), "")
 
     def get(self, request, *args, **kwargs):
         employee_id = request.GET.get('employee_id')
@@ -1209,18 +1216,42 @@ class ManDaysWorkedExcelExport(View):
             ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
             ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
             ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            if record.employeeid.designation is not None:
+            if record.employeeid.department is not None:
                 ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
             else:
                 ws.cell(row=row_num, column=7, value="")
-            ws.cell(row=row_num, column=8, value=record.employeeid.category)
+            ws.cell(row=row_num, column=8, value=record.employeeid.category if record.employeeid.category else "")
             if record.employeeid.designation is not None:
                 ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
             else:
                 ws.cell(row=row_num, column=9, value="")
             ws.cell(row=row_num, column=10, value=record.logdate)
-            ws.cell(row=row_num, column=11, value=record.duty_in_1)
-            ws.cell(row=row_num, column=12, value=record.duty_out_1)
+            duty_in_times = [
+                record.duty_in_1,
+                record.duty_in_2,
+                record.duty_in_3,
+                record.duty_in_4,
+                record.duty_in_5,
+                record.duty_in_6,
+                record.duty_in_7,
+                record.duty_in_8,
+                record.duty_in_9,
+                record.duty_in_10
+            ]
+            ws.cell(row=row_num, column=11, value=self.get_first_non_none_value(duty_in_times))
+            duty_out_times = [
+                record.duty_out_10,
+                record.duty_out_9,
+                record.duty_out_8,
+                record.duty_out_7,
+                record.duty_out_6,
+                record.duty_out_5,
+                record.duty_out_4,
+                record.duty_out_3,
+                record.duty_out_2,
+                record.duty_out_1
+            ]
+            ws.cell(row=row_num, column=12, value=self.get_first_non_none_value(duty_out_times))
             ws.cell(row=row_num, column=13, value=record.total_hours_worked)
 
             cell.alignment = Alignment(horizontal='center')
