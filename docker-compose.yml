@@ -38,7 +38,7 @@ services:
     
 
   postgres:
-    image: postgres:latest
+    image: postgres:16
     environment:
       POSTGRES_DB: skf
       POSTGRES_USER: postgres
