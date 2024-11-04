@@ -32,7 +32,6 @@ export class MandaysComponent implements OnInit {
             // { label: 'Import', icon: 'fas fa-file-import' },
             { label: 'Export Mandays Movements', icon: 'fas fa-download', command: () => this.downloadMandaysAttendanceReport() },
             { label: 'Export Mandays Worked', icon: 'fas fa-download', command: () => this.downloadMandaysWorkedReport() },
-            { label: 'Export Mandays Missed Punch', icon: 'fas fa-download', command: () => this.downloadMandaysMissedPunchReport() },
             // { separator: true },
         ];
     }
