@@ -19,7 +19,7 @@ services:
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=postgres
+      - DATABASE_HOST=10.177.8.143
       - DATABASE_PORT=5432
       - DATABASE_NAME=skf
       - DATABASE_USER=postgres
