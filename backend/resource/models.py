@@ -264,7 +264,7 @@ class Attendance(models.Model):
     shift_status = models.CharField(max_length=50, blank=True, null=True)
     
     class Meta:
-        unique_together = ('employeeid', 'logdate')
+        # unique_together = ('employeeid', 'logdate')
         db_table = 'attendance'
     
     # def save(self, *args, **kwargs):
