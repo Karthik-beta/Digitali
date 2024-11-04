@@ -38,7 +38,7 @@ services:
     
 
   postgres:
-    image: postgres:16
+    image: postgres:17
     environment:
       POSTGRES_DB: decan
       POSTGRES_USER: postgres
