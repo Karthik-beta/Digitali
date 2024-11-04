@@ -19,9 +19,9 @@ services:
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=10.177.8.143
+      - DATABASE_HOST=10.38.21.181
       - DATABASE_PORT=5432
-      - DATABASE_NAME=skf
+      - DATABASE_NAME=casa
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
@@ -40,7 +40,7 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: skf
+      POSTGRES_DB: casa
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
     volumes:
