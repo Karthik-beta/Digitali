@@ -1168,10 +1168,6 @@ class ManDaysWorkedExcelExport(View):
     def get_first_non_none_value(self, values):
         """Helper method to get the first non-None value from a list of values"""
         return next((value for value in values if value is not None), "")
-    
-    def get_last_non_none_value(self, values):
-        """Helper method to get the last non-None value from a list of values"""
-        return next((value for value in reversed(values) if value is not None), "")
 
     def get(self, request, *args, **kwargs):
         employee_id = request.GET.get('employee_id')
