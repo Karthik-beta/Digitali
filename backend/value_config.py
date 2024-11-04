@@ -1,0 +1,3 @@
+WEEK_OFF_CONFIG = {
+    'DEFAULT_WEEK_OFF': [6],
+}

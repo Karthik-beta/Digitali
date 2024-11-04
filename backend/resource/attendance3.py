@@ -159,8 +159,8 @@ class ManDaysAttendanceProcessor:
                     if processed_logs:
                         self._create_attendance_record(emp_id, log_date, processed_logs)
             
-            # if new_logs:
-            #     self._update_last_processed_id(new_logs.last()['id'])
+            if new_logs:
+                self._update_last_processed_id(new_logs.last()['id'])
                 
         except Exception as e:
             logger.error(f"Error processing logs: {str(e)}")

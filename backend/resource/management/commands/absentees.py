@@ -8,6 +8,8 @@ from typing import List, Dict, Set
 from datetime import date
 from collections import defaultdict
 
+from value_config import WEEK_OFF_CONFIG
+
 class Command(BaseCommand):
     help = "Creates new fields in Attendance model and marks absent employees for a given number of days starting from today"
     BATCH_SIZE = 1000  # Number of records to create at once
@@ -41,7 +43,7 @@ class Command(BaseCommand):
         attendance_objects = []
         
         for process_date in dates:
-            is_sunday = process_date.weekday() == 6
+            is_sunday = process_date.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']
             
             for employee in employees:
                 # Skip if attendance already exists

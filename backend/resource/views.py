@@ -400,7 +400,7 @@ class ExportAttendanceExcelView(View):
             record.employeeid.category if record.employeeid.category else None,
             record.employeeid.designation.name if record.employeeid.designation else None,
             record.logdate,
-            record.employeeid.shift.name if record.employeeid.shift else None,
+            record.shift if record.shift else None,
             record.shift_status,
             record.first_logtime,
             record.last_logtime,
