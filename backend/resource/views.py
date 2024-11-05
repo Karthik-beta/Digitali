@@ -1192,101 +1192,141 @@ class ManDaysAttendanceExcelExport(View):
             )
     
 class ManDaysWorkedExcelExport(View):
-    """
-    API view for exporting the mandays worked data to an Excel file.
-    """
+    """API view for exporting the mandays worked data to an Excel file."""
+    
+    HEADERS = [
+        "Employee ID", "Device Enroll ID", "Employee Name", "Company", 
+        "Location", "Jobtype", "Department", "Employee Type", "Designation", 
+        "Log Date", "Duty In First", "Duty Out Last", "Mandays Worked Hours"
+    ]
+
     def get_first_non_none_value(self, values):
         """Helper method to get the first non-None value from a list of values"""
         return next((value for value in values if value is not None), "")
 
-    def get(self, request, *args, **kwargs):
-        employee_id = request.GET.get('employee_id')
-        date_str = request.GET.get('date')
-        month = request.GET.get('month')
-        year = request.GET.get('year')
+    def get_queryset(self, request):
+        """Get filtered queryset with distinct records"""
+        filters = {}
+        
+        if employee_id := request.GET.get('employee_id'):
+            filters['employeeid__employee_id__iexact'] = employee_id
+        if date_str := request.GET.get('date'):
+            filters['logdate'] = date_str
+        if month := request.GET.get('month'):
+            filters['logdate__month'] = month
+        if year := request.GET.get('year'):
+            filters['logdate__year'] = year
 
-        queryset = ManDaysAttendance.objects.order_by('-logdate').all()
+        # Use select_related to minimize database queries and distinct to prevent duplicates
+        queryset = ManDaysAttendance.objects.select_related(
+            'employeeid',
+            'employeeid__company',
+            'employeeid__location',
+            'employeeid__department',
+            'employeeid__designation'
+        ).distinct(
+            'employeeid__employee_id',
+            'logdate'
+        ).order_by(
+            '-logdate'
+        )
 
-        if employee_id:
-            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
-        if date_str:
-            queryset = queryset.filter(logdate=date_str)
-        if month:
-            queryset = queryset.filter(logdate__month=month)
-        if year:
-            queryset = queryset.filter(logdate__year=year)
+        return queryset.filter(**filters) if filters else queryset
 
-        wb = openpyxl.Workbook()
+    def setup_worksheet(self, wb):
+        """Setup worksheet with headers and styling"""
         ws = wb.active
         ws.title = "Mandays Worked Report"
 
-        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Jobtype", "Department", "Employee Type", "Designation", "Log Date", "Duty In First", "Duty Out Last", "Mandays Worked Hours"]
+        # Create styles once
+        header_style = {
+            'font': Font(size=14, bold=True),
+            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        }
 
-        row_num = 1
+        # Apply headers and styles
+        for col_num, header in enumerate(self.HEADERS, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_style['font']
+            cell.fill = header_style['fill']
+            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 7
 
-        # Set font style and background color for headers
-        header_font = Font(size=14, bold=True)
-        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=row_num, column=col_num, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
         ws.freeze_panes = 'A2'
+        return ws
 
-        for row_num, record in enumerate(queryset, 2):
-            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
-            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
-            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
-            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
-            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
-            ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            if record.employeeid.department is not None:
-                ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
-            else:
-                ws.cell(row=row_num, column=7, value="")
-            ws.cell(row=row_num, column=8, value=record.employeeid.category if record.employeeid.category else "")
-            if record.employeeid.designation is not None:
-                ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
-            else:
-                ws.cell(row=row_num, column=9, value="")
-            ws.cell(row=row_num, column=10, value=record.logdate)
-            duty_in_times = [
-                record.duty_in_1,
-                record.duty_in_2,
-                record.duty_in_3,
-                record.duty_in_4,
-                record.duty_in_5,
-                record.duty_in_6,
-                record.duty_in_7,
-                record.duty_in_8,
-                record.duty_in_9,
-                record.duty_in_10
-            ]
-            ws.cell(row=row_num, column=11, value=self.get_first_non_none_value(duty_in_times))
-            duty_out_times = [
-                record.duty_out_10,
-                record.duty_out_9,
-                record.duty_out_8,
-                record.duty_out_7,
-                record.duty_out_6,
-                record.duty_out_5,
-                record.duty_out_4,
-                record.duty_out_3,
-                record.duty_out_2,
-                record.duty_out_1
-            ]
-            ws.cell(row=row_num, column=12, value=self.get_first_non_none_value(duty_out_times))
-            ws.cell(row=row_num, column=13, value=record.total_hours_worked)
+    def get_duty_times(self, record):
+        """Get first duty in and last duty out times"""
+        duty_in_times = [
+            record.duty_in_1, record.duty_in_2, record.duty_in_3,
+            record.duty_in_4, record.duty_in_5, record.duty_in_6,
+            record.duty_in_7, record.duty_in_8, record.duty_in_9,
+            record.duty_in_10
+        ]
+        
+        duty_out_times = [
+            record.duty_out_10, record.duty_out_9, record.duty_out_8,
+            record.duty_out_7, record.duty_out_6, record.duty_out_5,
+            record.duty_out_4, record.duty_out_3, record.duty_out_2,
+            record.duty_out_1
+        ]
 
+        return (
+            self.get_first_non_none_value(duty_in_times),
+            self.get_first_non_none_value(duty_out_times)
+        )
+
+    def write_record(self, ws, row_num, record):
+        """Write a single record to worksheet"""
+        emp = record.employeeid
+        duty_in, duty_out = self.get_duty_times(record)
+        
+        row_data = [
+            emp.employee_id,
+            emp.device_enroll_id,
+            emp.employee_name,
+            getattr(emp.company, 'name', ''),
+            getattr(emp.location, 'name', ''),
+            emp.job_type or '',
+            getattr(emp.department, 'name', ''),
+            emp.category or '',
+            getattr(emp.designation, 'name', ''),
+            record.logdate,
+            duty_in,
+            duty_out,
+            record.total_hours_worked
+        ]
+
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
             cell.alignment = Alignment(horizontal='center')
 
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
-        wb.save(response)
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get filtered queryset
+            queryset = self.get_queryset(request)
+            
+            # Create workbook and setup worksheet
+            wb = Workbook()
+            ws = self.setup_worksheet(wb)
+            
+            # Write data in batches
+            batch_size = 1000
+            for i in range(0, queryset.count(), batch_size):
+                batch = queryset[i:i + batch_size]
+                for idx, record in enumerate(batch, start=i+2):
+                    self.write_record(ws, idx, record)
 
-        return response  
+            # Create response
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
+            wb.save(response)
+
+            return response
+
+        except Exception as e:
+            return HttpResponse("Error generating report", status=500)
     
 class ManDaysMissedPunchExcelExport(View):
 
