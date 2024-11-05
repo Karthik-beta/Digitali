@@ -1028,6 +1028,13 @@ class MandaysAttendanceListCreate(generics.ListCreateAPIView):
             )
         return queryset
 
+from django.views import View
+from django.http import HttpResponse
+from django.db.models import Q
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from datetime import timedelta
+
 class ManDaysAttendanceExcelExport(View):
     HEADERS = (
         "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
@@ -1047,24 +1054,32 @@ class ManDaysAttendanceExcelExport(View):
         month = request.GET.get('month')
         year = request.GET.get('year')
 
-        # Use select_related for foreign key relationships
+        # Start with base queryset using select_related to minimize DB queries
+        # Add distinct() to prevent duplicates
         queryset = ManDaysAttendance.objects.select_related(
             'employeeid',
             'employeeid__company',
             'employeeid__location'
-        ).order_by('-logdate')
+        ).distinct(
+            'employeeid__employee_id',
+            'logdate'
+        ).order_by(
+            '-logdate'
+        )
 
-        # Apply filters
+        # Build filters dictionary
+        filters = {}
         if employee_id:
-            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+            filters['employeeid__employee_id__iexact'] = employee_id
         if date_str:
-            queryset = queryset.filter(logdate=date_str)
+            filters['logdate'] = date_str
         if month:
-            queryset = queryset.filter(logdate__month=month)
+            filters['logdate__month'] = month
         if year:
-            queryset = queryset.filter(logdate__year=year)
+            filters['logdate__year'] = year
 
-        return queryset
+        # Apply all filters at once
+        return queryset.filter(**filters) if filters else queryset
 
     def format_timedelta(self, td):
         """Format timedelta or return empty string"""
@@ -1075,28 +1090,31 @@ class ManDaysAttendanceExcelExport(View):
         ws = wb.active
         ws.title = "Mandays Attendance Report"
         
-        # Cache styles
-        header_font = Font(size=14, bold=True)
-        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        # Create header style once
+        header_style = {
+            'font': Font(size=14, bold=True),
+            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        }
         
-        # Write headers
+        # Apply headers and styles efficiently
         for col_num, header in enumerate(self.HEADERS, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            ws.column_dimensions[cell.column_letter].width = len(header) + 7
+            cell.font = header_style['font']
+            cell.fill = header_style['fill']
+            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 5
 
         ws.freeze_panes = 'A2'
         return ws
 
     def get_record_data(self, record):
         """Extract data from record into tuple"""
+        emp = record.employeeid
         return (
-            record.employeeid.employee_id,
-            record.employeeid.device_enroll_id,
-            record.employeeid.employee_name,
-            record.employeeid.company.name,
-            record.employeeid.location.name,
+            emp.employee_id,
+            emp.device_enroll_id or "",
+            emp.employee_name,
+            getattr(emp.company, 'name', ''),
+            getattr(emp.location, 'name', ''),
             record.logdate,
             record.duty_in_1,
             record.duty_out_1,
@@ -1127,39 +1145,51 @@ class ManDaysAttendanceExcelExport(View):
             self.format_timedelta(record.total_time_9),
             record.duty_in_10,
             record.duty_out_10,
+            self.format_timedelta(record.total_time_10),
             self.format_timedelta(record.total_hours_worked)
         )
 
     def get(self, request, *args, **kwargs):
-        # Get filtered queryset
-        queryset = self.get_queryset(request)
-        
-        # Convert queryset to tuple of tuples for better performance
-        records = tuple(
-            self.get_record_data(record) for record in queryset
-        )
+        try:
+            # Get filtered queryset
+            queryset = self.get_queryset(request)
+            
+            # Create workbook and setup worksheet
+            wb = Workbook()
+            ws = self.setup_worksheet(wb)
+            
+            # Cache alignment style
+            alignment = Alignment(horizontal='center')
+            
+            # Write data in batches for memory efficiency
+            batch_size = 1000
+            start_row = 2
+            
+            for i in range(0, queryset.count(), batch_size):
+                batch = queryset[i:i + batch_size]
+                for record in batch:
+                    record_data = self.get_record_data(record)
+                    for col_num, value in enumerate(record_data, 1):
+                        cell = ws.cell(row=start_row, column=col_num, value=value)
+                        cell.alignment = alignment
+                    start_row += 1
 
-        # Create workbook and setup worksheet
-        wb = openpyxl.Workbook()
-        ws = self.setup_worksheet(wb)
-        
-        # Cache alignment style
-        center_alignment = Alignment(horizontal='center')
+            # Create response
+            response = HttpResponse(
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
+            wb.save(response)
 
-        # Write data efficiently
-        for row_num, record_data in enumerate(records, 2):
-            for col_num, value in enumerate(record_data, 1):
-                cell = ws.cell(row=row_num, column=col_num, value=value)
-                cell.alignment = center_alignment
+            return response
 
-        # Create response
-        response = HttpResponse(
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-        response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
-        wb.save(response)
-
-        return response      
+        except Exception as e:
+            # Log the error and return an error response
+            logger.error(f"Error generating Excel report: {str(e)}")
+            return HttpResponse(
+                "Error generating report",
+                status=500
+            )
     
 class ManDaysWorkedExcelExport(View):
     """

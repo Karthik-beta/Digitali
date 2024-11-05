@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.db import transaction
 from typing import List, Dict, Tuple
 import logging
+from tqdm import tqdm
 
 from resource.models import Logs, Employee, ManDaysAttendance, LastLogIdMandays
 
@@ -80,7 +81,7 @@ class ManDaysAttendanceProcessor:
             emp_id = log['employeeid']
             
             if not self._is_valid_employee(emp_id):
-                logger.warning(f"Skipping logs for invalid employee ID: {emp_id}")
+                # logger.warning(f"Skipping logs for invalid employee ID: {emp_id}")
                 continue
                 
             log_date = log['log_datetime'].date()
@@ -152,15 +153,20 @@ class ManDaysAttendanceProcessor:
                 return
                 
             grouped_logs = self._group_logs_by_employee_and_date(new_logs)
+
+            # Calculate total iterations for the progress bar
+            total_iterations = sum(len(date_logs) for date_logs in grouped_logs.values())
             
-            for emp_id, date_logs in grouped_logs.items():
-                for log_date, logs in date_logs.items():
-                    processed_logs = self._process_day_logs(logs)
-                    if processed_logs:
-                        self._create_attendance_record(emp_id, log_date, processed_logs)
+            with tqdm(total=total_iterations, desc="Processing attendance logs") as pbar:
+                for emp_id, date_logs in grouped_logs.items():
+                    for log_date, logs in date_logs.items():
+                        processed_logs = self._process_day_logs(logs)
+                        if processed_logs:
+                            self._create_attendance_record(emp_id, log_date, processed_logs)
+                        pbar.update(1)
             
-            if new_logs:
-                self._update_last_processed_id(new_logs.last()['id'])
+            # if new_logs:
+            #     self._update_last_processed_id(new_logs.last()['id'])
                 
         except Exception as e:
             logger.error(f"Error processing logs: {str(e)}")
