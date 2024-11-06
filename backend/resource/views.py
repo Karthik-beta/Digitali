@@ -317,6 +317,9 @@ class ExportAttendanceExcelView(View):
             'employeeid__department',
             'employeeid__designation',
             'employeeid__shift'
+        ).distinct(
+            'employeeid__employee_id',
+            'logdate'
         ).order_by('-logdate')
 
         # Date range filter
@@ -1185,29 +1188,25 @@ class ManDaysAttendanceExcelExport(View):
 
         except Exception as e:
             # Log the error and return an error response
-            logger.error(f"Error generating Excel report: {str(e)}")
             return HttpResponse(
                 "Error generating report",
                 status=500
             )
     
 class ManDaysWorkedExcelExport(View):
-    """API view for exporting the mandays worked data to an Excel file."""
+    """API view for exporting mandays worked data to Excel with first in and last out times."""
     
     HEADERS = [
         "Employee ID", "Device Enroll ID", "Employee Name", "Company", 
         "Location", "Jobtype", "Department", "Employee Type", "Designation", 
-        "Log Date", "Duty In First", "Duty Out Last", "Mandays Worked Hours"
+        "Log Date", "First Duty In", "Last Duty Out", "Mandays Worked Hours"
     ]
 
-    def get_first_non_none_value(self, values):
-        """Helper method to get the first non-None value from a list of values"""
-        return next((value for value in values if value is not None), "")
-
     def get_queryset(self, request):
-        """Get filtered queryset with distinct records"""
+        """Get filtered queryset with optimized joins."""
         filters = {}
         
+        # Using walrus operator for cleaner filter assignments
         if employee_id := request.GET.get('employee_id'):
             filters['employeeid__employee_id__iexact'] = employee_id
         if date_str := request.GET.get('date'):
@@ -1217,45 +1216,23 @@ class ManDaysWorkedExcelExport(View):
         if year := request.GET.get('year'):
             filters['logdate__year'] = year
 
-        # Use select_related to minimize database queries and distinct to prevent duplicates
+        # Optimize database queries with select_related
         queryset = ManDaysAttendance.objects.select_related(
             'employeeid',
             'employeeid__company',
-            'employeeid__location',
+            'employeeid__location', 
             'employeeid__department',
             'employeeid__designation'
         ).distinct(
             'employeeid__employee_id',
             'logdate'
-        ).order_by(
-            '-logdate'
-        )
+        ).order_by('-logdate')
 
         return queryset.filter(**filters) if filters else queryset
 
-    def setup_worksheet(self, wb):
-        """Setup worksheet with headers and styling"""
-        ws = wb.active
-        ws.title = "Mandays Worked Report"
-
-        # Create styles once
-        header_style = {
-            'font': Font(size=14, bold=True),
-            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-        }
-
-        # Apply headers and styles
-        for col_num, header in enumerate(self.HEADERS, 1):
-            cell = ws.cell(row=1, column=col_num, value=header)
-            cell.font = header_style['font']
-            cell.fill = header_style['fill']
-            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 7
-
-        ws.freeze_panes = 'A2'
-        return ws
-
     def get_duty_times(self, record):
-        """Get first duty in and last duty out times"""
+        """Get first non-null duty in and last non-null duty out times."""
+        # List all duty in times
         duty_in_times = [
             record.duty_in_1, record.duty_in_2, record.duty_in_3,
             record.duty_in_4, record.duty_in_5, record.duty_in_6,
@@ -1263,23 +1240,51 @@ class ManDaysWorkedExcelExport(View):
             record.duty_in_10
         ]
         
+        # List all duty out times
         duty_out_times = [
-            record.duty_out_10, record.duty_out_9, record.duty_out_8,
-            record.duty_out_7, record.duty_out_6, record.duty_out_5,
-            record.duty_out_4, record.duty_out_3, record.duty_out_2,
-            record.duty_out_1
+            record.duty_out_1, record.duty_out_2, record.duty_out_3,
+            record.duty_out_4, record.duty_out_5, record.duty_out_6,
+            record.duty_out_7, record.duty_out_8, record.duty_out_9,
+            record.duty_out_10
         ]
 
-        return (
-            self.get_first_non_none_value(duty_in_times),
-            self.get_first_non_none_value(duty_out_times)
-        )
+        # Get first non-null duty in time
+        first_in = next((time for time in duty_in_times if time is not None), None)
+        
+        # Get last non-null duty out time (reverse the list to get the last one)
+        last_out = next((time for time in reversed(duty_out_times) if time is not None), None)
+
+        return first_in, last_out
+
+    def setup_worksheet(self, wb):
+        """Setup worksheet with headers and styling."""
+        ws = wb.active
+        ws.title = "Mandays Worked Report"
+        
+        # Create header style
+        header_style = {
+            'font': Font(size=14, bold=True),
+            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid"),
+            'alignment': Alignment(horizontal='center')
+        }
+
+        # Apply headers and styles
+        for col_num, header in enumerate(self.HEADERS, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_style['font']
+            cell.fill = header_style['fill']
+            cell.alignment = header_style['alignment']
+            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 7
+
+        ws.freeze_panes = 'A2'
+        return ws
 
     def write_record(self, ws, row_num, record):
-        """Write a single record to worksheet"""
+        """Write a single record to worksheet."""
         emp = record.employeeid
-        duty_in, duty_out = self.get_duty_times(record)
+        first_in, last_out = self.get_duty_times(record)
         
+        # Prepare row data
         row_data = [
             emp.employee_id,
             emp.device_enroll_id,
@@ -1291,38 +1296,36 @@ class ManDaysWorkedExcelExport(View):
             emp.category or '',
             getattr(emp.designation, 'name', ''),
             record.logdate,
-            duty_in,
-            duty_out,
+            first_in,
+            last_out,
             record.total_hours_worked
         ]
 
+        # Write data with center alignment
         for col_num, value in enumerate(row_data, 1):
             cell = ws.cell(row=row_num, column=col_num, value=value)
             cell.alignment = Alignment(horizontal='center')
 
     def get(self, request, *args, **kwargs):
+        """Handle GET request and generate Excel file."""
         try:
-            # Get filtered queryset
             queryset = self.get_queryset(request)
-            
-            # Create workbook and setup worksheet
             wb = Workbook()
             ws = self.setup_worksheet(wb)
             
-            # Write data in batches
+            # Process records in batches to optimize memory usage
             batch_size = 1000
             for i in range(0, queryset.count(), batch_size):
                 batch = queryset[i:i + batch_size]
                 for idx, record in enumerate(batch, start=i+2):
                     self.write_record(ws, idx, record)
 
-            # Create response
+            # Prepare response
             response = HttpResponse(
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
             wb.save(response)
-
             return response
 
         except Exception as e:
