@@ -35,16 +35,16 @@ services:
       - CELERY_TIMEZONE=Asia/Kolkata
 
       # MSSQL Configuration
-      # - MSSQL_DATABASE_NAME=biotime
-      # - MSSQL_DATABASE_USER=sa
-      # - MSSQL_DATABASE_PASSWORD=Digitali@password123
-      # - MSSQL_DATABASE_PORT=1400
-      # - MSSQL_DATABASE_HOST=mssql
-      # - MSSQL_DRIVER=ODBC Driver 17 for SQL Server
+      - MSSQL_DATABASE_NAME=biotime
+      - MSSQL_DATABASE_USER=sa
+      - MSSQL_DATABASE_PASSWORD=Digitali@password123
+      - MSSQL_DATABASE_PORT=1400
+      - MSSQL_DATABASE_HOST=mssql
+      - MSSQL_DRIVER=ODBC Driver 17 for SQL Server
     depends_on:
       - postgres
       - redis
-      # - mssql
+      - mssql
     
 
   postgres:
@@ -56,28 +56,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "5432:5432"
     restart: always
 
-  # mssql:
-  #   image: mcr.microsoft.com/mssql/server:2017-latest
-  #   container_name: mssql
-  #   build:
-  #     context: ./docker/mssql
-  #   environment:
-  #     - ACCEPT_EULA=Y
-  #     - MSSQL_SA_PASSWORD=Digitali@password123
-  #     - MSSQL_PID=Express    # Use Express edition (free)
-  #   ports:
-  #     - "1400:1433"    # Default MSSQL port
-  #   volumes:
-  #     - mssql_data:/var/opt/mssql
-  #     - ./docker/mssql/init:/docker-entrypoint-initdb.d
-  #     - ./docker/mssql/entrypoint.sh:/entrypoint.sh
-  #   command: >
-  #     bash -c "chmod +x /entrypoint.sh && /entrypoint.sh"
-  #   restart: always
-  #   mem_limit: 2g 
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: mssql
+    build:
+      context: ./docker/mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Digitali@password123
+      - MSSQL_PID=Express    # Use Express edition (free)
+    ports:
+      - "1400:1433"    # Default MSSQL port
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./docker/mssql/init:/docker-entrypoint-initdb.d
+      - ./docker/mssql/entrypoint.sh:/entrypoint.sh
+    command: >
+      bash -c "chmod +x /entrypoint.sh && /entrypoint.sh"
+    restart: always
+    mem_limit: 2g 
 
   redis:
     image: redis:6-alpine
