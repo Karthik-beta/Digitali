@@ -294,7 +294,7 @@ from datetime import datetime
 class ExportAttendanceExcelView(View):
     HEADERS = (
         "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
-        "Job Type", "Department", "Employee Type", "Desination", "Log Date", 
+        "Job Type", "Department", "Employee Type", "Designation", "Log Date", 
         "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
         "Late Entry", "Early Exit", "OT Hours"
     )
