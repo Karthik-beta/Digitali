@@ -176,4 +176,3 @@ class ManDaysAttendanceProcessor:
         LastLogIdMandays.objects.update_or_create(
             defaults={'last_log_id': log_id}
         )
-

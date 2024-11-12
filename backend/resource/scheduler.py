@@ -6,7 +6,7 @@ from resource.tasks import scan_for_data
 from apscheduler.jobstores.base import JobLookupError
 
 def run_my_command():
-    commands = ['absentees', 'task', 'mandays']
+    commands = ['sync_logs', 'absentees', 'task', 'mandays']
     
     for command in commands:
         try:
