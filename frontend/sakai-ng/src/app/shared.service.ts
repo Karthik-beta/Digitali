@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 
 @Injectable({
@@ -31,14 +32,26 @@ export class SharedService {
 
     // Company Resource
     // List and Create
+    // getCompanies(params: any): Observable<any> {
+    //   let queryParams = new HttpParams();
+    //   for (const key in params) {
+    //     if (params.hasOwnProperty(key)) {
+    //       queryParams = queryParams.append(key, params[key]);
+    //     }
+    //   }
+    //   return this.http.get<any[]>(`${this.APIUrl}/company/`, { params: queryParams });
+    // }
     getCompanies(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/company/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/company/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((company: any) => ({
+                    id: company.id,
+                    name: company.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -57,13 +70,16 @@ export class SharedService {
     // Location Resource
     // List and Create
     getLocations(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/location/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/location/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((location: any) => ({
+                    id: location.id,
+                    name: location.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -82,14 +98,16 @@ export class SharedService {
     // Department Resource
     // List and Create
     getDepartments(params: any): Observable<any> {
-      let httpParams = new HttpParams();
-
-    for (const key in params) {
-      if (params.hasOwnProperty(key)) {
-        httpParams = httpParams.append(key, params[key]);
-      }
-    }
-      return this.http.get<any[]>(`${this.APIUrl}/department/`, { params: httpParams });
+        return this.http.get<any>(`${this.APIUrl}/department/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((department: any) => ({
+                    id: department.id,
+                    name: department.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -108,13 +126,16 @@ export class SharedService {
     // Designation Resource
     // List and Create
     getDesignations(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/designation/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/designation/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((designation: any) => ({
+                    id: designation.id,
+                    name: designation.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -133,13 +154,16 @@ export class SharedService {
     // Divisions Resource
     // List and Create
     getDivisions(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/division/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/division/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((division: any) => ({
+                    id: division.id,
+                    name: division.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -158,13 +182,16 @@ export class SharedService {
     // SubDivision Resource
     // List and Create
     getSubDivisions(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/subdivision/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/subdivision/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((subDivision: any) => ({
+                    id: subDivision.id,
+                    name: subDivision.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -183,13 +210,16 @@ export class SharedService {
     // Shift Resource
     // List and Create
     getShifts(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/shift/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/shift/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((shift: any) => ({
+                    id: shift.id,
+                    name: shift.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -208,13 +238,16 @@ export class SharedService {
     // Shopfloor Resource
     // List and Create
     getShopfloors(params: any): Observable<any> {
-      let queryParams = new HttpParams();
-      for (const key in params) {
-        if (params.hasOwnProperty(key)) {
-          queryParams = queryParams.append(key, params[key]);
-        }
-      }
-      return this.http.get<any[]>(`${this.APIUrl}/shopfloor/`, { params: queryParams });
+        return this.http.get<any>(`${this.APIUrl}/shopfloor/`, { params })
+        .pipe(
+            map(response => ({
+                ...response,
+                results: response.results.map((shopfloor: any) => ({
+                    id: shopfloor.id,
+                    name: shopfloor.name
+                }))
+            }))
+        );
     }
 
     // Retrieve, Update, Destroy
@@ -229,12 +262,6 @@ export class SharedService {
     deleteShopfloor(id: number): Observable<any> {
       return this.http.delete<any>(`${this.APIUrl}/shopfloor/${id}/`);
     }
-
-
-
-
-
-
 
 
     getEmployeeList(params: any): Observable<any> {
@@ -258,6 +285,38 @@ export class SharedService {
   getEmployeeFieldOptions(): Observable<any> {
     return this.http.options(`${this.APIUrl}/employee/`);
   }
+//   getEmployeeFieldOptions(): Observable<any> {
+//     return this.http.options<any>(`${this.APIUrl}/employee/`)
+//       .pipe(
+//         map(response => {
+//           // Ensure the choices are properly formatted
+//           return {
+//             actions: {
+//               POST: {
+//                 category: {
+//                   choices: response.actions.POST.category.choices
+//                 },
+//                 job_type: {
+//                   choices: response.actions.POST.job_type.choices
+//                 },
+//                 accountTypes: {
+//                     choices: response.actions.POST.accountTypes.choices
+//                 },
+//                 jobStatusOptions: {
+//                     choices: response.actions.POST.jobStatusOptions.choices
+//                 },
+//                 maritalStatusOptions: {
+//                     choices: response.actions.POST.maritalStatusOptions.choices
+//                 },
+//                 genderOptions: {
+//                     choices: response.actions.POST.genderOptions.choices
+//                 },
+//               }
+//             }
+//           };
+//         })
+//       );
+//   }
 
   getUniqueId(): Observable<any> {
     return this.http.get(`${this.APIUrl}/unique_id/`);
@@ -446,6 +505,10 @@ export class SharedService {
             }
 
         return this.http.get(`${this.APIUrl}/logs/`, { params: httpParams });
+    }
+
+    reProcessLogs(): Observable<any> {
+        return this.http.post(`${this.APIUrl}/attendance/mandays/reset/`, {});
     }
 
 }

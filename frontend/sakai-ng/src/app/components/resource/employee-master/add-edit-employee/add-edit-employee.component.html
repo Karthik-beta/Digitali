@@ -268,40 +268,752 @@
 
                 </div>
                 </p-fieldset>
+
                 <div class="flex justify-content-end mt-4">
                     <p-button
                     label="Next"
                     icon="pi pi-arrow-right"
                     iconPos="right"
-                    [disabled]="!employeeForm.get('employeeId').valid || !employeeForm.get('employeeName').valid"
                     (onClick)="nextCallback.emit()">
                     </p-button>
                 </div>
         </ng-template>
     </p-stepperPanel>
 
+    <p-stepperPanel header="Official Details">
+        <ng-template pTemplate="content" let-prevCallback="prevCallback" let-nextCallback="nextCallback" let-index="index">
+            <div class="grid p-fluid mt-1" formGroupName="officialDetails">
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="companies"
+                    formControlName="company"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="company">Company</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="locations"
+                    formControlName="location"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="location">Location</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="categories"
+                    formControlName="category"
+                    optionLabel="display_name"
+                    optionValue="value"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="category">Category</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="agencies"
+                    optionLabel="display_name"
+                    [showClear]="false"
+                    [disabled]="true"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="agency">Agency</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="departments"
+                    formControlName="department"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="department">Department</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="designations"
+                    formControlName="designation"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="designation">Designation</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="divisions"
+                    formControlName="division"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="division">Divsion</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="subdivisions"
+                    formControlName="subdivision"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="subdivision">Sub Division</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="shopfloors"
+                    formControlName="shopfloor"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="shopfloor">Shopfloor</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="jobTypes"
+                    formControlName="jobType"
+                    optionLabel="display_name"
+                    optionValue="value"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="jobType">Job Type</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                        <p-calendar
+                            id="dateOfJoining"
+                            [iconDisplay]="'input'"
+                            [showIcon]="true"
+                            formControlName="dateOfJoining"
+                            dateFormat="dd/mm/yy"
+                            class="p-inputtext-sm">
+                        </p-calendar>
+                        <label for="dateOfJoining">Date of Joining</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 xl:col-3">
+                    <span class="p-float-label">
+                    <p-calendar
+                    id="dateOfLeaving"
+                    [iconDisplay]="'input'"
+                    [showIcon]="true"
+                    formControlName="dateOfLeaving"
+                    dateFormat="dd/mm/yy"
+                    class="p-inputtext-sm">
+                    </p-calendar>
+                    <label for="dateOfLeaving">Date of Leaving</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-3" [formGroup]="employeeForm.get('officialDetails')">
+                    <h6 class="block">Job Status :</h6>
+                    <div class="flex align-items-center">
+                        <div *ngFor="let status of jobStatusOptions" class="field-radiobutton mr-2">
+                            <p-radioButton
+                            [name]="'jobStatus'"
+                            [value]="status.value"
+                            formControlName="jobStatus"
+                            inputId="{{'jobStatus' + status.value}}"
+                            class="p-inputtext-sm">
+                            </p-radioButton>
+                            <label [for]="'jobStatus' + status.value">{{status.display_name}}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="reportingManagerOptions"
+                    formControlName="reportingManager"
+                    optionLabel="name"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="reportingManager">Reporting Manager</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="alternativeReportingManagerOptions"
+                    formControlName="altReportingManager"
+                    optionLabel="name"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="altReportingManager">Alternative Reporting Manager</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-3">
+                    <span class="p-float-label">
+                        <textarea
+                        inputId="textarea"
+                        rows="4"
+                        cols="30"
+                        pInputTextarea>
+                        </textarea>
+                        <label for="textarea">Reason for Absconding / Resignation</label>
+                    </span>
+                </div>
+
+            </div>
+            <div class="flex pt-4 justify-content-between">
+                <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" (onClick)="prevCallback.emit()" />
+                <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextCallback.emit()" />
+            </div>
+        </ng-template>
+    </p-stepperPanel>
+
+    <p-stepperPanel header="Personnel Details">
+        <ng-template pTemplate="content" let-prevCallback="prevCallback" let-nextCallback="nextCallback" let-index="index">
+            <div class="grid p-fluid mt-1" formGroupName="personalDetails">
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="emergencyContactName"
+                        type="text"
+                        pInputText
+                        formControlName="emergencyContactName"
+                        class="p-inputtext-sm" />
+                    <label for="emergencyContactName">Emergency Contact Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="emergencyContactNo"
+                        type="text"
+                        pInputText
+                        formControlName="emergencyContactNo"
+                        class="p-inputtext-sm" />
+                    <label for="emergencyContactNo">Emergency Contact Number</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <p-dropdown
+                    [options]="maritalStatusOptions"
+                    formControlName="maritalStatus"
+                    optionLabel="display_name"
+                    [showClear]="false"
+                    class="p-inputtext-sm">
+                    </p-dropdown>
+                    <label for="maritalStatus">Marital Status</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="spouseName"
+                        type="text"
+                        pInputText
+                        formControlName="spouseName"
+                        class="p-inputtext-sm" />
+                    <label for="spouseName">Father/Spouse Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="bloodGroup"
+                        type="text"
+                        pInputText
+                        formControlName="bloodGroup"
+                        class="p-inputtext-sm" />
+                    <label for="bloodGroup">Blood Group</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <p-calendar
+                    id="dateOfBirth"
+                    [iconDisplay]="'input'"
+                    [showIcon]="true"
+                    formControlName="dateOfBirth"
+                    dateFormat="dd/mm/yy"
+                    class="p-inputtext-sm">
+                    </p-calendar>
+                    <label for="dateOfBirth">Date of Birth</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-3 xl:col-3">
+                    <span class="p-float-label">
+                        <p-dropdown
+                        [options]="countries"
+                        placeholder="Select Nationality"
+                        optionLabel="name"
+                        [showClear]="false"
+                        inputId="nationality"
+                        class="p-inputtext-sm">
+                            <ng-template pTemplate="selectedItem">
+                                <div class="flex align-items-center gap-2" *ngIf="selectedCountry">
+                                    <img src="https://primefaces.org/cdn/primeng/images/demo/flag/flag_placeholder.png" [class]="'flag flag-' + selectedCountry.code.toLowerCase()" style="width: 18px"/>
+                                    <div>{{ selectedCountry.name }}</div>
+                                </div>
+                            </ng-template>
+                            <ng-template let-country pTemplate="item">
+                                <div class="flex align-items-center gap-2">
+                                    <img src="https://primefaces.org/cdn/primeng/images/demo/flag/flag_placeholder.png" [class]="'flag flag-' + country.code.toLowerCase()" style="width: 18px"/>
+                                    <div>{{ country.name }}</div>
+                                </div>
+                            </ng-template>
+                        </p-dropdown>
+                        <label for="nationality">Nationality</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="uidNo"
+                        type="text"
+                        pInputText
+                        formControlName="uidNo"
+                        class="p-inputtext-sm" />
+                    <label for="uidNo">UID No</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="panNo"
+                        type="text"
+                        pInputText
+                        formControlName="panNo"
+                        class="p-inputtext-sm" />
+                    <label for="panNo">PAN No</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="voterId"
+                        type="text"
+                        pInputText
+                        formControlName="voterId"
+                        class="p-inputtext-sm" />
+                    <label for="voterId">Voter ID</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 lg:col-3">
+                    <span class="p-float-label">
+                    <input
+                        id="drivingLicense"
+                        type="text"
+                        pInputText
+                        formControlName="drivingLicense"
+                        class="p-inputtext-sm" />
+                    <label for="drivingLicense">Driving License</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-4">
+                    <h6 class="block">Gender :</h6>
+                    <div class="flex align-items-center">
+                        <div *ngFor="let status of genderOptions" class="field-radiobutton mr-2">
+                            <p-radioButton
+                            [name]="'gender'"
+                            [value]="status.value"
+                            formControlName="gender"
+                            inputId="{{'gender' + status.value}}"
+                            class="p-inputtext-sm">
+                            </p-radioButton>
+                            <label [for]="'gender' + status.value">{{status.display_name}}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-4">
+                    <span class="p-float-label">
+                    <input
+                        id="presentAddress"
+                        type="text"
+                        pInputText
+                        formControlName="presentAddress"
+                        class="p-inputtext-sm" />
+                    <label for="presentAddress">Present Address</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-6 xl:col-4">
+                    <span class="p-float-label">
+                    <input
+                        id="permanentAddress"
+                        type="text"
+                        pInputText
+                        formControlName="permanentAddress"
+                        class="p-inputtext-sm" />
+                    <label for="permanentAddress">Permanent Address</label>
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="flex pt-4 justify-content-between">
+                <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" (onClick)="prevCallback.emit()" />
+                <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextCallback.emit()" />
+            </div>
+        </ng-template>
+    </p-stepperPanel>
+
+    <p-stepperPanel header="Additional Details">
+        <ng-template pTemplate="content" let-prevCallback="prevCallback" let-nextCallback="nextCallback" let-index="index">
+            <!-- <div class="flex flex-column h-12rem">
+                <div class="border-2 border-dashed surface-border border-round surface-ground flex-auto flex justify-content-center align-items-center font-medium">Content II</div>
+            </div> -->
+
+            <div class="grid p-fluid mt-1">
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <input type="text" id="graduation" pInputText class="p-inputtext-sm"/>
+                        <label for="graduation">Graduation</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <p-dropdown [options]="course_types" placeholder="Select Course Type" optionLabel="display_name" class="p-inputtext-sm" inputId="course_type"></p-dropdown>
+                        <label for="course_type">Course Type</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <input type="text" id="course" pInputText class="p-inputtext-sm"/>
+                        <label for="course">Course</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <input type="text" id="place_of_graduation" pInputText class="p-inputtext-sm"/>
+                        <label for="place_of_graduation">Place of Graduation</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <input type="text" id="aggregate" pInputText class="p-inputtext-sm"/>
+                        <label for="aggregate">Aggregate</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+                    <span class="p-float-label">
+                        <p-calendar inputId="year_of_graduation" view="year" dateFormat="yy" [iconDisplay]="'input'" [showIcon]="true" class="p-inputtext-sm"></p-calendar>
+                        <label for="year_of_graduation">Year of Graduation</label>
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="grid">
+
+                <div class="field p-fluid col-12 md:col-12 lg:col-12 xl:col-6">
+                    <span class="p-float-label">
+                        <textarea id="float-input" rows="10" cols="100" pInputTextarea></textarea>
+                        <label for="float-input">Add Any Additional Details</label>
+                    </span>
+                </div>
+
+                <div class="col-12 md:col-12 lg:col-12 xl:col-6">
+                    <p-toast></p-toast>
+                    <p-fileUpload name="demo[]" url="https://www.primefaces.org/cdn/api/upload.php" (onUpload)="onUpload($event)" [multiple]="true" accept="image/*" maxFileSize="1000000">
+                        <ng-template pTemplate="content">
+                            <ul *ngIf="uploadedFiles.length">
+                                <li *ngFor="let file of uploadedFiles">{{ file.name }} - {{ file.size }} bytes</li>
+                            </ul>
+                            <p-divider></p-divider>
+                            <div *ngIf="!uploadedFiles.length">Drag and drop files</div>
+                        </ng-template>
+                    </p-fileUpload>
+                </div>
+
+            </div>
+            <div class="flex pt-4 justify-content-between">
+                <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" (onClick)="prevCallback.emit()" />
+                <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextCallback.emit()" /></div
+        ></ng-template>
+    </p-stepperPanel>
+
+
     <!-- Additional panels similar structure... -->
     <!-- Final Step with Submit -->
     <p-stepperPanel header="Work Configuration">
-    <ng-template pTemplate="content" let-prevCallback="prevCallback">
-    <!-- Work configuration fields here -->
-    <div class="flex justify-content-between mt-4">
-    <p-button
-        label="Back"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        (onClick)="prevCallback.emit()">
-    </p-button>
-    <p-button
-    [label]="isEditMode ? 'Update' : 'Save'"
-    [icon]="isEditMode ? 'pi pi-save' : 'pi pi-plus'"
-    [severity]="isEditMode ? 'info' : 'success'"
-    (onClick)="onSubmit()"
-    [disabled]="employeeForm.invalid">
-    </p-button>
-    </div>
-    </ng-template>
+        <ng-template pTemplate="content" let-prevCallback="prevCallback" let-index="index">
+            <div class="grid p-fluid mt-1" formGroupName="workConfig">
+
+                <div class="col-12 md:col-12 lg:col-12 xl:col-6">
+
+                    <div class="col-12">
+                        <div class="grid p-fluid">
+                            <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
+                                <span class="p-float-label">
+                                    <p-dropdown
+                                    [options]="shifts"
+                                    placeholder="Select Shift"
+                                    optionLabel="name"
+                                    inputId="shift"
+                                    formControlName="shift"
+                                    class="p-inputtext-sm">
+                                    </p-dropdown>
+                                    <label for="shift">Assigned Shift</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <p-fieldset legend="Shift Configuration" [toggleable]="true">
+
+                            <div class="grid p-fluid">
+                                <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="autoShift"
+                                        class="p-inputswitch-sm">
+                                        </p-inputSwitch>
+                                        <span class="block font-bold">Fixed Shift</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="autoShift"
+                                        class="p-inputswitch-sm">
+                                        </p-inputSwitch>
+                                        <span class="block font-bold">Auto shift</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        class="p-inputswitch-sm">
+                                        </p-inputSwitch>
+                                        <span class="block font-bold">Assign Shift</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </p-fieldset>
+                    </div>
+
+
+                    <div class="col-12">
+                        <p-fieldset legend="Select Weekly Off Days" [toggleable]="true">
+
+                            <div class="grid p-fluid">
+                                <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
+                                    <span class="p-float-label">
+                                        <p-dropdown [options]="week_days"
+                                        placeholder="Select Day"
+                                        optionLabel="display_name"
+                                        inputId="shift_1"
+                                        class="p-inputtext-sm"></p-dropdown>
+                                        <label for="shift_1" class="font-small">1st Week Off</label>
+                                    </span>
+                                </div>
+
+                                <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
+                                    <span class="p-float-label">
+                                        <p-dropdown [options]="week_days"
+                                        placeholder="Select Day"
+                                        optionLabel="display_name"
+                                        inputId="shift_1"
+                                        class="p-inputtext-sm"></p-dropdown>
+                                        <label for="shift_1" class="font-small">2nd Week Off</label>
+                                    </span>
+                                </div>
+
+                                <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
+                                    <span class="p-float-label">
+                                        <p-calendar
+                                        inputId="week_off_date"
+                                        [iconDisplay]="'input'"
+                                        [showIcon]="true"
+                                        class="p-inputtext-sm"></p-calendar>
+                                        <label for="week_off_date">Week Off Effective Date</label>
+                                    </span>
+                                </div>
+                            </div>
+
+                        </p-fieldset>
+                    </div>
+                </div>
+
+
+                <div class="col-12 md:col-12 lg:col-12 xl:col-6">
+                    <div class="col-12">
+                        <p-fieldset legend="Late/Early/Overtime/Flexi Time" [toggleable]="true">
+
+                            <div class="grid p-fluid">
+                                <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="flexiTime"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Flexi Work</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerLateEntry"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Late Coming</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerEarlyExit"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Early Leaving</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerExtraHoursWorked"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Extra Hours Worked</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerLateEntryOnHoliday"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Late Coming on Holidays/Week Off</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerEarlyExitOnHoliday"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Early Leaving on Holidays/Week Off</span>
+                                    </div>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="considerExtraHoursWorkedOnHoliday"
+                                        class="p-inputswitch-sm"></p-inputSwitch>
+                                        <span class="block font-bold">Consider Extra Hours Worked on Holidays/Week Off</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </p-fieldset>
+                    </div>
+
+                    <div class="col-12">
+                        <p-fieldset legend="Punch Out Settings If Single Punches" [toggleable]="true">
+
+                            <div class="grid p-fluid">
+                                <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
+                                    <div class="flex align-items-center gap-2">
+                                        <p-inputSwitch
+                                        formControlName="searchNextDay"
+                                        class="p-inputswitch-sm">
+                                        </p-inputSwitch>
+                                        <span class="block font-bold">Search next day punched if single/odd punched made</span>
+                                    </div>
+                                    <div class="p-fluid mt-2">
+                                        <!-- <h6 class="block">Gender :</h6> -->
+                                        <div class="flex flex-column">
+                                            <div class="border-2 border-dashed surface-border border-round surface-ground flex-auto flex justify-content-center align-items-center font-medium p-2">
+                                                <div class="flex flex-wrap gap-2">
+                                                    <div class="flex align-items-center">
+                                                        <p-radioButton></p-radioButton>
+                                                        <label class="block font-bold ml-2">Consider next day's first punch at out time</label>
+                                                    </div>
+
+                                                    <div class="flex align-items-center">
+                                                        <p-radioButton></p-radioButton>
+                                                        <label class="block font-bold ml-2">Consider next day's punch max search</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </p-fieldset>
+                    </div>
+
+                </div>
+
+            </div>
+            <!-- <div class="flex pt-4 justify-content-between">
+                <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" (onClick)="prevCallback.emit()" />
+                <p-button label="Save" *ngIf="id == null" icon="pi pi-save" severity="success" (click)="PostEmployee()" />
+                <p-button label="Update" *ngIf="id !== null" icon="pi pi-pencil" severity="info" (click)="updateEmployee()" /></div>-->
+
+            <!-- Work configuration fields here -->
+            <div class="flex justify-content-between mt-4">
+                <p-button
+                    label="Back"
+                    icon="pi pi-arrow-left"
+                    severity="secondary"
+                    (onClick)="prevCallback.emit()">
+                </p-button>
+                <p-button
+                    [label]="isEditMode ? 'Update' : 'Save'"
+                    [icon]="isEditMode ? 'pi pi-save' : 'pi pi-plus'"
+                    [severity]="isEditMode ? 'info' : 'success'"
+                    (onClick)="onSubmit()">
+                </p-button>
+            </div>
+        </ng-template>
     </p-stepperPanel>
-    </p-stepper>
-    </div>
-    <p-toast></p-toast>
+</p-stepper>
+</div>
+<p-toast></p-toast>

@@ -32,7 +32,8 @@ export class MandaysComponent implements OnInit {
             // { label: 'Import', icon: 'fas fa-file-import' },
             { label: 'Export Mandays Movements', icon: 'fas fa-download', command: () => this.downloadMandaysAttendanceReport() },
             { label: 'Export Mandays Worked', icon: 'fas fa-download', command: () => this.downloadMandaysWorkedReport() },
-            // { separator: true },
+            { separator: true },
+            { label: 'Reprocess Report', icon: 'fas fa-redo-alt', command: () => this.postReprocessLogs() },
         ];
     }
 
@@ -158,6 +159,27 @@ export class MandaysComponent implements OnInit {
                     severity: 'error',
                     summary: 'Error',
                     detail: 'Error downloading the report'
+                });
+            }
+        });
+    }
+
+    postReprocessLogs() {
+        this.service.reProcessLogs().subscribe({
+            next: (data) => {
+                // Show success message
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'The report is being reprocessed. Please wait for up to 2 minutes to view/download the report.'
+                });
+            },
+            error: (error) => {
+                // Show error message
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to reprocess logs'
                 });
             }
         });

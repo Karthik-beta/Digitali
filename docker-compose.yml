@@ -3,7 +3,6 @@ volumes:
   postgres_data_backups: {}
   
   production_redis_data: {}
-  mssql_data: {}
 
 services:
   django: &django
@@ -20,9 +19,9 @@ services:
       - DEBUG=True
       - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.pO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=10.177.8.143
+      - DATABASE_HOST=192.168.0.108
       - DATABASE_PORT=5432
-      - DATABASE_NAME=skf
+      - DATABASE_NAME=decan
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
@@ -34,21 +33,13 @@ services:
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_TIMEZONE=Asia/Kolkata
 
-      # MSSQL Configuration
-      - MSSQL_DATABASE_NAME=biotime
-      - MSSQL_DATABASE_USER=sa
-      - MSSQL_DATABASE_PASSWORD=Digitali@password123
-      - MSSQL_DATABASE_PORT=1400
-      - MSSQL_DATABASE_HOST=mssql
-      - MSSQL_DRIVER=ODBC Driver 17 for SQL Server
     depends_on:
       - postgres
       - redis
-      - mssql
     
 
   postgres:
-    image: postgres:16
+    image: postgres:17
     environment:
       POSTGRES_DB: skf
       POSTGRES_USER: postgres
@@ -59,26 +50,6 @@ services:
       - "5432:5432"
     restart: always
 
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2017-latest
-    container_name: mssql
-    build:
-      context: ./docker/mssql
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Digitali@password123
-      - MSSQL_PID=Express    # Use Express edition (free)
-    user: root
-    ports:
-      - "1400:1433"    # Default MSSQL port
-    volumes:
-      - mssql_data:/var/opt/mssql
-      - ./docker/mssql/init:/docker-entrypoint-initdb.d
-      - ./docker/mssql/entrypoint.sh:/entrypoint.sh
-    command: >
-      bash -c "chmod +x /entrypoint.sh && /entrypoint.sh"
-    restart: always
-    mem_limit: 2g 
 
   redis:
     image: redis:6-alpine

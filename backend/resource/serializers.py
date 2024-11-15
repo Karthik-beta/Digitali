@@ -95,3 +95,15 @@ class ManDaysMissedPunchAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ManDaysMissedPunchAttendance
         fields = '__all__'
+
+class ResetMandaysResponseSerializer(serializers.Serializer):
+    """Serializer for reset mandays response data"""
+    message = serializers.CharField()
+    cutoff_date = serializers.DateField()
+    deleted_records = serializers.IntegerField()
+    last_log_id = serializers.IntegerField(allow_null=True)
+
+class ErrorResponseSerializer(serializers.Serializer):
+    """Serializer for error responses"""
+    error = serializers.CharField()
+    message = serializers.CharField()

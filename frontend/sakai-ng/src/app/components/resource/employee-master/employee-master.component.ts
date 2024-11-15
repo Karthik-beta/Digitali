@@ -137,6 +137,7 @@ export class EmployeeMasterComponent implements OnInit, OnDestroy {
         });
     }
 
+
     onSearchChange(query: string): void {
         this.searchQuery = query;
         this.dt.filterGlobal(query, 'contains');

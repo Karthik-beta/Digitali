@@ -1,5 +1,5 @@
 # Use the official Python slim image to reduce image size
-FROM python:3.11.7-slim AS builder
+FROM python:3.12.7-slim AS builder
 
 # Set environment variables for Python
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -20,7 +20,7 @@ RUN pip install --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt
 
 # Use a smaller final image
-FROM python:3.11.7-slim
+FROM python:3.12.7-slim
 
 # Copy installed dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages

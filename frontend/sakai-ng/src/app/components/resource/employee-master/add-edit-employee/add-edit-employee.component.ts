@@ -3,74 +3,89 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { access } from 'fs';
 import { MessageService } from 'primeng/api';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { Subject, takeUntil } from 'rxjs';
 import { SharedService } from 'src/app/shared.service';
 
 interface EmployeeForm {
-  profilePic: File | null;
-  employeeId: string;
-  deviceEnrollId: string;
-  employeeName: string;
-  accessCardNo: string | null;
-  email: string | null;
-  phoneNo: number | null;
-  pfNo: string | null;
-  esiNo: string | null;
-  insuranceNo: string | null;
+    profile_pic: File | null;
+    employee_id: string;
+    employee_name: string;
+    device_enroll_id: string;
+    email: string;
+    phone_no: number | null;
+    pf_no: string;
+    esi_no: string;
+    insurance_no: string;
 
-  // Bank Details
-  bankName: string | null;
-  bankBranch: string | null;
-  bankAccountNo: string | null;
-  bankAccountName: string | null;
-  bankAccountType: string | null;
-  ifscCode: string | null;
+    bank_name: string;
+    bank_branch: string;
+    bank_account_no: string;
+    bank_account_name: string;
+    bank_account_type: string | null;
+    ifsc_code: string;
 
-  // Official Details
-  company: number | null;
-  location: number | null;
-  category: string | null;
-  department: number | null;
-  designation: number | null;
-  division: number | null;
-  subdivision: number | null;
-  shopfloor: number | null;
-  jobType: string | null;
-  dateOfJoining: Date | null;
-  dateOfLeaving: Date | null;
-  jobStatus: string;
-  reportingManager: number | null;
-  altReportingManager: number | null;
-  reasonForLeaving: string | null;
+    category: string | null;
+    job_type: string | null;
+    date_of_joining: string | null;
+    date_of_leaving: string | null;
+    job_status: string | null;
+    reason_for_leaving: string;
 
-  // Work Configuration
-  shift: number | null;
-  autoShift: boolean;
-  flexiTime: boolean;
-  considerLateEntry: boolean;
-  considerEarlyExit: boolean;
-  considerExtraHoursWorked: boolean;
-  considerLateEntryOnHoliday: boolean;
-  considerEarlyExitOnHoliday: boolean;
-  considerExtraHoursWorkedOnHoliday: boolean;
-  searchNextDay: boolean;
+    emergency_contact_name: string;
+    emergency_contact_no: number | null;
+    marital_status: string | null;
+    spouse_name: string;
+    blood_group: string;
+    date_of_birth: string | null;
+    country_name: string;
+    country_code: string;
+    uid_no: string;
+    pan_no: string;
+    voter_id: string;
+    driving_license: string;
+    gender: string | null;
+    present_address: string;
+    permanent_address: string;
+    additional_info: string;
+    graduation: string;
+    course_type: string | null;
+    course: string;
+    place_of_graduation: string;
+    aggregate: number | null;
+    year_of_graduation: number | null;
+    auto_shift: boolean;
+    first_weekly_off: string | null;
+    second_weekly_off: string | null;
+    week_off_effective_date: string | null;
+    flexi_time: boolean;
+    consider_late_entry: boolean;
+    consider_early_exit: boolean;
+    consider_extra_hours_worked: boolean;
+    consider_late_entry_on_holiday: boolean;
+    consider_early_exit_on_holiday: boolean;
+    consider_extra_hours_worked_on_holiday: boolean;
+    search_next_day: boolean;
+    company: number | null;
+    location: number | null;
+    department: number | null;
+    designation: number | null;
+    division: number | null;
+    subdivision: number | null;
+    shopfloor: number | null;
+    reporting_manager: number | null;
+    alt_reporting_manager: number | null;
+    shift: number | null;
+}
 
-  // Personal Details
-  emergencyContactName: string | null;
-  emergencyContactNo: number | null;
-  maritalStatus: string | null;
-  spouseName: string | null;
-  bloodGroup: string | null;
-  dateOfBirth: Date | null;
-  countryName: string | null;
-  countryCode: string | null;
-  uidNo: string | null;
-  panNo: string | null;
-  voterId: string | null;
-  drivingLicense: string | null;
-  gender: string | null;
-  presentAddress: string | null;
-  permanentAddress: string | null;
+interface UploadEvent {
+    originalEvent: Event;
+    files: File[];
+}
+
+interface ChoiceOption {
+    value: string;
+    display_name: string;
 }
 
 @Component({
@@ -82,12 +97,22 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     employeeForm: FormGroup;
     isEditMode = false;
     employeeId: number | null = null;
-    activeStepperNumber: number | undefined = 0;
+    uploadedFiles: any[] = [];
+    activeStepperNumber: number | undefined = 3;
     private destroy$ = new Subject<void>();
+
+    punchOutOptions = [
+        { label: "Consider next day's first punch at out time", value: 'first_punch' },
+        { label: "Consider next day's punch max search", value: 'max_search' }
+    ];
 
     // Dropdown options
     accountTypes: any[] = [];
-    categories: any[] = [];
+    categories: ChoiceOption[] = [];
+    jobTypes: ChoiceOption[] = [];
+    jobStatusOptions: ChoiceOption[] = [];
+    maritalStatusOptions: any[] = [];
+    genderOptions: ChoiceOption[] = [];
     countries: any[] = [];
     shifts: any[] = [];
     companies: any[] = [];
@@ -133,7 +158,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
             // Official Details as nested form group
             officialDetails: this.fb.group({
-                company: [null],
+                company: [null, Validators.required],
                 location: [null],
                 category: [''],
                 department: [null],
@@ -144,7 +169,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
                 jobType: [''],
                 dateOfJoining: [null],
                 dateOfLeaving: [null],
-                jobStatus: ['Active'],
+                jobStatus: [null],
                 reportingManager: [null],
                 altReportingManager: [null],
                 reasonForLeaving: ['']
@@ -153,7 +178,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
             // Work Configuration as nested form group
             workConfig: this.fb.group({
                 shift: [null],
-                autoShift: [false],
+                autoShift: [true],
                 flexiTime: [false],
                 considerLateEntry: [true],
                 considerEarlyExit: [true],
@@ -161,7 +186,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
                 considerLateEntryOnHoliday: [true],
                 considerEarlyExitOnHoliday: [true],
                 considerExtraHoursWorkedOnHoliday: [true],
-                searchNextDay: [false]
+                searchNextDay: [true]
             }),
 
             // Personal Details as nested form group
@@ -196,8 +221,48 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe(options => {
             this.accountTypes = options.actions.POST.bank_account_type.choices;
-            this.categories = options.actions.POST.category.choices;
+            this.categories = options.actions.POST.category.choices
+            this.jobTypes = options.actions.POST.job_type.choices
+            // this.jobTypes = options.actions.POST.job_type.choices.map((choice: any) => ({
+            //     value: choice.value,
+            //     display_name: choice.display_name
+            //   }));
+            this.jobStatusOptions = options.actions.POST.job_status.choices;
+            this.maritalStatusOptions = options.actions.POST.marital_status.choices;
+            this.genderOptions = options.actions.POST.gender.choices;
         });
+
+        this.employeeService.getShifts({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.shifts = data.results);
+
+        this.employeeService.getCompanies({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.companies = data.results);
+
+        this.employeeService.getLocations({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.locations = data.results);
+
+        this.employeeService.getDepartments({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.departments = data.results);
+
+        this.employeeService.getDesignations({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.designations = data.results);
+
+        this.employeeService.getDivisions({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.divisions = data.results);
+
+        this.employeeService.getSubDivisions({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.subDivisions = data.results);
+
+        this.employeeService.getShopfloors({ page: 1, page_size: 1000 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => this.shopfloors = data.results);
 
         this.employeeService.getShifts({ page: 1, page_size: 1000 })
         .pipe(takeUntil(this.destroy$))
@@ -246,9 +311,10 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     }
 
     onSubmit(): void {
-        if (this.employeeForm.invalid) {
-        return;
-    }
+    //     if (this.employeeForm.invalid) {
+    //     return;
+    // }
+    console.log(this.employeeForm.value);
 
     const formData = this.prepareFormData();
     const request$ = this.isEditMode ?
@@ -284,6 +350,59 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('profile_pic', formValue.profilePic);
         }
 
+        // The company ID will be available in formValue.officialDetails.company
+        if (formValue.officialDetails.company) {
+            formData.append('company', formValue.officialDetails.company);
+        }
+
+        if (formValue.officialDetails.location) {
+            formData.append('location', formValue.officialDetails.location);
+        }
+
+        if (formValue.officialDetails.department) {
+            formData.append('department', formValue.officialDetails.department);
+        }
+
+        if (formValue.officialDetails.designation) {
+            formData.append('designation', formValue.officialDetails.designation);
+        }
+
+        if (formValue.officialDetails.division) {
+            formData.append('division', formValue.officialDetails.division);
+        }
+
+        if (formValue.officialDetails.subdivision) {
+            formData.append('subdivision', formValue.officialDetails.subdivision);
+        }
+
+        if (formValue.officialDetails.shopfloor) {
+            formData.append('shopfloor', formValue.officialDetails.shopfloor);
+        }
+
+        if (formValue.officialDetails.reportingManager) {
+            formData.append('reporting_manager', formValue.officialDetails.reportingManager);
+        }
+
+        if (formValue.officialDetails.altReportingManager) {
+            formData.append('alt_reporting_manager', formValue.officialDetails.altReportingManager);
+        }
+
+        if (formValue.officialDetails.category) {
+            formData.append('category', formValue.officialDetails.category);
+        }
+
+        if (formValue.officialDetails.jobType) {
+            formData.append('job_type', formValue.officialDetails.jobType);
+        }
+
+        if (formValue.officialDetails.jobStatus) {
+            formData.append('job_status', formValue.officialDetails.jobStatus);
+        }
+
+        if (formValue.personalDetails.gender) {
+            formData.append('gender', formValue.personalDetails.gender)
+        }
+
         // Append all other form values
         Object.keys(formValue).forEach(key => {
         if (formValue[key] !== null && key !== 'profilePic') {
@@ -308,20 +427,92 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     }
 
     private mapEmployeeToForm(employee: any): Partial<EmployeeForm> {
+        console.log(employee);
         return {
-            employeeId: employee.employee_id,
-            deviceEnrollId: employee.device_enroll_id,
-            employeeName: employee.employee_name,
-            accessCardNo: employee.access_card_no,
-            email: employee.email,
-            phoneNo: employee.phone_no,
-            pfNo: employee.pf_no,
-            esiNo: employee.esi_no,
-            insuranceNo: employee.insurance_no,
+            // employeeId: employee.employee_id,
+            // deviceEnrollId: employee.device_enroll_id,
+            // employeeName: employee.employee_name,
+            // accessCardNo: employee.access_card_no,
+            // email: employee.email,
+            // phoneNo: employee.phone_no,
+            // pfNo: employee.pf_no,
+            // esiNo: employee.esi_no,
+            // insuranceNo: employee.insurance_no,
 
-        // Map other fields similarly
+            // bankDetails: {
+            //     bankName: employee.bank_name,
+            //     bankBranch: employee.bank_branch,
+            //     bankAccountNo: employee.bank_account_no,
+            //     bankAccountName: employee.bank_account_name,
+            //     bankAccountType: employee.bank_account_type,
+            //     ifscCode: employee.ifsc_code,
+            // },
+
+            // officialDetails: {
+            //     company: employee.company,
+            //     location: employee.location,
+            //     category: employee.category,
+            //     department: employee.department,
+            //     designation: employee.designation,
+            //     division: employee.division,
+            //     subdivision: employee.subdivision,
+            //     shopfloor: employee.shopfloor,
+            //     jobType: employee.job_type,
+            //     dateOfJoining: new Date(employee.date_of_joining),
+            //     dateOfLeaving: new Date(employee.date_of_leaving),
+            //     jobStatus: employee.job_status,
+            //     reportingManager: employee.reporting_manager,
+            //     altReportingManager: employee.alt_reporting_manager,
+            //     reasonForLeaving: employee.reason_for_leaving,
+            // },
+
+            // workConfig: {
+            // shift: employee.shift,
+            // autoShift: employee.auto_shift,
+            // flexiTime: employee.flexi_time,
+            // considerLateEntry: employee.consider_late_entry,
+            // considerEarlyExit: employee.consider_early_exit,
+            // considerExtraHoursWorked: employee.consider_extra_hours_worked,
+            // considerLateEntryOnHoliday: employee.consider_late_entry_on_holiday,
+            // considerEarlyExitOnHoliday: employee.consider_early_exit_on_holiday,
+            // considerExtraHoursWorkedOnHoliday: employee.consider_extra_hours_worked_on_holiday,
+            // searchNextDay: employee.search_next_day,
+            // },
+
+            // personalDetails: {
+            //     emergencyContactName: employee.emergency_contact_name,
+            //     emergencyContactNo: employee.emergency_contact_no,
+            //     maritalStatus: employee.marital_status,
+            //     spouseName: employee.spouse_name,
+            //     bloodGroup: employee.blood_group,
+            //     dateOfBirth: new Date(employee.date_of_birth),
+            //     countryName: employee.country_name,
+            //     countryCode: employee.country_code,
+            //     uidNo: employee.uid_no,
+            //     panNo: employee.pan_no,
+            //     voterId: employee.voter_id,
+            //     drivingLicense: employee.driving_license,
+            //     gender: employee.gender,
+            //     presentAddress: '',
+            //     permanentAddress: ''
+            // },
+
+            // Map other fields similarly
         };
+
     }
+
+    onUpload(event:UploadEvent) {
+        for(let file of event.files) {
+            this.uploadedFiles.push(file);
+        }
+
+        this.messageService.add({severity: 'info', summary: 'File Uploaded', detail: ''});
+    }
+
+
+
+    fileName = '';
 
     ngOnDestroy(): void {
         this.destroy$.next();

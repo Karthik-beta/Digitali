@@ -14,12 +14,17 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
 from django.core.management import execute_from_command_line
+from django.core.management import call_command
+from django.db import transaction
+from apscheduler.schedulers.background import BackgroundScheduler
+from django_apscheduler.jobstores import DjangoJobStore
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 
-from resource.models import Employee, Attendance, Logs, LastLogId,ManDaysAttendance, ManDaysMissedPunchAttendance
+from resource.models import Employee, Attendance, Logs, LastLogId,ManDaysAttendance, ManDaysMissedPunchAttendance, LastLogIdMandays
+from resource.scheduler import get_scheduler
 from . import serializers
 from .services import generate_unique_ids, check_employee_id
 
@@ -294,7 +299,7 @@ from datetime import datetime
 class ExportAttendanceExcelView(View):
     HEADERS = (
         "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
-        "Job Type", "Department", "Employee Type", "Designation", "Log Date", 
+        "Job Type", "Department", "Employee Type", "Desination", "Log Date", 
         "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
         "Late Entry", "Early Exit", "OT Hours"
     )
@@ -317,9 +322,6 @@ class ExportAttendanceExcelView(View):
             'employeeid__department',
             'employeeid__designation',
             'employeeid__shift'
-        ).distinct(
-            'employeeid__employee_id',
-            'logdate'
         ).order_by('-logdate')
 
         # Date range filter
@@ -1031,13 +1033,6 @@ class MandaysAttendanceListCreate(generics.ListCreateAPIView):
             )
         return queryset
 
-from django.views import View
-from django.http import HttpResponse
-from django.db.models import Q
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
-from datetime import timedelta
-
 class ManDaysAttendanceExcelExport(View):
     HEADERS = (
         "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
@@ -1057,32 +1052,24 @@ class ManDaysAttendanceExcelExport(View):
         month = request.GET.get('month')
         year = request.GET.get('year')
 
-        # Start with base queryset using select_related to minimize DB queries
-        # Add distinct() to prevent duplicates
+        # Use select_related for foreign key relationships
         queryset = ManDaysAttendance.objects.select_related(
             'employeeid',
             'employeeid__company',
             'employeeid__location'
-        ).distinct(
-            'employeeid__employee_id',
-            'logdate'
-        ).order_by(
-            '-logdate'
-        )
+        ).order_by('-logdate')
 
-        # Build filters dictionary
-        filters = {}
+        # Apply filters
         if employee_id:
-            filters['employeeid__employee_id__iexact'] = employee_id
+            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
         if date_str:
-            filters['logdate'] = date_str
+            queryset = queryset.filter(logdate=date_str)
         if month:
-            filters['logdate__month'] = month
+            queryset = queryset.filter(logdate__month=month)
         if year:
-            filters['logdate__year'] = year
+            queryset = queryset.filter(logdate__year=year)
 
-        # Apply all filters at once
-        return queryset.filter(**filters) if filters else queryset
+        return queryset
 
     def format_timedelta(self, td):
         """Format timedelta or return empty string"""
@@ -1093,31 +1080,28 @@ class ManDaysAttendanceExcelExport(View):
         ws = wb.active
         ws.title = "Mandays Attendance Report"
         
-        # Create header style once
-        header_style = {
-            'font': Font(size=14, bold=True),
-            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-        }
+        # Cache styles
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
         
-        # Apply headers and styles efficiently
+        # Write headers
         for col_num, header in enumerate(self.HEADERS, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
-            cell.font = header_style['font']
-            cell.fill = header_style['fill']
-            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 5
+            cell.font = header_font
+            cell.fill = header_fill
+            ws.column_dimensions[cell.column_letter].width = len(header) + 7
 
         ws.freeze_panes = 'A2'
         return ws
 
     def get_record_data(self, record):
         """Extract data from record into tuple"""
-        emp = record.employeeid
         return (
-            emp.employee_id,
-            emp.device_enroll_id or "",
-            emp.employee_name,
-            getattr(emp.company, 'name', ''),
-            getattr(emp.location, 'name', ''),
+            record.employeeid.employee_id,
+            record.employeeid.device_enroll_id,
+            record.employeeid.employee_name,
+            record.employeeid.company.name,
+            record.employeeid.location.name,
             record.logdate,
             record.duty_in_1,
             record.duty_out_1,
@@ -1148,188 +1132,109 @@ class ManDaysAttendanceExcelExport(View):
             self.format_timedelta(record.total_time_9),
             record.duty_in_10,
             record.duty_out_10,
-            self.format_timedelta(record.total_time_10),
             self.format_timedelta(record.total_hours_worked)
         )
 
     def get(self, request, *args, **kwargs):
-        try:
-            # Get filtered queryset
-            queryset = self.get_queryset(request)
-            
-            # Create workbook and setup worksheet
-            wb = Workbook()
-            ws = self.setup_worksheet(wb)
-            
-            # Cache alignment style
-            alignment = Alignment(horizontal='center')
-            
-            # Write data in batches for memory efficiency
-            batch_size = 1000
-            start_row = 2
-            
-            for i in range(0, queryset.count(), batch_size):
-                batch = queryset[i:i + batch_size]
-                for record in batch:
-                    record_data = self.get_record_data(record)
-                    for col_num, value in enumerate(record_data, 1):
-                        cell = ws.cell(row=start_row, column=col_num, value=value)
-                        cell.alignment = alignment
-                    start_row += 1
+        # Get filtered queryset
+        queryset = self.get_queryset(request)
+        
+        # Convert queryset to tuple of tuples for better performance
+        records = tuple(
+            self.get_record_data(record) for record in queryset
+        )
 
-            # Create response
-            response = HttpResponse(
-                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
-            wb.save(response)
+        # Create workbook and setup worksheet
+        wb = openpyxl.Workbook()
+        ws = self.setup_worksheet(wb)
+        
+        # Cache alignment style
+        center_alignment = Alignment(horizontal='center')
 
-            return response
+        # Write data efficiently
+        for row_num, record_data in enumerate(records, 2):
+            for col_num, value in enumerate(record_data, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                cell.alignment = center_alignment
 
-        except Exception as e:
-            # Log the error and return an error response
-            return HttpResponse(
-                "Error generating report",
-                status=500
-            )
+        # Create response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = "attachment; filename=Mandays_Attendance_Report.xlsx"
+        wb.save(response)
+
+        return response      
     
 class ManDaysWorkedExcelExport(View):
-    """API view for exporting mandays worked data to Excel with first in and last out times."""
-    
-    HEADERS = [
-        "Employee ID", "Device Enroll ID", "Employee Name", "Company", 
-        "Location", "Jobtype", "Department", "Employee Type", "Designation", 
-        "Log Date", "First Duty In", "Last Duty Out", "Mandays Worked Hours"
-    ]
-
-    def get_queryset(self, request):
-        """Get filtered queryset with optimized joins."""
-        filters = {}
-        
-        # Using walrus operator for cleaner filter assignments
-        if employee_id := request.GET.get('employee_id'):
-            filters['employeeid__employee_id__iexact'] = employee_id
-        if date_str := request.GET.get('date'):
-            filters['logdate'] = date_str
-        if month := request.GET.get('month'):
-            filters['logdate__month'] = month
-        if year := request.GET.get('year'):
-            filters['logdate__year'] = year
-
-        # Optimize database queries with select_related
-        queryset = ManDaysAttendance.objects.select_related(
-            'employeeid',
-            'employeeid__company',
-            'employeeid__location', 
-            'employeeid__department',
-            'employeeid__designation'
-        ).distinct(
-            'employeeid__employee_id',
-            'logdate'
-        ).order_by('-logdate')
-
-        return queryset.filter(**filters) if filters else queryset
-
-    def get_duty_times(self, record):
-        """Get first non-null duty in and last non-null duty out times."""
-        # List all duty in times
-        duty_in_times = [
-            record.duty_in_1, record.duty_in_2, record.duty_in_3,
-            record.duty_in_4, record.duty_in_5, record.duty_in_6,
-            record.duty_in_7, record.duty_in_8, record.duty_in_9,
-            record.duty_in_10
-        ]
-        
-        # List all duty out times
-        duty_out_times = [
-            record.duty_out_1, record.duty_out_2, record.duty_out_3,
-            record.duty_out_4, record.duty_out_5, record.duty_out_6,
-            record.duty_out_7, record.duty_out_8, record.duty_out_9,
-            record.duty_out_10
-        ]
-
-        # Get first non-null duty in time
-        first_in = next((time for time in duty_in_times if time is not None), None)
-        
-        # Get last non-null duty out time (reverse the list to get the last one)
-        last_out = next((time for time in reversed(duty_out_times) if time is not None), None)
-
-        return first_in, last_out
-
-    def setup_worksheet(self, wb):
-        """Setup worksheet with headers and styling."""
-        ws = wb.active
-        ws.title = "Mandays Worked Report"
-        
-        # Create header style
-        header_style = {
-            'font': Font(size=14, bold=True),
-            'fill': PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid"),
-            'alignment': Alignment(horizontal='center')
-        }
-
-        # Apply headers and styles
-        for col_num, header in enumerate(self.HEADERS, 1):
-            cell = ws.cell(row=1, column=col_num, value=header)
-            cell.font = header_style['font']
-            cell.fill = header_style['fill']
-            cell.alignment = header_style['alignment']
-            ws.column_dimensions[get_column_letter(col_num)].width = len(header) + 7
-
-        ws.freeze_panes = 'A2'
-        return ws
-
-    def write_record(self, ws, row_num, record):
-        """Write a single record to worksheet."""
-        emp = record.employeeid
-        first_in, last_out = self.get_duty_times(record)
-        
-        # Prepare row data
-        row_data = [
-            emp.employee_id,
-            emp.device_enroll_id,
-            emp.employee_name,
-            getattr(emp.company, 'name', ''),
-            getattr(emp.location, 'name', ''),
-            emp.job_type or '',
-            getattr(emp.department, 'name', ''),
-            emp.category or '',
-            getattr(emp.designation, 'name', ''),
-            record.logdate,
-            first_in,
-            last_out,
-            record.total_hours_worked
-        ]
-
-        # Write data with center alignment
-        for col_num, value in enumerate(row_data, 1):
-            cell = ws.cell(row=row_num, column=col_num, value=value)
-            cell.alignment = Alignment(horizontal='center')
+    """
+    API view for exporting the mandays worked data to an Excel file.
+    """
 
     def get(self, request, *args, **kwargs):
-        """Handle GET request and generate Excel file."""
-        try:
-            queryset = self.get_queryset(request)
-            wb = Workbook()
-            ws = self.setup_worksheet(wb)
-            
-            # Process records in batches to optimize memory usage
-            batch_size = 1000
-            for i in range(0, queryset.count(), batch_size):
-                batch = queryset[i:i + batch_size]
-                for idx, record in enumerate(batch, start=i+2):
-                    self.write_record(ws, idx, record)
+        employee_id = request.GET.get('employee_id')
+        date_str = request.GET.get('date')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
 
-            # Prepare response
-            response = HttpResponse(
-                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
-            wb.save(response)
-            return response
+        queryset = ManDaysAttendance.objects.order_by('-logdate').all()
 
-        except Exception as e:
-            return HttpResponse("Error generating report", status=500)
+        if employee_id:
+            queryset = queryset.filter(Q(employeeid__employee_id__iexact=employee_id))
+        if date_str:
+            queryset = queryset.filter(logdate=date_str)
+        if month:
+            queryset = queryset.filter(logdate__month=month)
+        if year:
+            queryset = queryset.filter(logdate__year=year)
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Mandays Worked Report"
+
+        headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Jobtype", "Department", "Employee Type", "Designation", "Log Date", "Duty In First", "Duty Out Last", "Mandays Worked Hours"]
+
+        row_num = 1
+
+        # Set font style and background color for headers
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
+        ws.freeze_panes = 'A2'
+
+        for row_num, record in enumerate(queryset, 2):
+            ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
+            ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
+            ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
+            ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
+            ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
+            ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
+            if record.employeeid.designation is not None:
+                ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
+            else:
+                ws.cell(row=row_num, column=7, value="")
+            ws.cell(row=row_num, column=8, value=record.employeeid.category)
+            if record.employeeid.designation is not None:
+                ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
+            else:
+                ws.cell(row=row_num, column=9, value="")
+            ws.cell(row=row_num, column=10, value=record.logdate)
+            ws.cell(row=row_num, column=11, value=record.duty_in_1)
+            ws.cell(row=row_num, column=12, value=record.duty_out_1)
+            ws.cell(row=row_num, column=13, value=record.total_hours_worked)
+
+            cell.alignment = Alignment(horizontal='center')
+
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = "attachment; filename=Mandays_Worked_Report.xlsx"
+        wb.save(response)
+
+        return response  
     
 class ManDaysMissedPunchExcelExport(View):
 
@@ -1454,3 +1359,116 @@ class ExportLogsExcelView(View):
         wb.save(response)
 
         return response
+
+class ResetMandaysView(generics.GenericAPIView):
+    """
+    API endpoint to reset and reprocess mandays data.
+    Handles:
+    1. Scheduler shutdown
+    2. Data cleanup for last 7 days
+    3. LastLogIdMandays reset to cutoff day - 1
+    4. Mandays reprocessing
+    5. Scheduler restart
+    """
+
+    def handle_scheduler(self, action='stop'):
+        """
+        Safely handle scheduler operations
+        Returns True if operation was successful
+        """
+        try:
+            scheduler = get_scheduler()
+            if action == 'stop':
+                if scheduler and scheduler.running:
+                    scheduler.shutdown(wait=True)
+                return True
+            elif action == 'start':
+                if scheduler and not scheduler.running:
+                    scheduler.start()
+                return True
+            return False
+        except Exception as e:
+            return False
+
+    def cleanup_old_data(self, cutoff_date):
+        """
+        Clean up ManDaysAttendance records for the last 7 days
+        cutoff_date is the date 7 days ago
+        We want to delete records >= cutoff_date (last 7 days)
+        """
+        try:
+            total_records = ManDaysAttendance.objects.all().count()
+            result = ManDaysAttendance.objects.filter(
+                logdate__gte=cutoff_date
+            ).delete()
+            print(f"Total records before deletion: {total_records}")
+            print(f"Deleted records: {result[0]}")
+            return result
+        except Exception:
+            raise
+
+    def update_last_log_id(self, cutoff_date):
+        """
+        Update LastLogIdMandays with log ID from day before cutoff date
+        """
+        try:
+            # Find the last log entry from the day before cutoff date
+            day_before_cutoff = cutoff_date - timedelta(days=1)
+            last_log_before_cutoff = Logs.objects.filter(
+                log_datetime__date__lte=day_before_cutoff
+            ).order_by('-id').first()
+
+            if last_log_before_cutoff:
+                LastLogIdMandays.objects.all().delete()
+                new_last_log = LastLogIdMandays.objects.create(
+                    last_log_id=last_log_before_cutoff.id
+                )
+                return new_last_log.last_log_id
+            return None
+        except Exception as e:
+            raise
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST request to reset mandays data"""
+        scheduler_stopped = False
+        try:
+            # Stop scheduler
+            scheduler_stopped = self.handle_scheduler('stop')
+            if not scheduler_stopped:
+                raise Exception("Failed to stop scheduler")
+
+            with transaction.atomic():
+                # Calculate cutoff date (7 days ago)
+                cutoff_date = datetime.now().date() - timedelta(days=7)
+                
+                # Execute cleanup operations
+                deleted_count = self.cleanup_old_data(cutoff_date)
+                last_log_id = self.update_last_log_id(cutoff_date)
+                
+                # Run mandays command
+                call_command('mandays')
+                
+                response_data = {
+                    'message': 'Successfully reset mandays data and restarted processing',
+                    'cutoff_date': cutoff_date.isoformat(),
+                    'deleted_records': deleted_count[0] if deleted_count else 0,
+                    'last_log_id': last_log_id,
+                    'scheduler_status': 'restarted'
+                }
+                
+                # Restart scheduler
+                if not self.handle_scheduler('start'):
+                    response_data['scheduler_status'] = 'failed_to_restart'
+                
+                return Response(response_data, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            # Ensure scheduler is restarted if it was stopped
+            if scheduler_stopped:
+                self.handle_scheduler('start')
+            
+            return Response({
+                'error': str(e),
+                'message': 'Failed to reset mandays data',
+                'scheduler_status': 'restarted_after_error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

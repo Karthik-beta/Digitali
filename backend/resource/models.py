@@ -23,6 +23,8 @@ class Employee(models.Model):
         ('Training', 'Training'),
         ('Confirmed', 'Confirmed'),
         ('Professional', 'Professional'),
+        ('Temporary', 'Temporary'),
+        ('Permanent', 'Permanent'),
     )
 
     JOB_STATUS_CHOICES = (
@@ -315,6 +317,7 @@ class ManDaysAttendance(models.Model):
     total_hours_worked = models.DurationField(blank=True, null=True)
 
     class Meta:
+        unique_together = ['employeeid', 'logdate']
         db_table = 'mandays_attendance'
 
 class ManDaysMissedPunchAttendance(models.Model):
