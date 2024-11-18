@@ -8,6 +8,7 @@ from django.db.models import Q, F, Count, Sum
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from datetime import datetime, timedelta, date
+from typing import Optional, Tuple
 import pytz
 from django.utils.timezone import make_aware, timezone, now
 from django.http import HttpResponse
@@ -1171,6 +1172,27 @@ class ManDaysWorkedExcelExport(View):
     API view for exporting the mandays worked data to an Excel file.
     """
 
+    def get_duty_times(self, record):
+        """Helper method to get first duty in and last duty out times."""
+        # Get all duty in times
+        duty_in_times = [
+            getattr(record, f'duty_in_{i}')
+            for i in range(1, 11)
+            if getattr(record, f'duty_in_{i}') is not None
+        ]
+        
+        # Get all duty out times
+        duty_out_times = [
+            getattr(record, f'duty_out_{i}')
+            for i in range(1, 11)
+            if getattr(record, f'duty_out_{i}') is not None
+        ]
+        
+        first_duty_in = duty_in_times[0] if duty_in_times else None
+        last_duty_out = duty_out_times[-1] if duty_out_times else None
+        
+        return first_duty_in, last_duty_out
+
     def get(self, request, *args, **kwargs):
         employee_id = request.GET.get('employee_id')
         date_str = request.GET.get('date')
@@ -1186,7 +1208,7 @@ class ManDaysWorkedExcelExport(View):
         if month:
             queryset = queryset.filter(logdate__month=month)
         if year:
-            queryset = queryset.filter(logdate__year=year)
+            queryset = queryset.filter(logdate__year=year)           
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -1208,25 +1230,27 @@ class ManDaysWorkedExcelExport(View):
         ws.freeze_panes = 'A2'
 
         for row_num, record in enumerate(queryset, 2):
+            first_duty_in, last_duty_out = self.get_duty_times(record)
+
             ws.cell(row=row_num, column=1, value=record.employeeid.employee_id)
             ws.cell(row=row_num, column=2, value=record.employeeid.device_enroll_id)
             ws.cell(row=row_num, column=3, value=record.employeeid.employee_name)
             ws.cell(row=row_num, column=4, value=record.employeeid.company.name)
             ws.cell(row=row_num, column=5, value=record.employeeid.location.name)
             ws.cell(row=row_num, column=6, value=record.employeeid.job_type)
-            if record.employeeid.designation is not None:
+            if record.employeeid.department is not None:
                 ws.cell(row=row_num, column=7, value=record.employeeid.department.name)
             else:
                 ws.cell(row=row_num, column=7, value="")
-            ws.cell(row=row_num, column=8, value=record.employeeid.category)
+            ws.cell(row=row_num, column=8, value=record.employeeid.category if record.employeeid.category else "")
             if record.employeeid.designation is not None:
                 ws.cell(row=row_num, column=9, value=record.employeeid.designation.name)
             else:
                 ws.cell(row=row_num, column=9, value="")
             ws.cell(row=row_num, column=10, value=record.logdate)
-            ws.cell(row=row_num, column=11, value=record.duty_in_1)
-            ws.cell(row=row_num, column=12, value=record.duty_out_1)
-            ws.cell(row=row_num, column=13, value=record.total_hours_worked)
+            ws.cell(row=row_num, column=11, value=first_duty_in)
+            ws.cell(row=row_num, column=12, value=last_duty_out)
+            ws.cell(row=row_num, column=13, value=record.total_hours_worked if record.total_hours_worked else "")
 
             cell.alignment = Alignment(horizontal='center')
 
