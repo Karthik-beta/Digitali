@@ -21,27 +21,99 @@ class ManDaysAttendanceProcessor:
     def _get_valid_employee_ids(self) -> set:
         return set(Employee.objects.values_list('id', flat=True))
     
+    # def _get_new_logs(self) -> List:
+    #     return (Logs.objects
+    #             .filter(id__gt=self.last_processed_id)
+    #             .order_by('log_datetime', 'id')
+    #             .values('id', 'employeeid', 'log_datetime', 'direction'))
+
     def _get_new_logs(self) -> List:
+        """Get new logs with distinct employee punches."""
+        distinct_fields = ['employeeid', 'log_datetime', 'direction']
+        order_fields = distinct_fields + ['id']
+        
         return (Logs.objects
                 .filter(id__gt=self.last_processed_id)
-                .order_by('log_datetime', 'id')
+                .order_by(*order_fields)
+                .distinct(*distinct_fields)
                 .values('id', 'employeeid', 'log_datetime', 'direction'))
 
-    def _process_day_logs(self, logs: List) -> List[Dict]:
-        """Process logs for a single day in chronological order."""
+    def _get_last_record_info(self, prev_day_record: ManDaysAttendance) -> Tuple[int, str, time, bool]:
+        """Get info about the last record from previous day."""
+        last_index = 0
+        last_direction = None
+        last_time = None
+        has_out = False
+
+        for i in range(1, 11):
+            in_time = getattr(prev_day_record, f'duty_in_{i}', None)
+            out_time = getattr(prev_day_record, f'duty_out_{i}', None)
+            
+            if in_time is not None:
+                last_index = i
+                last_direction = 'In Device'
+                last_time = in_time
+                
+            if out_time is not None:
+                last_index = i
+                last_direction = 'Out Device'
+                last_time = out_time
+                has_out = True
+                
+            if in_time is None and out_time is None:
+                break
+
+        return last_index, last_direction, last_time, has_out
+
+    def _process_day_logs(self, emp_id: str, current_date: date, logs: List, prev_day_record: ManDaysAttendance = None) -> List[Dict]:
+        """Process logs for a single day, handling night shift scenarios."""
         processed_logs = []
         slot_index = 1
-        
+
         # Sort logs chronologically
         sorted_logs = sorted(logs, key=lambda x: x['log_datetime'])
         
+        # Only proceed with night shift handling if there are logs and first punch is Out Device
+        if sorted_logs and sorted_logs[0]['direction'] == 'Out Device' and prev_day_record:
+            last_idx = 0
+            last_in_time = None
+            
+            # Find the last duty_in without duty_out from previous day
+            for i in range(10, 0, -1):
+                in_time = getattr(prev_day_record, f'duty_in_{i}', None)
+                out_time = getattr(prev_day_record, f'duty_out_{i}', None)
+                
+                if in_time is not None:
+                    if out_time is None:
+                        last_idx = i
+                        last_in_time = in_time
+                    break
+            
+            # If we found a duty_in without duty_out, copy the first out punch
+            if last_idx > 0 and last_in_time:
+                first_out_time = sorted_logs[0]['log_datetime'].time()
+                setattr(prev_day_record, f'duty_out_{last_idx}', first_out_time)
+                
+                # Calculate total time for previous day
+                in_dt = datetime.combine(current_date - timedelta(days=1), last_in_time)
+                out_dt = datetime.combine(current_date, first_out_time)
+                if out_dt > in_dt:
+                    total_time = out_dt - in_dt
+                    setattr(prev_day_record, f'total_time_{last_idx}', total_time)
+                
+                prev_day_record.save()
+        
+        # Process current day's logs
+        current_in_time = None
+        
         for log in sorted_logs:
+            if slot_index > 10:
+                break
+
             log_time = log['log_datetime'].time()
             
-            if slot_index > 10:  # Limit to 10 pairs
-                break
-                
             if log['direction'] == 'In Device':
+                current_in_time = log_time
                 processed_logs.append({
                     'slot': slot_index,
                     'duty_in': log_time,
@@ -50,21 +122,21 @@ class ManDaysAttendanceProcessor:
                 })
                 slot_index += 1
             else:  # Out Device
-                # Find the last incomplete entry
-                for entry in reversed(processed_logs):
-                    if entry['duty_out'] is None:
-                        entry['duty_out'] = log_time
-                        if entry['duty_in']:
-                            # Calculate duration only if we have both in and out
-                            in_dt = datetime.combine(date.today(), entry['duty_in'])
-                            out_dt = datetime.combine(date.today(), log_time)
-                            if out_dt < in_dt:  # Handle midnight crossing
-                                out_dt += timedelta(days=1)
-                            if out_dt > in_dt:
-                                entry['total_time'] = out_dt - in_dt
-                        break
+                # Try to pair with previous in time
+                if current_in_time and processed_logs and processed_logs[-1]['duty_out'] is None:
+                    processed_logs[-1]['duty_out'] = log_time
+                    
+                    # Calculate total time
+                    in_dt = datetime.combine(current_date, current_in_time)
+                    out_dt = datetime.combine(current_date, log_time)
+                    if out_dt < in_dt:  # Handle midnight crossing
+                        out_dt += timedelta(days=1)
+                    if out_dt > in_dt:
+                        processed_logs[-1]['total_time'] = out_dt - in_dt
+                    
+                    current_in_time = None
                 else:
-                    # If no incomplete entry found, create new entry with only out time
+                    # Create new record if can't pair
                     processed_logs.append({
                         'slot': slot_index,
                         'duty_in': None,
@@ -72,7 +144,7 @@ class ManDaysAttendanceProcessor:
                         'total_time': None
                     })
                     slot_index += 1
-                    
+
         return processed_logs
 
     def _group_logs_by_employee_and_date(self, logs: List) -> Dict:
@@ -81,7 +153,6 @@ class ManDaysAttendanceProcessor:
             emp_id = log['employeeid']
             
             if not self._is_valid_employee(emp_id):
-                # logger.warning(f"Skipping logs for invalid employee ID: {emp_id}")
                 continue
                 
             log_date = log['log_datetime'].date()
@@ -95,8 +166,7 @@ class ManDaysAttendanceProcessor:
         
         return grouped_logs
 
-    def _create_attendance_record(self, emp_id: str, log_date: date, 
-                                processed_logs: List[Dict]) -> None:
+    def _create_attendance_record(self, emp_id: str, log_date: date, processed_logs: List[Dict]) -> None:
         try:
             if not self._is_valid_employee(emp_id):
                 logger.warning(f"Skipping attendance record for invalid employee ID: {emp_id}")
@@ -111,7 +181,6 @@ class ManDaysAttendanceProcessor:
             
             total_hours = timedelta()
             
-            # Map processed logs to attendance record fields
             for log in processed_logs:
                 slot = log['slot']
                 if slot > 10:
@@ -127,7 +196,6 @@ class ManDaysAttendanceProcessor:
             
             attendance_data['total_hours_worked'] = total_hours
             
-            # Create or update record
             ManDaysAttendance.objects.update_or_create(
                 employeeid_id=emp_id,
                 logdate=log_date,
@@ -153,14 +221,29 @@ class ManDaysAttendanceProcessor:
                 return
                 
             grouped_logs = self._group_logs_by_employee_and_date(new_logs)
-
-            # Calculate total iterations for the progress bar
             total_iterations = sum(len(date_logs) for date_logs in grouped_logs.values())
             
             with tqdm(total=total_iterations, desc="Processing attendance logs") as pbar:
                 for emp_id, date_logs in grouped_logs.items():
-                    for log_date, logs in date_logs.items():
-                        processed_logs = self._process_day_logs(logs)
+                    sorted_dates = sorted(date_logs.keys())
+                    
+                    for i, log_date in enumerate(sorted_dates):
+                        # Get previous day's record if exists
+                        prev_day_record = None
+                        if i > 0:
+                            prev_day = sorted_dates[i - 1]
+                            prev_day_record = ManDaysAttendance.objects.filter(
+                                employeeid_id=emp_id,
+                                logdate=prev_day
+                            ).first()
+                            
+                        processed_logs = self._process_day_logs(
+                            emp_id, 
+                            log_date, 
+                            date_logs[log_date],
+                            prev_day_record
+                        )
+                        
                         if processed_logs:
                             self._create_attendance_record(emp_id, log_date, processed_logs)
                         pbar.update(1)
