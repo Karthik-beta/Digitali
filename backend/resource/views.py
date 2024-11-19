@@ -1463,7 +1463,7 @@ class ResetMandaysView(generics.GenericAPIView):
 
             with transaction.atomic():
                 # Calculate cutoff date (7 days ago)
-                cutoff_date = datetime.now().date() - timedelta(days=7)
+                cutoff_date = datetime.now().date() - timedelta(days=100)
                 
                 # Execute cleanup operations
                 deleted_count = self.cleanup_old_data(cutoff_date)
