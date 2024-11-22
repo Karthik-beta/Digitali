@@ -119,8 +119,8 @@ class AttendanceProcessor:
                         
                     if shift_window.start_window <= log_time <= shift_window.end_window:
 
-                        if existing_attendance:
-                            # Update existing attendance
+                        if existing_attendance and existing_attendance.first_logtime is None:
+                            # Only update existing attendance if first_logtime is None
                             attendance = existing_attendance
                             attendance.first_logtime = log_time
                             attendance.shift = auto_shift.name
