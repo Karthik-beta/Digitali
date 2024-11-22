@@ -6,11 +6,21 @@
 
     <div class="grid p-fluid">
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <!-- <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
             <span class="p-float-label">
                 <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
                 (onSelect)="onDateRangeChange($event)" inputId="dateRange"></p-calendar>
                 <label for="dateRange">Date Range</label>
+            </span>
+        </div> -->
+        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+            <span class="p-float-label">
+                <p-calendar
+                [(ngModel)]="month"
+                view="month"
+                dateFormat="mm/yy"
+                [readonlyInput]="true" (onSelect)="onMonthSelect($event)"/>
+                <label for="month">Select Month</label>
             </span>
         </div>
 
@@ -71,7 +81,7 @@
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <!-- <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
             <span class="p-float-label">
                 <p-dropdown
                 [options]="criteria"
@@ -80,38 +90,13 @@
                 placeholder="Select a City" (onChange)="onCriteriaChange($event)"></p-dropdown>
                 <label for="shift">Criteria</label>
             </span>
-        </div>
-
-    </div>
-</div>
-
-<div class="card">
-
-    <div class="grid p-fluid mt-1">
-
-        <!-- <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
-            <span class="p-float-label">
-                <p-dropdown [options]="employeeList" [(ngModel)]="selectedEmployee" [filter]="true" placeholder="Select a Employee"
-                optionLabel="combined_field" class="p-inputtext-sm"
-                inputId="employee" (onChange)="assignEmployeeId(selectedEmployee)" />
-                <label for="employee">Employee</label>
-            </span>
         </div> -->
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
-            <p-calendar
-            [(ngModel)]="month"
-            view="month"
-            dateFormat="mm/yy"
-            [readonlyInput]="true" (onSelect)="onMonthSelect($event)"/>
-        </div>
-
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <p-button label="Submit" (click)="downloadAllEmployeeMonthlyReport()" />
         </div>
 
     </div>
-
 </div>
 
 <div>
