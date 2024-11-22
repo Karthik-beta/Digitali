@@ -74,6 +74,7 @@ class Employee(models.Model):
         ('Saturday', 'Saturday'),
     )
     
+    id = models.AutoField(primary_key=True)
     profile_pic = models.ImageField(default="default_pic.jpg",upload_to='profile_pics/', blank=True, null=True)
     employee_id = models.CharField(max_length=20, unique=True)
     employee_name = models.CharField(max_length=100)

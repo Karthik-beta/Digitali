@@ -92,19 +92,14 @@ class ManDaysAttendanceProcessor:
             # If we found a duty_in without duty_out, copy the first out punch
             if last_idx > 0 and last_in_time:
                 first_out_time = sorted_logs[0]['log_datetime'].time()
-                
-                # Update previous day's record
                 setattr(prev_day_record, f'duty_out_{last_idx}', first_out_time)
                 
-                # Calculate total time for previous day's last slot
+                # Calculate total time for previous day
                 in_dt = datetime.combine(current_date - timedelta(days=1), last_in_time)
                 out_dt = datetime.combine(current_date, first_out_time)
-                total_time = None
-                
                 if out_dt > in_dt:
                     total_time = out_dt - in_dt
-                
-                setattr(prev_day_record, f'total_time_{last_idx}', total_time)
+                    setattr(prev_day_record, f'total_time_{last_idx}', total_time)
                 
                 # Recalculate total_hours_worked for previous day
                 total_hours = timedelta()
@@ -114,6 +109,7 @@ class ManDaysAttendanceProcessor:
                         total_hours += slot_total
                 
                 prev_day_record.total_hours_worked = total_hours
+                
                 prev_day_record.save()
         
         # Process current day's logs

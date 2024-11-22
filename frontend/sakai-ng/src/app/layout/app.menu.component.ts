@@ -75,52 +75,51 @@ export class AppMenuComponent implements OnInit {
                     }
                 ]
             },
-            {
-                label: 'Utility Management',
-                items: [
-                    {
-                        label: 'Utility Management', icon: 'fa-solid fa-briefcase',
-                        items: [
-                            { label: 'Canteen Management', icon: 'fa-solid fa-utensils',
-                                items: [
-                                    { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
-                                    { label: 'Food Counter Management', icon: 'fa-solid fa-utensils' },
-                                    { label: 'Food Allocation Managemen', icon: 'fa-solid fa-utensil-spoon' },
-                                    { label: 'Food Wallet Managemen', icon: 'fa-solid fa-wallet' },
-                                    { label: 'Food Menu Managemen', icon: 'fa-solid fa-list' },
-                                    // { label: 'Food Order', icon: 'fa-solid fa-cash-register' },
-                                    { label: 'Food Waste Managemen', icon: 'fa-solid fa-trash' },
-                                ]
-                            },
-                            { label: 'Feedback Management', icon: 'fa-solid fa-comment-alt',
-                                items: [
-                                    { label: 'Dashbaord', icon: 'fa-solid fa-tachometer' },
-                                    { label: 'Feedback Requests', icon: 'fa-solid fa-comment-alt' },
-                                    { label: 'Feedback Status Open/Close', icon: 'fa-solid fa-comment-alt' },
-                                    { label: 'Feedback Analysis', icon: 'fa-solid fa-chart-line' },
-                                ]
-                            },
-                            { label: 'Gate Office Management', icon: 'fa-solid fa-building-lock',
-                                items: [
-                                    { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
-                                    { label: 'Visitor Management', icon: 'fa-solid fa-user-check' },
-                                    { label: 'Material Management', icon: 'fa-solid fa-box' },
-                                    { label: 'Work Order Management', icon: 'fa-solid fa-clipboard-list' },
-                                    { label: 'Evacuation Management', icon: 'fa-solid fa-right-from-bracket' },
-                                    { label: 'Shift Strength Management', icon: 'fa-solid fa-users' },
-                                ]
-                            },
-                            {
-                                label: 'EHS Management', icon: 'fa-solid fa-shield-alt',
-                                items: [
-                                    { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
-                                ]
-                            }
-                        ]
-                    }
-                ]
-
-            },
+            // {
+            //     label: 'Utility Management',
+            //     items: [
+            //         {
+            //             label: 'Utility Management', icon: 'fa-solid fa-briefcase',
+            //             items: [
+            //                 { label: 'Canteen Management', icon: 'fa-solid fa-utensils',
+            //                     items: [
+            //                         { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
+            //                         { label: 'Food Counter Management', icon: 'fa-solid fa-utensils' },
+            //                         { label: 'Food Allocation Managemen', icon: 'fa-solid fa-utensil-spoon' },
+            //                         { label: 'Food Wallet Managemen', icon: 'fa-solid fa-wallet' },
+            //                         { label: 'Food Menu Managemen', icon: 'fa-solid fa-list' },
+            //                         // { label: 'Food Order', icon: 'fa-solid fa-cash-register' },
+            //                         { label: 'Food Waste Managemen', icon: 'fa-solid fa-trash' },
+            //                     ]
+            //                 },
+            //                 { label: 'Feedback Management', icon: 'fa-solid fa-comment-alt',
+            //                     items: [
+            //                         { label: 'Dashbaord', icon: 'fa-solid fa-tachometer' },
+            //                         { label: 'Feedback Requests', icon: 'fa-solid fa-comment-alt' },
+            //                         { label: 'Feedback Status Open/Close', icon: 'fa-solid fa-comment-alt' },
+            //                         { label: 'Feedback Analysis', icon: 'fa-solid fa-chart-line' },
+            //                     ]
+            //                 },
+            //                 { label: 'Gate Office Management', icon: 'fa-solid fa-building-lock',
+            //                     items: [
+            //                         { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
+            //                         { label: 'Visitor Management', icon: 'fa-solid fa-user-check' },
+            //                         { label: 'Material Management', icon: 'fa-solid fa-box' },
+            //                         { label: 'Work Order Management', icon: 'fa-solid fa-clipboard-list' },
+            //                         { label: 'Evacuation Management', icon: 'fa-solid fa-right-from-bracket' },
+            //                         { label: 'Shift Strength Management', icon: 'fa-solid fa-users' },
+            //                     ]
+            //                 },
+            //                 {
+            //                     label: 'EHS Management', icon: 'fa-solid fa-shield-alt',
+            //                     items: [
+            //                         { label: 'Dashboard', icon: 'fa-solid fa-tachometer' },
+            //                     ]
+            //                 }
+            //             ]
+            //         }
+            //     ]
+            // },
             {
                 label: 'Reports',
                 items: [
@@ -172,37 +171,37 @@ export class AppMenuComponent implements OnInit {
                             //         { label: 'Payslip', icon: 'fa-solid fa-file-invoice' },
                             //     ]
                             // },
-                            {
-                                label: 'Canteen Management', icon: 'fa-solid fa-utensils',
-                                items: [
-                                    { label: 'Food Order Report', icon: 'fa-solid fa-cash-register' },
-                                    { label: 'Food Wallet Report', icon: 'fa-solid fa-wallet' },
-                                    { label: 'Food Waste Report', icon: 'fa-solid fa-trash' },
-                                ]
-                            },
-                            {
-                                label: 'Feedback Management', icon: 'fa-solid fa-comment-alt',
-                                items: [
-                                    { label: 'Feedback Report', icon: 'fa-solid fa-comment-alt' },
-                                    { label: 'Feedback Analysis Report', icon: 'fa-solid fa-chart-line' },
-                                ]
-                            },
-                            {
-                                label: 'Gate Office Management', icon: 'fa-solid fa-building-lock',
-                                items: [
-                                    { label: 'Visitor Management Report', icon: 'fa-solid fa-user-check' },
-                                    { label: 'Material Management Report', icon: 'fa-solid fa-box' },
-                                    { label: 'Work Order Management Report', icon: 'fa-solid fa-clipboard-list' },
-                                    { label: 'Evacuation Management Report', icon: 'fa-solid fa-right-from-bracket' },
-                                    { label: 'Shift Strength Management Report', icon: 'fa-solid fa-users' },
-                                ]
-                            },
-                            {
-                                label: 'EHS Management', icon: 'fa-solid fa-shield-alt',
-                                items: [
-                                    { label: 'EHS Report', icon: 'fa-solid fa-shield-alt' },
-                                ]
-                            }
+                            // {
+                            //     label: 'Canteen Management', icon: 'fa-solid fa-utensils',
+                            //     items: [
+                            //         { label: 'Food Order Report', icon: 'fa-solid fa-cash-register' },
+                            //         { label: 'Food Wallet Report', icon: 'fa-solid fa-wallet' },
+                            //         { label: 'Food Waste Report', icon: 'fa-solid fa-trash' },
+                            //     ]
+                            // },
+                            // {
+                            //     label: 'Feedback Management', icon: 'fa-solid fa-comment-alt',
+                            //     items: [
+                            //         { label: 'Feedback Report', icon: 'fa-solid fa-comment-alt' },
+                            //         { label: 'Feedback Analysis Report', icon: 'fa-solid fa-chart-line' },
+                            //     ]
+                            // },
+                            // {
+                            //     label: 'Gate Office Management', icon: 'fa-solid fa-building-lock',
+                            //     items: [
+                            //         { label: 'Visitor Management Report', icon: 'fa-solid fa-user-check' },
+                            //         { label: 'Material Management Report', icon: 'fa-solid fa-box' },
+                            //         { label: 'Work Order Management Report', icon: 'fa-solid fa-clipboard-list' },
+                            //         { label: 'Evacuation Management Report', icon: 'fa-solid fa-right-from-bracket' },
+                            //         { label: 'Shift Strength Management Report', icon: 'fa-solid fa-users' },
+                            //     ]
+                            // },
+                            // {
+                            //     label: 'EHS Management', icon: 'fa-solid fa-shield-alt',
+                            //     items: [
+                            //         { label: 'EHS Report', icon: 'fa-solid fa-shield-alt' },
+                            //     ]
+                            // }
                         ]
                     }
                 ]

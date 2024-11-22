@@ -17,11 +17,11 @@ services:
     environment:
       - ENVIRONMENT=production
       - DEBUG=True
-      - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.pO{*/q8/IFkx)'
+      - SECRET_KEY='}Z(=*+t(]sdsdc!&&-"!sdsdvsdv-.serdffgpO{*/q8/IFkx)'
       - ALLOWED_HOSTS=*
-      - DATABASE_HOST=192.168.0.108
+      - DATABASE_HOST=10.177.8.143
       - DATABASE_PORT=5432
-      - DATABASE_NAME=decan
+      - DATABASE_NAME=skf
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password123
 
@@ -70,39 +70,3 @@ services:
     depends_on:
       - django
     restart: always
-
-
-  # celery:
-  #   container_name: celery
-  #   build:
-  #     context: ./backend
-  #   volumes:
-  #     - ./backend:/usr/src/app
-  #   depends_on:
-  #     - postgres
-  #     - redis
-
-  # celery:
-  #   <<: *django
-  #   command: celery -A backend worker --loglevel=info
-  #   environment:
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
-  #   depends_on:
-  #     - redis
-  #     - django
-
-  # celery-beat:
-  #   <<: *django
-  #   command: celery -A backend beat --loglevel=info  # Introduce a 5-second delay
-  #   environment:
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
-  #   volumes:
-  #     - ./backend/celerybeat-schedule:/app/celerybeat-schedule
-  #   depends_on:
-  #     - redis
-  #     - django
-  #   # Remove port mapping for celery-beat:
-  #   # ports:
-  #   #   - "8082:8000"
