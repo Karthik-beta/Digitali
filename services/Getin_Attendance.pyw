@@ -4,8 +4,8 @@ import schedule
 import time
 
 # Database connection settings
-mssql_conn_str = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.177.8.143;DATABASE=biotime;UID=Digitali;PWD=Digitali'
-pg_conn_str = 'dbname=decan user=postgres password=password123 host=192.168.0.108 port=5432'
+mssql_conn_str = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=127.0.0.1;DATABASE=biotime;UID=Digitali;PWD=Digitali'
+pg_conn_str = 'dbname=skf user=postgres password=password123 host=10.177.8.143 port=5432'
 
 def fetch_latest_id_from_postgres():
     with psycopg2.connect(pg_conn_str) as pg_conn:
