@@ -119,13 +119,18 @@ class AttendanceProcessor:
                         
                     if shift_window.start_window <= log_time <= shift_window.end_window:
 
-                        if existing_attendance and existing_attendance.first_logtime is None:
-                            # Only update existing attendance if first_logtime is None
-                            attendance = existing_attendance
-                            attendance.first_logtime = log_time
-                            attendance.shift = auto_shift.name
-                            attendance.direction = 'Machine'
-                            attendance.shift_status = 'MP'
+                        if existing_attendance:
+                            if existing_attendance.first_logtime is None:
+                                # Only update existing attendance if first_logtime is None
+                                attendance = existing_attendance
+                                attendance.first_logtime = log_time
+                                attendance.shift = auto_shift.name
+                                attendance.direction = 'Machine'
+                                attendance.shift_status = 'MP'
+
+                            else:
+                                # Skip if attendance exists and first_logtime is not None
+                                return True
                         
                         else:
                             attendance = Attendance.objects.create(
