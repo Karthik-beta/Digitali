@@ -60,7 +60,7 @@ import { LogsComponent } from './components/configurations/logs/logs.component';
 
                     // Configuration
                     { path: 'configuration', component: ConfigComponent, canActivate: [authGuard] },
-                    { path: 'configuration/logs', component: LogsComponent, canActivate: [authGuard] },
+                    { path: 'logs', component: LogsComponent, canActivate: [authGuard] },
                 ]
             },
             { path: 'auth', loadChildren: () => import('./demo/components/auth/auth.module').then(m => m.AuthModule) },

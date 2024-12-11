@@ -19,6 +19,9 @@ from django.core.management import call_command
 from django.db import transaction
 from apscheduler.schedulers.background import BackgroundScheduler
 from django_apscheduler.jobstores import DjangoJobStore
+import time
+import json
+from django.http import JsonResponse
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -232,7 +235,7 @@ class AttendanceListCreate(generics.ListCreateAPIView):
         if overtime_not_null == 'true':
             queryset = queryset.exclude(overtime__isnull=True).exclude(overtime='00:00:00')
         if missed_punch == 'true':
-            queryset = queryset.exclude(first_logtime__isnull=True).exclude(last_logtime__isnull=False)
+            queryset = queryset.filter(shift_status='MP')
 
         if insufficient_duty_hours == 'true':
             queryset = queryset.filter(total_time__lt='08:00:00')
@@ -290,12 +293,6 @@ class AttendanceListCreate(generics.ListCreateAPIView):
 # # Pre-load data into cache
 # cache.get_or_set('attendance', Attendance.objects.order_by('-logdate').all(), timeout=3600)
 
-from django.views import View
-from django.http import HttpResponse
-from django.db.models import Q
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
-from datetime import datetime
 
 class ExportAttendanceExcelView(View):
     HEADERS = (
@@ -453,142 +450,195 @@ class ExportAttendanceExcelView(View):
         return response
     
 ''' Second Iteration for Excel Workbook '''
-# class ExportAttendanceExcelView(View):
-#     def get(self, request, *args, **kwargs):
+class ExportAttendanceExcelView2(View):
+    HEADERS = (
+        "Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", 
+        "Job Type", "Department", "Employee Type", "Desination", "Log Date", 
+        "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
+        "Late Entry", "Early Exit", "OT Hours"
+    )
 
-#         # Get filter parameters
-#         employee_id = request.GET.get('employee_id')
-#         employee_name = request.GET.get('employee_name')
-#         shift_status = self.request.GET.get('shift_status')
-#         company_names = self.request.GET.get('company_name')
-#         location_names = self.request.GET.get('location_name') 
-#         department_names = self.request.GET.get('department_name')
-#         designation_names = self.request.GET.get('designation_name')
-#         date_from = self.request.GET.get('date_from') 
-#         date_to = self.request.GET.get('date_to') 
-#         late_entry_not_null = self.request.GET.get('late_entry')
-#         early_exit_not_null = self.request.GET.get('early_exit')
-#         overtime_not_null = self.request.GET.get('overtime')
-#         missed_punch = self.request.GET.get('missed_punch')
+    SHIFT_STATUS_STYLES = {
+        'P': 'Good', 'WW': 'Good',
+        'A/P': 'Neutral', 'P/A': 'Neutral', 'WO': 'Neutral',
+    }
 
-#         # Step 1: Fetch all necessary data in one go with optimized query
-#         queryset = Attendance.objects.select_related(
-#             'employeeid', 'employeeid__company', 'employeeid__location',
-#             'employeeid__department', 'employeeid__designation', 'employeeid__shift', 
-#             'first_logtime', 'last_logtime', 'total_time', 'late_entry', 'early_exit', 'overtime'
-#         ).order_by('-logdate')
+    def fetch_base_data(self, request):
+        """
+        Fetch the base attendance data with minimal filtering at the database level.
+        We only apply date range filtering here as it's most efficient at DB level.
+        """
+        # Start with base attendance query
+        attendance_query = Attendance.objects.select_related(
+            'employeeid',
+            'employeeid__company',
+            'employeeid__location',
+            'employeeid__department',
+            'employeeid__designation'
+        ).order_by('logdate')
 
-#         # Apply date filter directly to the queryset 
-#         if date_from and date_to:
-#             try:
-#                 date_from_obj = datetime.strptime(date_from, '%m-%d-%Y').date()
-#                 date_to_obj = datetime.strptime(date_to, '%m-%d-%Y').date()
-#                 queryset = queryset.filter(logdate__range=[date_from_obj, date_to_obj])
-#             except ValueError:
-#                 pass 
+        # Apply date filtering at database level for efficiency
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        if date_from and date_to:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%m-%d-%Y').date()
+                date_to_obj = datetime.strptime(date_to, '%m-%d-%Y').date()
+                attendance_query = attendance_query.filter(
+                    logdate__range=[date_from_obj, date_to_obj]
+                )
+            except ValueError:
+                pass
 
-#         # Step 2: Use a data structure (list of dictionaries) to filter the data
-#         attendance_data = []
-#         for record in queryset:
-#             data = {
-#                 'employee_id': record.employeeid.employee_id,
-#                 'device_enroll_id': record.employeeid.device_enroll_id,
-#                 'employee_name': record.employeeid.employee_name,
-#                 'company': record.employeeid.company.name,
-#                 'location': record.employeeid.location.name,
-#                 'job_type': record.employeeid.job_type,
-#                 'department': record.employeeid.department.name,
-#                 'category': record.employeeid.category,
-#                 'designation': record.employeeid.designation.name,
-#                 'logdate': record.logdate,
-#                 'shift': record.employeeid.shift.name,
-#                 'shift_status': record.shift_status,
-#                 'first_logtime': record.first_logtime,
-#                 'last_logtime': record.last_logtime,
-#                 'total_time': record.total_time,
-#                 'late_entry': record.late_entry,
-#                 'early_exit': record.early_exit,
-#                 'overtime': record.overtime 
-#             }
+        # Return all records - we'll filter in memory
+        return attendance_query
 
-#             # Apply filters to the data structure
-#             if (employee_id and employee_id != data['employee_id']) or \
-#                 (employee_name and employee_name.lower() not in data['employee_name'].lower()) or \
-#                 (shift_status and shift_status != data['shift_status']) or \
-#                 (company_names and data['company'] not in [name.strip() for name in company_names.split(',')]) or \
-#                 (location_names and data['location'] not in [name.strip() for name in location_names.split(',')]) or \
-#                 (department_names and data['department'] not in [name.strip() for name in department_names.split(',')]) or \
-#                 (designation_names and data['designation'] not in [name.strip() for name in designation_names.split(',')]) or \
-#                 (late_entry_not_null == 'true' and data['late_entry']):
-#                 continue  # Skip this record if it doesn't match the filters
+    def apply_filters_in_memory(self, records, request):
+        """
+        Apply all filtering logic in memory after fetching base data.
+        This is more efficient for complex filtering operations.
+        """
+        filtered_records = []
+        
+        for record in records:
+            # Skip if any of these direct match filters fail
+            if request.GET.get('employee_id') and \
+               record.employeeid.employee_id.lower() != request.GET.get('employee_id').lower():
+                continue
+                
+            if request.GET.get('employee_name') and \
+               request.GET.get('employee_name').lower() not in record.employeeid.employee_name.lower():
+                continue
+                
+            if request.GET.get('shift_status') and \
+               record.shift_status != request.GET.get('shift_status'):
+                continue
 
-#             attendance_data.append(data)
+            # Check comma-separated list filters
+            skip_record = False
+            filter_mappings = {
+                'company_name': lambda r: r.employeeid.company.name if r.employeeid.company else None,
+                'location_name': lambda r: r.employeeid.location.name if r.employeeid.location else None,
+                'department_name': lambda r: r.employeeid.department.name if r.employeeid.department else None,
+                'designation_name': lambda r: r.employeeid.designation.name if r.employeeid.designation else None
+            }
 
+            for param, getter_func in filter_mappings.items():
+                filter_values = request.GET.get(param)
+                if filter_values:
+                    allowed_values = [v.strip().lower() for v in filter_values.split(',')]
+                    current_value = getter_func(record)
+                    if not current_value or current_value.lower() not in allowed_values:
+                        skip_record = True
+                        break
+
+            if skip_record:
+                continue
+
+            # Apply special filters
+            if request.GET.get('late_entry') == 'true' and \
+               (not record.late_entry or str(record.late_entry) == '00:00:00'):
+                continue
+
+            if request.GET.get('early_exit') == 'true' and \
+               (not record.early_exit or str(record.early_exit) == '00:00:00'):
+                continue
+
+            if request.GET.get('overtime') == 'true' and \
+               (not record.overtime or str(record.overtime) == '00:00:00'):
+                continue
+
+            if request.GET.get('missed_punch') == 'true' and \
+               not (record.first_logtime and not record.last_logtime):
+                continue
+
+            if request.GET.get('insufficient_duty_hours') == 'true' and \
+               str(record.total_time) >= '08:00:00':
+                continue
+
+            # If record passes all filters, add it to results
+            filtered_records.append(record)
+
+        return filtered_records
+
+    def format_record_data(self, record):
+        """
+        Convert a record into the tuple format needed for Excel export.
+        Handles all the field access and null checks in one place.
+        """
+        return (
+            record.employeeid.employee_id,
+            record.employeeid.device_enroll_id,
+            record.employeeid.employee_name,
+            record.employeeid.company.name if record.employeeid.company else None,
+            record.employeeid.location.name if record.employeeid.location else None,
+            record.employeeid.job_type,
+            record.employeeid.department.name if record.employeeid.department else None,
+            record.employeeid.category,
+            record.employeeid.designation.name if record.employeeid.designation else None,
+            record.logdate,
+            record.shift,
+            record.shift_status,
+            record.first_logtime,
+            record.last_logtime,
+            record.total_time,
+            record.late_entry,
+            record.early_exit,
+            record.overtime
+        )
+
+    def setup_worksheet(self, wb):
+        """Setup Excel worksheet with headers and styling"""
+        ws = wb.active
+        ws.title = "Attendance Report"
+        
+        header_font = Font(size=14, bold=True)
+        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+
+        for col_num, header in enumerate(self.HEADERS, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            ws.column_dimensions[cell.column_letter].width = len(header) + 7
+
+        ws.freeze_panes = 'A2'
+        return ws
+
+    def write_record(self, ws, row_num, record_data):
+        """Write a single record to the worksheet with proper styling"""
+        for col_num, value in enumerate(record_data, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.alignment = Alignment(horizontal='center')
             
+            if col_num == 12:  # Shift Status column
+                cell.style = self.SHIFT_STATUS_STYLES.get(value, 'Bad')
 
-#         # Step 3: Create the Excel workbook
-#         wb = openpyxl.Workbook()
-#         ws = wb.active
-#         ws.title = "Attendance Report"
+    def get(self, request, *args, **kwargs):
+        # Fetch base data with minimal DB filtering
+        base_records = self.fetch_base_data(request)
+        
+        # Apply remaining filters in memory
+        filtered_records = self.apply_filters_in_memory(base_records, request)
+        
+        # Format records for Excel
+        formatted_records = [self.format_record_data(record) for record in filtered_records]
 
-#         headers = ["Employee ID", "Device Enroll ID", "Employee Name", "Company", "Location", "Job Type", "Department", 
-#                    "Employee Type", "Desination", "Log Date", "Shift", "Shift Status", "In Time", "Out Time", "Total Hours", 
-#                    "Late Entry", "Early Exit", "OT Hours"]
+        # Create and setup Excel workbook
+        wb = openpyxl.Workbook()
+        ws = self.setup_worksheet(wb)
 
-#         row_num = 1
+        # Write records to Excel
+        for row_num, record_data in enumerate(formatted_records, 2):
+            self.write_record(ws, row_num, record_data)
 
-#         # Styles
-#         header_font = Font(size=14, bold=True)
-#         header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-#         footer_font = Font(bold=True)
-#         footer_fill = PatternFill(start_color="799184", end_color="799184", fill_type="solid")
-
-#         # Headers
-#         for col_num, header in enumerate(headers, 1):
-#             cell = ws.cell(row=row_num, column=col_num, value=header)
-#             # cell.font = header_font
-#             cell.fill = header_fill
-#             cell.style = 'Headline 1'
-#             ws.column_dimensions[ws.cell(row=row_num, column=col_num).column_letter].width = len(header) + 7
-#         ws.freeze_panes = 'A2'
-
-#         # Data
-#         for row_num, data in enumerate(attendance_data, 2):
-#             ws.cell(row=row_num, column=1, value=data['employee_id'])
-#             ws.cell(row=row_num, column=2, value=data['device_enroll_id'])
-#             ws.cell(row=row_num, column=3, value=data['employee_name'])
-#             ws.cell(row=row_num, column=4, value=data['company'])
-#             ws.cell(row=row_num, column=5, value=data['location'])
-#             ws.cell(row=row_num, column=6, value=data['job_type'])
-#             ws.cell(row=row_num, column=7, value=data['department'])
-#             ws.cell(row=row_num, column=8, value=data['category'])  
-#             ws.cell(row=row_num, column=9, value=data['designation'])
-#             ws.cell(row=row_num, column=10, value=data['logdate'])
-#             ws.cell(row=row_num, column=11, value=data['shift'])
-#             ws.cell(row=row_num, column=12, value=data['shift_status'])
-#             ws.cell(row=row_num, column=13, value=data['first_logtime'])
-#             ws.cell(row=row_num, column=14, value=data['last_logtime'])
-#             ws.cell(row=row_num, column=15, value=data['total_time'])
-#             ws.cell(row=row_num, column=16, value=data['late_entry'])
-#             ws.cell(row=row_num, column=17, value=data['early_exit'])
-#             ws.cell(row=row_num, column=18, value=data['overtime'])
-            
-
-
-#             # Conditional formatting
-#             cell = ws.cell(row=row_num, column=12) 
-#             if data['shift_status'] == 'P': 
-#                 cell.style = 'Good'
-#             elif data['shift_status'] in ['A/P', 'P/A', 'WO']:
-#                 cell.style = 'Neutral'
-#             else: 
-#                 cell.style = 'Bad'
-#             cell.alignment = Alignment(horizontal='center')
-
-#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-#         response["Content-Disposition"] = "attachment; filename=Attendance_Report.xlsx"
-#         wb.save(response)
-#         return response
+        # Prepare response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = "attachment; filename=Attendance_Report.xlsx"
+        wb.save(response)
+        
+        return response
     
 class AttendanceMetricsAPIView(generics.ListAPIView):
     def get_queryset(self):
@@ -714,15 +764,93 @@ class AttendanceMonthlyMetricsAPIView(APIView):
     
 class LogsListCreate(generics.ListCreateAPIView):
     """
-    API view for listing and creating logs.
+    API view for listing and creating logs with improved filtering.
     """
-    queryset = Logs.objects.all()
     serializer_class = serializers.LogsSerializer
     pagination_class = DefaultPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = ['employeeid']
-    search_fields = ['employeeid']
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_fields = '__all__'
+    search_fields = ['employeeid', 'shortname']
+    ordering_fields = ['log_datetime', 'employeeid', 'direction', 'shortname']
     ordering_fields = '__all__'
+    ordering = ['-log_datetime']
+
+    def get_queryset(self):
+        """
+        Get the queryset for listing logs with all filters.
+        """
+        queryset = Logs.objects.all()
+
+        # Get query parameters
+        search_query = self.request.GET.get('search')
+        date_query = self.request.GET.get('date')
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+        employee_id = self.request.GET.get('employeeid')
+        employee_ids = self.request.GET.get('employee_ids')
+        direction = self.request.GET.get('direction')
+        
+        # Apply search filter (case-insensitive)
+        if search_query:
+            queryset = queryset.filter(
+                Q(employeeid__icontains=search_query) |
+                Q(shortname__icontains=search_query)
+            )
+
+        # Filter by specific date
+        if date_query:
+            try:
+                date_obj = datetime.strptime(date_query, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date=date_obj)
+            except ValueError:
+                pass
+
+        # Filter by date range
+        if date_from:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date__gte=date_from_obj)
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date__lte=date_to_obj)
+            except ValueError:
+                pass
+
+        # Filter by single employee ID
+        if employee_id:
+            queryset = queryset.filter(employeeid=employee_id)
+
+        # Filter by multiple employee IDs
+        if employee_ids:
+            try:
+                employee_ids_list = [id.strip() for id in employee_ids.split(',')]
+                queryset = queryset.filter(employeeid__in=employee_ids_list)
+            except Exception:
+                pass
+
+        # Filter by direction
+        if direction:
+            queryset = queryset.filter(direction=direction)
+
+        return queryset.order_by('-log_datetime')
+
+    def get(self, request, *args, **kwargs):
+        """
+        Get the list of Logs records with filters.
+        """
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)        
 
 class LogsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -1338,25 +1466,100 @@ class ManDaysMissedPunchExcelExport(View):
         return response      
 
 class ExportLogsExcelView(View):
-    def get(self, request, *args, **kwargs):
-        # Get all data as tuples - values_list() already returns tuples
-        logs_data = tuple(Logs.objects.order_by('-log_datetime').values_list(
-            'id', 'employeeid', 'direction', 'log_datetime'
-        ))
+    def get_filtered_queryset(self, request):
+        """
+        Get the filtered queryset using the same logic as LogsListCreate
+        """
+        queryset = Logs.objects.all()
 
+        # Get query parameters
+        search_query = request.GET.get('search')
+        date_query = request.GET.get('date')
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        employee_id = request.GET.get('employeeid')
+        employee_ids = request.GET.get('employee_ids')
+        direction = request.GET.get('direction')
+        
+        # Apply search filter (case-insensitive)
+        if search_query:
+            queryset = queryset.filter(
+                Q(employeeid__icontains=search_query) |
+                Q(shortname__icontains=search_query)
+            )
+
+        # Filter by specific date
+        if date_query:
+            try:
+                date_obj = datetime.strptime(date_query, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date=date_obj)
+            except ValueError:
+                pass
+
+        # Filter by date range
+        if date_from:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date__gte=date_from_obj)
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                queryset = queryset.filter(log_datetime__date__lte=date_to_obj)
+            except ValueError:
+                pass
+
+        # Filter by single employee ID
+        if employee_id:
+            queryset = queryset.filter(employeeid=employee_id)
+
+        # Filter by multiple employee IDs
+        if employee_ids:
+            try:
+                employee_ids_list = [id.strip() for id in employee_ids.split(',')]
+                queryset = queryset.filter(employeeid__in=employee_ids_list)
+            except Exception:
+                pass
+
+        # Filter by direction
+        if direction:
+            queryset = queryset.filter(direction=direction)
+
+        return queryset.order_by('-log_datetime')
+
+    def get(self, request, *args, **kwargs):
+        # Get filtered queryset
+        queryset = self.get_filtered_queryset(request)
+        
+        # Fetch only the exact fields we need directly
+        logs_data = queryset.values_list(
+            'id',
+            'employeeid',  # Direct field access since it's a CharField
+            'direction',
+            'log_datetime'
+        )
+
+        # Convert to tuple for performance optimization
+        logs_data = tuple(logs_data)
+
+        # Initialize workbook and worksheet
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Logs"
 
-        # Use tuple for headers
+        # Define headers and styles
         headers = ("ID", "Employee ID", "Direction", "Datetime")
-
-        # Cache styles
         header_font = Font(size=14, bold=True)
-        header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        header_fill = PatternFill(
+            start_color="D3D3D3",
+            end_color="D3D3D3",
+            fill_type="solid"
+        )
         center_alignment = Alignment(horizontal='center')
 
-        # Write headers
+        # Write headers with styling
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
             cell.font = header_font
@@ -1364,18 +1567,20 @@ class ExportLogsExcelView(View):
             cell.alignment = center_alignment
             ws.column_dimensions[cell.column_letter].width = len(header) + 7
 
-        # Write data - direct tuple access is faster
+        # Write data rows efficiently
         for row_num, record in enumerate(logs_data, 2):
-            # No need to unpack - direct tuple access is faster
-            ws.cell(row=row_num, column=1, value=record[0])
-            ws.cell(row=row_num, column=2, value=record[1])
-            ws.cell(row=row_num, column=3, value=record[2])
+            # Each record is a tuple with exactly the fields we need
+            ws.cell(row=row_num, column=1, value=record[0])  # ID
+            ws.cell(row=row_num, column=2, value=record[1])  # Employee ID
+            ws.cell(row=row_num, column=3, value=record[2])  # Direction
+            # Handle timezone for datetime value
             ws.cell(row=row_num, column=4, value=record[3].replace(tzinfo=None) if record[3] else None)
-            
-            # Set alignment for all cells in the row
+
+            # Apply center alignment to all cells in the row
             for col in range(1, 5):
                 ws.cell(row=row_num, column=col).alignment = center_alignment
 
+        # Prepare and return the response
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
@@ -1389,8 +1594,8 @@ class ResetMandaysView(generics.GenericAPIView):
     API endpoint to reset and reprocess mandays data.
     Handles:
     1. Scheduler shutdown
-    2. Data cleanup for last 7 days
-    3. LastLogIdMandays reset to cutoff day - 1
+    2. Data cleanup for last 7 days or all data if no records exist in range
+    3. LastLogIdMandays reset to cutoff day - 1 or 0 if no data exists
     4. Mandays reprocessing
     5. Scheduler restart
     """
@@ -1416,39 +1621,68 @@ class ResetMandaysView(generics.GenericAPIView):
 
     def cleanup_old_data(self, cutoff_date):
         """
-        Clean up ManDaysAttendance records for the last 7 days
-        cutoff_date is the date 7 days ago
-        We want to delete records >= cutoff_date (last 7 days)
+        Clean up ManDaysAttendance records.
+        First checks if we have at least 100 days of historical data.
+        If we don't have 100 days of data, deletes all records for a fresh start.
+        Otherwise, only deletes records from cutoff_date forward.
+        Returns tuple of (deleted_count, was_full_cleanup)
         """
         try:
-            total_records = ManDaysAttendance.objects.all().count()
+            # Get the date of our oldest record
+            oldest_record = ManDaysAttendance.objects.order_by('logdate').first()
+            
+            if not oldest_record:
+                # No records at all - return early with (0, True)
+                return (0, True)
+                
+            # Calculate how many days of history we have
+            days_of_history = (datetime.now().date() - oldest_record.logdate).days
+            
+            # If we have less than 100 days of history, delete everything
+            if days_of_history < 100:
+                result = ManDaysAttendance.objects.all().delete()
+                print(f"Only {days_of_history} days of history found, deleting all records")
+                return (result[0], True)
+            
+            # Otherwise, just delete records from cutoff_date forward
             result = ManDaysAttendance.objects.filter(
                 logdate__gte=cutoff_date
             ).delete()
-            print(f"Total records before deletion: {total_records}")
-            print(f"Deleted records: {result[0]}")
-            return result
+            print(f"Found {days_of_history} days of history, performing normal cleanup")
+            return (result[0], False)
+            
         except Exception:
             raise
 
-    def update_last_log_id(self, cutoff_date):
+    def update_last_log_id(self, cutoff_date, was_full_cleanup=False):
         """
         Update LastLogIdMandays with log ID from day before cutoff date
+        If was_full_cleanup is True or no logs found, resets to 0
         """
         try:
+            if was_full_cleanup:
+                LastLogIdMandays.objects.all().delete()
+                new_last_log = LastLogIdMandays.objects.create(last_log_id=0)
+                print("Full cleanup performed, resetting last_log_id to 0")
+                return new_last_log.last_log_id
+
             # Find the last log entry from the day before cutoff date
             day_before_cutoff = cutoff_date - timedelta(days=1)
             last_log_before_cutoff = Logs.objects.filter(
                 log_datetime__date__lte=day_before_cutoff
             ).order_by('-id').first()
 
+            LastLogIdMandays.objects.all().delete()
             if last_log_before_cutoff:
-                LastLogIdMandays.objects.all().delete()
                 new_last_log = LastLogIdMandays.objects.create(
                     last_log_id=last_log_before_cutoff.id
                 )
-                return new_last_log.last_log_id
-            return None
+            else:
+                # No logs found, reset to 0
+                new_last_log = LastLogIdMandays.objects.create(last_log_id=0)
+                print("No logs found before cutoff date, resetting last_log_id to 0")
+            
+            return new_last_log.last_log_id
         except Exception as e:
             raise
 
@@ -1462,12 +1696,12 @@ class ResetMandaysView(generics.GenericAPIView):
                 raise Exception("Failed to stop scheduler")
 
             with transaction.atomic():
-                # Calculate cutoff date (7 days ago)
+                # Calculate cutoff date (100 days ago)
                 cutoff_date = datetime.now().date() - timedelta(days=100)
                 
                 # Execute cleanup operations
-                deleted_count = self.cleanup_old_data(cutoff_date)
-                last_log_id = self.update_last_log_id(cutoff_date)
+                deleted_count, was_full_cleanup = self.cleanup_old_data(cutoff_date)
+                last_log_id = self.update_last_log_id(cutoff_date, was_full_cleanup)
                 
                 # Run mandays command
                 call_command('mandays')
@@ -1475,8 +1709,9 @@ class ResetMandaysView(generics.GenericAPIView):
                 response_data = {
                     'message': 'Successfully reset mandays data and restarted processing',
                     'cutoff_date': cutoff_date.isoformat(),
-                    'deleted_records': deleted_count[0] if deleted_count else 0,
+                    'deleted_records': deleted_count,
                     'last_log_id': last_log_id,
+                    'was_full_cleanup': was_full_cleanup,
                     'scheduler_status': 'restarted'
                 }
                 
@@ -1496,3 +1731,31 @@ class ResetMandaysView(generics.GenericAPIView):
                 'message': 'Failed to reset mandays data',
                 'scheduler_status': 'restarted_after_error'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class test_view(APIView):
+    """
+    API endpoint to query an entire table and return its size, 
+    query execution time, data size (in bytes), and optionally the data.
+    """
+    def get(self, request):
+        # Record the start time
+        start_time = time.time()
+
+        # Query the table and convert it to a list of dictionaries
+        data = list(Logs.objects.all().values())
+
+        # Calculate query time
+        query_time = time.time() - start_time
+
+        # Calculate data size in bytes
+        data_size = len(json.dumps(data).encode('utf-8'))
+
+        # Prepare the response
+        response = {
+            "size": len(data),               # Number of rows
+            "query_time": query_time,        # Time taken in seconds
+            "data_size": data_size,          # Size of the data in bytes
+            "data": data                     # Optional: include queried data
+        }
+
+        return Response(response)

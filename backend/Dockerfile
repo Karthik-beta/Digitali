@@ -9,9 +9,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies needed for building packages
+# Install system dependencies needed for building packages and MSSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Microsoft repository and install MSSQL ODBC driver
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
+    unixodbc \
+    unixodbc-dev \
+    msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file and install dependencies
@@ -21,6 +33,18 @@ RUN pip install --upgrade pip setuptools \
 
 # Use a smaller final image
 FROM python:3.12.7-slim
+
+# Install runtime dependencies for MSSQL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
+    unixodbc \
+    msodbcsql17 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy installed dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages

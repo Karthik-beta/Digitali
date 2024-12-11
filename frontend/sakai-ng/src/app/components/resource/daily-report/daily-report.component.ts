@@ -170,7 +170,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         this.initCharts();
 
         this.items = [
-            { label: 'Import', icon: 'fas fa-file-import' },
+            { label: 'PDF', icon: 'fas fa-download' },
             { label: 'Export', icon: 'fas fa-download', command: () => this.downloadAttendanceReport() },
             // { separator: true },
         ];
@@ -470,6 +470,27 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         table.clear();
         this.searchQuery = '';
         this.company_name = '';
+        this.location_name = '';
+        this.department_name = '';
+        this.designation_name = '';
+        this.date = null;
+        this.rangeDates = null;
+        this.shift_status = '';
+        this.late_entry = false;
+        this.early_exit = false;
+        this.overtime = false;
+        this.missed_punch = false;
+        this.insufficient_duty_hours = false;
+        this.employee_ids = [];
+        this.company_names = [];
+        this.location_names = [];
+        this.department_names = [];
+        this.designation_names = [];
+        this.selectedEmplyees = [];
+        this.selectedCompanies = [];
+        this.selectedLocations = [];
+        this.selectedDepartments = [];
+        this.selectedDesignations = [];
 
         this.getAttendanceReport(
             {

@@ -65,7 +65,7 @@ export class PresentComponent implements OnInit, OnDestroy {
 
     rangeDates: Date[];
 
-    shift_status: string = '';
+    shift_status: string = 'P';
 
     late_entry: boolean = false;
 
@@ -167,8 +167,9 @@ export class PresentComponent implements OnInit, OnDestroy {
         this.initCharts();
 
         this.items = [
-            { label: 'Import', icon: 'fas fa-file-import' },
-            { label: 'Export', icon: 'fas fa-download', command: () => this.downloadAttendanceReport() },
+            { label: 'PDF', icon: 'fas fa-download' },
+            { label: 'Excel', icon: 'fas fa-download', command: () => this.downloadAttendanceReport() },
+            // { label: 'Export', icon: 'fas fa-download', command: () => this.downloadAttendanceReport() },
             // { separator: true },
         ];
 
@@ -467,6 +468,27 @@ export class PresentComponent implements OnInit, OnDestroy {
         table.clear();
         this.searchQuery = '';
         this.company_name = '';
+        this.location_name = '';
+        this.department_name = '';
+        this.designation_name = '';
+        this.date = null;
+        this.rangeDates = null;
+        this.shift_status = 'P';
+        this.late_entry = false;
+        this.early_exit = false;
+        this.overtime = false;
+        this.missed_punch = false;
+        this.insufficient_duty_hours = false;
+        this.employee_ids = [];
+        this.company_names = [];
+        this.location_names = [];
+        this.department_names = [];
+        this.designation_names = [];
+        this.selectedEmplyees = [];
+        this.selectedCompanies = [];
+        this.selectedLocations = [];
+        this.selectedDepartments = [];
+        this.selectedDesignations = [];
 
         this.getAttendanceReport(
             {
@@ -538,6 +560,7 @@ export class PresentComponent implements OnInit, OnDestroy {
                     summary: 'Report Downloaded',
                     detail: 'Report is ready to download'
                 });
+                console.log("Triggered")
             },
             error: (error) => {
                 // Handle any error that might occur during the download

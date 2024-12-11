@@ -7,10 +7,10 @@ class CompanySerializer(serializers.ModelSerializer):
         model = models.Company
         fields = '__all__'
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['name'] = instance.name.title()
-        return data
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     data['name'] = instance.name.title()
+    #     return data
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:

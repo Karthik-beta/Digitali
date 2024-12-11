@@ -121,8 +121,8 @@ class Employee(models.Model):
     spouse_name = models.CharField(max_length=100, blank=True, null=True)
     blood_group = models.CharField(max_length=10, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
-    country_name = models.CharField(max_length=100, blank=True, null=True)
-    country_code = models.CharField(max_length=10, blank=True, null=True)
+    country_name = models.CharField(max_length=100, default="India", blank=True, null=True)
+    country_code = models.CharField(max_length=10, default="IN", blank=True, null=True)
     uid_no = models.CharField(max_length=20, blank=True, null=True) #aadhar 
     pan_no = models.CharField(max_length=20, blank=True, null=True)
     voter_id = models.CharField(max_length=20, blank=True, null=True)

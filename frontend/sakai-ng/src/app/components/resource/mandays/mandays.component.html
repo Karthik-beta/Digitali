@@ -2,12 +2,22 @@
 
     <div class="grid p-fluid mt-1">
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
-                <p-calendar [(ngModel)]="date" [iconDisplay]="'input'"
+                <p-calendar [(ngModel)]="dateDelected" [iconDisplay]="'input'"
                 [showIcon]="true"
                 inputId="icondisplay"
-                (onSelect)="onDateChange($event)" inputId="dateRange"></p-calendar>
+                dateFormat="dd/mm/yy"
+                class="p-inputtext-md"
+                (onSelect)="onDateChange($event)" inputId="dateRange" #calendar></p-calendar>
+                <label for="dateRange">Select Date</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" [showIcon]="true" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
+                (onSelect)="onDateRangeChange($event)" inputId="dateRange"></p-calendar>
                 <label for="dateRange">Date Range</label>
             </span>
         </div>

@@ -511,4 +511,11 @@ export class SharedService {
         return this.http.post(`${this.APIUrl}/attendance/mandays/reset/`, {});
     }
 
+    downloadLogsReport(): Observable<any> {
+
+            return this.http.get(`${this.APIUrl}/logs/export/`, {
+                responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+            });
+        }
+
 }

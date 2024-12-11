@@ -46,7 +46,7 @@ def get_scheduler():
 
 def run_my_command():
     """Execute management commands with better error handling"""
-    commands = ['absentees', 'task', 'mandays']
+    commands = ['sync_logs', 'absentees', 'task', 'mandays']
     
     for command in commands:
         try:

@@ -2,7 +2,6 @@
 from django.core.management.base import BaseCommand
 import pyodbc
 import os
-from dotenv import load_dotenv
 
 # Load the correct environment file
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')

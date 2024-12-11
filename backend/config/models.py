@@ -10,9 +10,9 @@ class Company(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        self.name = self.name.title()
-        super(Company, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.name = self.name.upper()
+    #     super(Company, self).save(*args, **kwargs)
     
     class Meta:
         db_table = 'company'
@@ -26,9 +26,9 @@ class Location(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        self.name = self.name.title()
-        super(Location, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.name = self.name.title()
+    #     super(Location, self).save(*args, **kwargs)
     
     class Meta:
         db_table = 'location'
@@ -42,9 +42,9 @@ class Department(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        self.name = self.name.title()
-        super(Department, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.name = self.name.upper()
+    #     super(Department, self).save(*args, **kwargs)
     
     class Meta:
         db_table = 'department'
@@ -58,9 +58,9 @@ class Designation(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        self.name = self.name.title()
-        super(Designation, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.name = self.name.upper()
+    #     super(Designation, self).save(*args, **kwargs)
     
     class Meta:
         db_table = 'designation'
@@ -74,9 +74,9 @@ class Division(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        self.name = self.name.title()
-        super(Division, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.name = self.name.title()
+    #     super(Division, self).save(*args, **kwargs)
     
     class Meta:
         db_table = 'division'

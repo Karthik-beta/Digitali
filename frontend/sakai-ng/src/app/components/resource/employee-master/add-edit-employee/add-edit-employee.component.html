@@ -16,7 +16,7 @@
                             <div class="field col-12 md:col-6 lg:col-6 xl:col-4">
                                 <span class="p-float-label">
                                     <input type="text" id="employee_id" pInputText [(ngModel)]="employee_id" class="p-inputtext-sm"/>
-                                    <label for="employee_id">Employee ID</label>
+                                    <label for="employee_id">Employee ID <span class="text-red-500">*</span></label>
                                     <small *ngIf="employee_id_error">Employee Id Already Exists</small>
                                 </span>
                             </div>
@@ -24,14 +24,14 @@
                             <div class="field col-12 md:col-6 lg:col-6 xl:col-4">
                                 <span class="p-float-label">
                                     <input type="text" id="enroll_id" pInputText [(ngModel)]="enroll_id" class="p-inputtext-sm"/>
-                                    <label for="enroll_id">Device Enroll ID</label>
+                                    <label for="enroll_id">Device Enroll ID <span class="text-red-500">*</span></label>
                                 </span>
                             </div>
 
                             <div class="field col-12 md:col-6 lg:col-6 xl:col-4">
                                 <span class="p-float-label">
                                     <input type="text" id="employee_name" pInputText [(ngModel)]="employee_name" class="p-inputtext-sm"/>
-                                    <label for="employee_name">Employee Name</label>
+                                    <label for="employee_name">Employee Name <span class="text-red-500">*</span></label>
                                 </span>
                             </div>
 
@@ -211,7 +211,7 @@
                             [options]="companies" [(ngModel)]="selectedCompany" placeholder="Select a Company"
                             [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
                             inputId="company" (onChange)="assignCompanyId(selectedCompany)"></p-dropdown>
-                            <label for="company">Company</label>
+                            <label for="company">Company <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -220,7 +220,7 @@
                             <p-dropdown
                             [options]="locations" [(ngModel)]="selectedLocation" placeholder="Select a Location"
                             optionLabel="name" class="p-inputtext-sm" inputId="location" (onChange)="assignLocationId(selectedLocation)"></p-dropdown>
-                            <label for="location">Location</label>
+                            <label for="location">Location <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -229,7 +229,7 @@
                             <p-dropdown [options]="categories" [(ngModel)]="selectedCategory" placeholder="Select a Category"
                             optionLabel="display_name" class="p-inputtext-sm" inputId="category"
                             (onChange)="assignCategoryValue($event.value)"></p-dropdown>
-                            <label for="category">Category</label>
+                            <label for="category">Category <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -245,7 +245,7 @@
                             <p-dropdown [options]="departments" [(ngModel)]="selectedDepartment"
                             placeholder="Select a Department" optionLabel="name"
                             class="p-inputtext-sm" inputId="department" (onChange)="assignDepartmentId(selectedDepartment)"></p-dropdown>
-                            <label for="department">Department</label>
+                            <label for="department">Department <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -254,7 +254,7 @@
                             <p-dropdown [options]="designations" [(ngModel)]="selectedDesignation"
                             placeholder="Select a Designation" optionLabel="name"
                             class="p-inputtext-sm" inputId="designation" (onChange)="assignDesignationId(selectedDesignation)"></p-dropdown>
-                            <label for="designation">Designation</label>
+                            <label for="designation">Designation <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -263,7 +263,7 @@
                             <p-dropdown [options]="divisions" [(ngModel)]="selectedDivision"
                             placeholder="Select a Division" optionLabel="name"
                             class="p-inputtext-sm" inputId="division" (onChange)="assignDivisionId(selectedDivision)"></p-dropdown>
-                            <label for="division">Division</label>
+                            <label for="division">Division <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -297,7 +297,7 @@
                             <p-dropdown [options]="jobTypes" [(ngModel)]="selectedJobType"
                             placeholder="Select a Job Type" optionLabel="display_name"
                             class="p-inputtext-sm" inputId="job_type" (onChange)="assignJobValue(selectedJobType)"></p-dropdown>
-                            <label for="job_type">Job Type</label>
+                            <label for="job_type">Job Type <span class="text-red-500">*</span></label>
                         </span>
                     </div>
 
@@ -320,7 +320,7 @@
                     </div>
 
                     <div class="field col-12 md:col-6 lg:col-6 xl:col-3">
-                        <h6 class="block">Job Status :</h6>
+                        <h6 class="block">Job Status : <span class="text-red-500">*</span></h6>
                         <div class="flex flex-wrap gap-2">
                             <div class="flex align-items-center">
                                 <p-radioButton name="jobStatus" value="Active" [(ngModel)]="jobStatus" inputId="jobStatus1"></p-radioButton>

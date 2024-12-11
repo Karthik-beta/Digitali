@@ -84,7 +84,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
         this.getAllOptions();
 
-        this.getEmployeeId();
 
 
  //   this.imageInfos = this.uploadService.getFiles();
@@ -235,15 +234,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     toggleTimeSetting() {
         this.punchCollapsed = !this.punchCollapsed;
         this.timeCollapsed = !this.timeCollapsed;
-    }
-
-    getEmployeeId(): void {
-        // Use startWith to trigger an initial HTTP request
-        this.service.getUniqueId().subscribe((data: any) => {
-            this.employee_id = data.employee_id;
-            this.enroll_id = data.device_enroll_id;
-            // console.log("Employee ID:", this.employee_id);
-        });
     }
 
     selectedAccountType: any;
@@ -517,7 +507,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
                 this.activeStepperNumber = 0;
 
-                this.getEmployeeId();
 
                 console.log("Employee Added:", data);
                 this.messageService.add({severity: 'success', summary: 'Employee Added', detail: 'Employee added successfully'});
@@ -548,12 +537,12 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('esi_no', this.esi_no || '');
         formData.append('insurance_no', this.insurance_no || '');
 
-        formData.append('bank_name', this.bank_name);
-        formData.append('bank_branch', this.branch_name);
-        formData.append('bank_account_no', this.account_no);
-        formData.append('bank_account_name', this.account_name);
-        formData.append('bank_account_type', this.account_type);
-        formData.append('ifsc_code', this.ifsc_code);
+        formData.append('bank_name', this.bank_name || '');
+        formData.append('bank_branch', this.branch_name || '');
+        formData.append('bank_account_no', this.account_no || '');
+        formData.append('bank_account_name', this.account_name || '');
+        formData.append('bank_account_type', this.account_type || '');  // Ensure this is a valid choice
+        formData.append('ifsc_code', this.ifsc_code || '');
 
         // formData.append('company', Number(this.company).toString());
         // formData.append('location', Number(this.location).toString());
@@ -571,12 +560,12 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
         formData.append('emergency_contact_name', this.emergency_contact_name);
         // formData.append('emergency_contact_no', Number(this.emergency_contact_no).toString());
-        formData.append('marital_status', this.marital_status);
+        formData.append('marital_status', this.marital_status || '');
         formData.append('spouse_name', this.spouse_name);
         formData.append('blood_group', this.blood_group);
         formData.append('date_of_birth', this.datePipe.transform(this.date_of_birth, 'yyyy-MM-dd') || '');
-        formData.append('country_name', this.country_name);
-        formData.append('country_code', this.country_code);
+        formData.append('country_name', this.country_name || 'India');
+        formData.append('country_code', this.country_code || 'IN');
         formData.append('uid_no', this.uid_no);
         formData.append('pan_no', this.pan_no);
         formData.append('voter_id', this.voter_id);
@@ -607,7 +596,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
                 this.activeStepperNumber = 0;
 
-                this.getEmployeeId();
 
                 console.log("Employee Updated:", data);
                 this.messageService.add({severity: 'success', summary: 'Employee Updated', detail: 'Employee Updated successfully'});

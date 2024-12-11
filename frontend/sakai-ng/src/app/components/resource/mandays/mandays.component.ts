@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { SharedService } from 'src/app/shared.service';
 import { MessageService } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api';
+import { Table } from 'primeng/table';
 import { MenuItem } from 'primeng/api';
+import { Calendar } from 'primeng/calendar';
 
 @Component({
   selector: 'app-mandays',
@@ -10,6 +12,9 @@ import { MenuItem } from 'primeng/api';
   styleUrl: './mandays.component.scss'
 })
 export class MandaysComponent implements OnInit {
+
+    @ViewChild('dt') dt: Table;
+    @ViewChild('calendar') calendar!: Calendar;
 
     mandaysAttendanceList: any[] = [];
     totalRecords: number = 0;
@@ -20,7 +25,8 @@ export class MandaysComponent implements OnInit {
     showElements: string = 'true';
     visible: boolean = false;
     position: string = 'top';
-    date: string = '';
+    dateSelected: Date = new Date();
+    dateSelectedString: string = '';
     logdate: string = '';
     items: MenuItem[] = [];
 
@@ -38,21 +44,32 @@ export class MandaysComponent implements OnInit {
     }
 
     onDateChange(event: any) {
-        const selectedDate = new Date(event);  // Convert the event to a Date object
-        const year = selectedDate.getFullYear();
-        const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);  // Months are zero-indexed
-        const day = ('0' + selectedDate.getDate()).slice(-2);  // Ensure two digits for the day
-        const formattedDate = `${year}-${month}-${day}`;
+        if (event) {
+            const selectedDate = new Date(event);
+            this.dateSelected = selectedDate;
+            this.dateSelectedString = this.formatDate(this.dateSelected);
+        } else {
+            this.dateSelected = null;
+            this.dateSelectedString = '';
+        }
+    }
 
-        this.date = formattedDate;  // Assign the formatted date to the date property
 
+    formatDate(date: Date): string {
+        if (!date) {
+          return '';
+        }
+        const year = date.getFullYear().toString(); // Keeping the full year
+        const month = ('0' + (date.getMonth() + 1)).slice(-2); // Adding 1 to month as it's 0-indexed
+        const day = ('0' + date.getDate()).slice(-2);
+        return `${year}-${month}-${day}`; // Format mm-dd-yyyy
     }
 
     downloadMandaysAttendanceReport() {
         this.visible = true;
 
         const params: any = {
-            date: this.date,
+            date: this.dateSelectedString,
         };
 
         this.service.downloadMandaysAttendanceReport(params).subscribe({
@@ -106,11 +123,23 @@ export class MandaysComponent implements OnInit {
         });
     }
 
+    clear(table: Table) {
+        table.clear();
+        // this.showElements = 'true';
+        if (this.calendar) {
+            this.calendar.value = null;
+            this.calendar.updateInputfield();
+        }
+        this.dateSelected = null; // Reset the model value
+        this.dateSelectedString = ''; // Clear the formatted string
+        this.onDateChange(null);
+    }
+
     downloadMandaysWorkedReport() {
         this.visible = true;
 
         const params: any = {
-            date: this.date,
+            date: this.dateSelectedString,
         };
 
         this.service.downloadMandaysWorkedReport(params).subscribe({
@@ -189,7 +218,7 @@ export class MandaysComponent implements OnInit {
         this.visible = true;
 
         const params: any = {
-            date: this.date,
+            date: this.dateSelectedString,
         };
 
         this.service.downloadMandaysMissedPunchReport(params).subscribe({
@@ -248,10 +277,8 @@ export class MandaysComponent implements OnInit {
         this.loading = true;
 
         const params: any = {
-            logdate: this.date,
+            logdate: this.dateSelectedString,
         };
-
-        console.log('Params:', params); // Check the params object
 
         this.service.getMandaysAttendanceList(params).subscribe((data: any) => {
             this.mandaysAttendanceList = data.results;

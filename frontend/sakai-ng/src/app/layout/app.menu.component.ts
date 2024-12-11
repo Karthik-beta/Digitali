@@ -151,7 +151,8 @@ export class AppMenuComponent implements OnInit {
                                             { label: 'Monthly Muster Roll Register', icon: 'fa-solid fa-calendar-plus' },
                                             { label: 'Payroll Output Register', icon: 'fa-solid fa-calendar-plus' },
                                         ]
-                                    }
+                                    },
+                                    { label: 'Device Logs', icon: 'fa-solid fa-fingerprint', routerLink: ['/logs'] },
                                 ]
                             },
                             // {

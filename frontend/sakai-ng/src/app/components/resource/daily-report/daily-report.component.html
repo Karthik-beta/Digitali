@@ -177,15 +177,15 @@
             </span>
         </div> -->
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
-                <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
+                <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" [showIcon]="true" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
                 (onSelect)="onDateRangeChange($event)" inputId="dateRange"></p-calendar>
                 <label for="dateRange">Date Range</label>
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-multiSelect [options]="employeeList" [(ngModel)]="selectedEmployees" placeholder="Select a Employee"
                 [autoDisplayFirst]="true" optionLabel="combined_field" class="p-inputtext-sm"
@@ -195,7 +195,7 @@
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-multiSelect [options]="companies" [(ngModel)]="selectedCompanies" placeholder="Select a Company"
                 [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
@@ -205,14 +205,7 @@
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
-            <!-- <span class="p-float-label">
-                <p-dropdown
-                [options]="locations" [(ngModel)]="selectedLocation" placeholder="Select a Location"
-                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
-                inputId="location" (onChange)="assignLocationId(selectedLocation)"></p-dropdown>
-                <label for="location">Location</label>
-            </span> -->
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-multiSelect [options]="locations" [(ngModel)]="selectedLocations" placeholder="Select Locations"
                 [autoDisplayFirst]="true" optionLabel="name" class="p-multiselect-sm"
@@ -222,7 +215,7 @@
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-multiSelect [options]="departments" [(ngModel)]="selectedDepartments" placeholder="Select a Department"
                 [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
@@ -232,7 +225,7 @@
             </span>
         </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-multiSelect [options]="designations" [(ngModel)]="selectedDesignations" placeholder="Select a Designation"
                 [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
@@ -242,17 +235,16 @@
             </span>
         </div>
 
-        <!-- <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
-                <p-multiSelect [options]="criteria" [(ngModel)]="selectedDepartments" placeholder="Select a Department"
-                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
-                inputId="employee" display="chip">
-                </p-multiSelect>
-                <label for="employee">Employee</label>
+                <p-dropdown
+                optionLabel="name"
+                placeholder="Select Employee Type"></p-dropdown>
+                <label for="employeeType">Employee Type</label>
             </span>
-        </div> -->
+        </div>
 
-        <div class="field col-12 md:col-4 lg:col-4 xl:col-4">
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
                 <p-dropdown
                 [options]="criteria"

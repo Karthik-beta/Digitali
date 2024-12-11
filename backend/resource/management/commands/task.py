@@ -13,6 +13,7 @@ from resource.models import Logs, LastLogId  # Import your models
 # from resource.tasks import scan_for_data   # Import the function to execute
 
 from resource.attendance2 import AttendanceProcessor
+# from resource.attendance4 import AttendanceProcessor
 
 class Command(BaseCommand):
     help = 'Processes new logs from the database.'

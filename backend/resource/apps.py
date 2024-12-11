@@ -20,6 +20,8 @@ class ResourceConfig(AppConfig):
             try:
                 if ENVIRONMENT != 'local':
                     call_command('migrate', interactive=False)  # Ensure all migrations are applied
+                    call_command('absentees', days=400)
+                    call_command('reset_sequences')
                     scheduler.start()
                     print("Scheduler started.")
             except Exception as e:
