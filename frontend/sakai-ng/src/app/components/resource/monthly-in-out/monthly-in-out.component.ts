@@ -109,6 +109,8 @@ export class MonthlyInOutComponent implements OnInit {
 
     visible: boolean = false;
 
+    position: string = 'top';
+
     employeeList: any[] = [];
 
     employee_id: any;
@@ -143,6 +145,8 @@ export class MonthlyInOutComponent implements OnInit {
 
     criteria: Criteria[] | undefined;
 
+    report_status: string = '';
+
     constructor(
         private service: SharedService,
         private messageService: MessageService,
@@ -156,13 +160,16 @@ export class MonthlyInOutComponent implements OnInit {
         ];
 
         this.criteria = [
-            { name: 'Present', code: 'P',command: () => this.searchAttendance('P') },
-            { name: 'Absent', code: 'A', command: () => this.searchAttendance('A') },
-            { name: 'Late Entry', code: 'LE', command: () => this.performAttendanceAction('lateEntry') },
-            { name: 'Early Exit', code: 'EE', command: () => this.performAttendanceAction('earlyExit') },
-            { name: 'Overtime', code: 'OT', command: () => this.performAttendanceAction('overtime') },
-            { name: 'Missed Punch', code: 'MP', command: () => this.performAttendanceAction('missedPunch')},
-            { name: 'Insufficient Duty Hours', code: 'IDH', command: () => this.performAttendanceAction('insufficientDutyHours')},
+            { name: 'In-Out Movements Register', code: 'allemployees', command: () => this.setReportStatus('allemployees')},
+            { name: 'Duty Hours Register', code: 'monthly_duty_hours', command: () => this.setReportStatus('monthly_duty_hours') },
+            { name: 'Musterrole Register', code: 'monthly_muster_role', command: () => this.setReportStatus('monthly_muster_role') },
+            { name: 'Payroll Register', code: 'monthly_payroll', command: () => this.setReportStatus('monthly_payroll') },
+            { name: 'Shift Roaster Register', code: 'monthly_shift_roaster', command: () => this.setReportStatus('monthly_shift_roaster') },
+            { name: 'Overtime Register', code: 'monthly_overtime', command: () => this.setReportStatus('monthly_overtime')},
+            { name: 'Late Entry Register', code: 'monthly_late_entry', command: () => this.setReportStatus('monthly_late_entry')},
+            { name: 'Early Exit Register', code: 'monthly_early_exit', command: () => this.setReportStatus('monthly_early_exit')},
+            { name: 'Absent Register', code: 'monthly_absent', command: () => this.setReportStatus('monthly_absent')},
+            { name: 'Present Register', code: 'monthly_present', command: () => this.setReportStatus('monthly_present')},
         ];
 
         this.initCharts();
@@ -309,7 +316,6 @@ export class MonthlyInOutComponent implements OnInit {
         const formattedDate = this.formatDate(query);
         this.searchQuery = formattedDate;
         this.dt.filterGlobal(formattedDate, 'contains');
-        console.log(formattedDate);
     }
 
     onCriteriaChange(event: any) {
@@ -335,35 +341,15 @@ export class MonthlyInOutComponent implements OnInit {
     }
 
     performAttendanceAction(actionType: string) {
-        // Reset all flags to false
-        this.shift_status = '';
-        this.late_entry = false;
-        this.early_exit = false;
-        this.overtime = false;
-        this.missed_punch = false;
-        this.insufficient_duty_hours = false;
+        const params: any = {
+            month: this.selectedMonth || '',
+            year: this.selectedYear || '',
+            actionType: actionType, // Include the actionType in the parameters
+        };
+    }
 
-        switch(actionType) {
-            case 'lateEntry':
-                this.late_entry = true;
-                break;
-            case 'earlyExit':
-                this.early_exit = true;
-                break;
-            case 'overtime':
-                this.overtime = true;
-                break;
-            case 'missedPunch':
-                this.missed_punch = true;
-                break;
-            case 'insufficientDutyHours':
-                this.insufficient_duty_hours = true;
-                break;
-            default:
-                // Handle default case if needed
-                break;
-        }
-        this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    setReportStatus(status: string) {
+        this.report_status = status;
     }
 
     onDateRangeChange(event: any) {
@@ -510,8 +496,6 @@ export class MonthlyInOutComponent implements OnInit {
             year: this.selectedYear || '',
         };
 
-        console.log("PARAMS:", params);
-
         this.service.downloadEmployeeMonthlyReport(params).subscribe((data: any) => {
             const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = window.URL.createObjectURL(blob);
@@ -533,35 +517,269 @@ export class MonthlyInOutComponent implements OnInit {
             this.selectedYear = year;
             this.selectedMonth = month;
 
-            console.log("Month:", this.selectedMonth);
-            console.log("Year:", this.selectedYear);
         } else {
             console.error("Invalid Date object:", this.month);
         }
     }
 
-    downloadAllEmployeeMonthlyReport() {
-        const params: any = {
+    downloadAllEmployeeMonthlyReport(params: any, actionType: string) {
+        this.visible = true;
+        this.counter = 0;
+        this.startCounter();
+
+        // Use 'allemployees' as the default actionType if report_status is empty
+        const resolvedActionType = actionType || 'allemployees';
+
+        this.service.downloadAllEmployeeMonthlyReport(params, resolvedActionType).subscribe({
+            next: (data: any) => {
+                // Create a Blob object from the response data
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                // Create a URL for the Blob
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a link element and set up the download
+                const link = document.createElement('a');
+                link.href = url;
+
+                // Dynamically set the file name based on the resolved actionType and current date
+                const reportFileName = this.getReportFileName(resolvedActionType);
+                const currentDate = this.formatCurrentDate();
+                link.download = `${reportFileName}_${currentDate}.xlsx`;
+
+                // Append the link to the body, trigger the click, and remove the link
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+
+                // Set visibility to false and show success message
+                this.visible = false;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Report Downloaded',
+                    detail: 'The report is ready and has been downloaded successfully.'
+                });
+            },
+            error: (error: any) => {
+                // Handle any error that might occur during the download
+                console.error('Error downloading the report:', error);
+
+                // Set visibility to false and show error message
+                this.stopCounter();
+                this.visible = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'An error occurred while downloading the report. Please try again.'
+                });
+            }
+        });
+    }
+
+
+    // Helper function to format the current date as YYYY-MM-DD
+    formatCurrentDate(): string {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    getReportFileName(actionType: string): string {
+        const reportNames: { [key: string]: string } = {
+            allemployees: 'Monthly_In_Out_Movements_Register',
+            monthly_duty_hours: 'Monthly_Duty_Hours_Register',
+            monthly_muster_role: 'Monthly_Musterrole_Register',
+            monthly_payroll: 'Monthly_Payroll_Register',
+            monthly_shift_roaster: 'Monthly_Shift_Roaster_Register',
+            monthly_overtime: 'Monthly_Overtime_Register',
+            monthly_late_entry: 'Monthly_Late_Entry_Register',
+            monthly_early_exit: 'Monthly_Early_Exit_Register',
+            monthly_absent: 'Monthly_Absent_Register',
+            monthly_present: 'Monthly_Present_Register',
+        };
+        return reportNames[actionType] || 'All_Employee_Monthly_Report';
+    }
+
+    onExportClick() {
+        const params = {
             month: this.selectedMonth || '',
             year: this.selectedYear || '',
         };
 
-        this.service.downloadAllEmployeeMonthlyReport(params).subscribe((data: any) => {
-            const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'All_Employee_Monthly_Report.xlsx';
-            link.click();
-            window.URL.revokeObjectURL(url);
-        });
+        // Default to 'allemployees' if report_status is empty
+        const actionType = this.report_status || 'allemployees';
+
+        // Trigger the download with the selected parameters and actionType
+        this.downloadAllEmployeeMonthlyReport(params, actionType);
     }
 
+    counter: number = 0;
+    private intervalId: any;
+
+    startCounter() {
+        this.intervalId = setInterval(() => {
+            this.counter += 0.1; // Increment counter by 10ms in seconds
+        }, 100); // Run every 10ms
+    }
+
+    stopCounter() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            this.counter = 0;
+        }
+        this.counter = 0;
+    }
 
     ngOnDestroy() {
 
         if (this.AttendanceMonthlyMetricSubscription) {
             this.AttendanceMonthlyMetricSubscription.unsubscribe();
+        }
+    }
+
+    customers: any[] = [
+        {
+            id: 1000,
+            representative: {
+                name: 'esrgesr rgerg',
+                image: 'ionibowcher.png'
+            },
+            day_1: {
+                time_in: '09:00',
+                time_out: '17:00'
+            },
+            day_2: {
+                time_in: '09:00',
+                time_out: '17:00'
+            },
+            day_3: {
+                time_in: '09:00',
+                time_out: '17:00'
+            },
+            day_4: {
+                time_in: '09:00',
+                time_out: '17:00'
+            },
+            day_5: {
+                time_in: '09:00',
+                time_out: '17:00'
+            }
+        },
+        // Add more customer objects as needed
+    ];
+
+    customers2: any[] = [
+        {
+            id: 1000,
+            representative: {
+                name: 'esrgesr rgerg',
+                image: 'ionibowcher.png'
+            },
+            company: 'Company A',
+            department: 'Department A',
+            designation: 'Designation A',
+            location: 'Location A',
+            total_time: '40:00:00', // Total time for the employee
+            days: [
+                { day: 'Day 1', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 2', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 3', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 4', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 5', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 6', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 7', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 8', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 9', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 10', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 11', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 12', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 13', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 14', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 15', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 16', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 17', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 18', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 19', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 20', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 21', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 22', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 23', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 24', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 25', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 26', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 27', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 28', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 29', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 30', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' }
+            ]
+        },
+        {
+            id: 1001,
+            representative: {
+                name: 'asd asd',
+                image: 'amyelsner.png'
+            },
+            company: 'Company B',
+            department: 'Department A',
+            designation: 'Designation A',
+            location: 'Location A',
+            total_time: '40:00:00', // Total time for the employee
+            days: [
+                { day: 'Day 1', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 2', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 3', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 4', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' },
+                { day: 'Day 5', time_in: '09:00', time_out: '17:00', duration: '8:00:00', shift: 'FS' }
+            ]
+        },
+    ];
+
+    calculateTotalTime(representativeName: string): string {
+        const employee = this.customers.find(c => c.representative.name === representativeName);
+        if (employee) {
+            const totalHours = employee.days.reduce((sum, day) => sum + parseInt(day.duration), 0);
+            return `${totalHours} hours`;
+        }
+        return '0 hours';
+    }
+
+    calculateCustomerTotal(name: string) {
+        let total = 0;
+
+        if (this.customers) {
+            for (let customer of this.customers) {
+                if (customer.representative?.name === name) {
+                    total++;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    getSeverity(status: string) {
+        switch (status) {
+            case 'unqualified':
+                return 'danger';
+
+            case 'qualified':
+                return 'success';
+
+            case 'new':
+                return 'info';
+
+            case 'negotiation':
+                return 'warning';
+
+            case 'renewal':
+                return null;
+
+            default:
+                return '';
         }
     }
 

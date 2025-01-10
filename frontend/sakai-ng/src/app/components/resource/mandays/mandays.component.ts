@@ -6,6 +6,26 @@ import { Table } from 'primeng/table';
 import { MenuItem } from 'primeng/api';
 import { Calendar } from 'primeng/calendar';
 
+interface Employee {
+    employee_id: string;
+}
+
+interface Location {
+    name: string;
+}
+
+interface Company {
+    name: string;
+}
+
+interface Department {
+    name: string;
+}
+
+interface Designation {
+    name: string;
+}
+
 @Component({
   selector: 'app-mandays',
   templateUrl: './mandays.component.html',
@@ -28,7 +48,44 @@ export class MandaysComponent implements OnInit {
     dateSelected: Date = new Date();
     dateSelectedString: string = '';
     logdate: string = '';
+
+    searchQuery: string = '';
+
     items: MenuItem[] = [];
+
+    date: Date;
+
+    rangeDates: Date[];
+
+    employeeList: any[] = [];
+
+    companies: any[] = [];
+
+    locations: any[] = [];
+
+    departments: any[] = [];
+
+    designations: any[] = [];
+
+    employee_ids: string[] = [];
+
+    location_names: string[] = [];
+
+    company_names: string[] = [];
+
+    department_names: string[] = [];
+
+    designation_names: string[] = [];
+
+    selectedLocations: Location[] = [];
+
+    selectedCompanies: Company[] = [];
+
+    selectedEmployees: Employee[] = [];
+
+    selectedDepartments: Department[] = [];
+
+    selectedDesignations: Designation[] = [];
 
     constructor(private service: SharedService, private messageService: MessageService,) { }
 
@@ -41,6 +98,12 @@ export class MandaysComponent implements OnInit {
             { separator: true },
             { label: 'Reprocess Report', icon: 'fas fa-redo-alt', command: () => this.postReprocessLogs() },
         ];
+
+        this.getEmployeeList();
+        this.getCompaniesList();
+        this.getLocationsList();
+        this.getDepartmentsList();
+        this.getDesignationList();
     }
 
     onDateChange(event: any) {
@@ -54,6 +117,103 @@ export class MandaysComponent implements OnInit {
         }
     }
 
+    getEmployeeList() {
+
+        this.service.getEmployeeDropdown().subscribe(data => {
+            this.employeeList = data;
+        });
+    }
+
+    getCompaniesList() {
+
+        const params: any = {
+            page: 1,
+            page_size: 100,
+            sortField: '',
+            ordering: '',
+        };
+
+        this.service.getCompanies(params).subscribe((data: any) => {
+            this.companies = data.results;
+        });
+    }
+
+    getLocationsList() {
+
+        const params: any = {
+            page: 1,
+            page_size: 100,
+            sortField: '',
+            ordering: '',
+        };
+
+        this.service.getLocations(params).subscribe((data: any) => {
+            this.locations = data.results;
+        });
+    }
+
+    getDepartmentsList() {
+
+        const params: any = {
+            page: 1,
+            page_size: 100,
+            sortField: '',
+            ordering: '',
+        };
+
+        this.service.getDepartments(params).subscribe((data: any) => {
+            this.departments = data.results;
+        }
+        );
+    }
+
+    getDesignationList() {
+        const params: any = {
+            page: 1,
+            page_size: 100,
+            sortField: '',
+            ordering: '',
+        };
+
+        this.service.getDesignations(params).subscribe((data: any) => {
+            this.designations = data.results;
+        });
+    }
+
+    assignEmployeeId(selectedEmployees: Employee[]) {
+        // Set the search query to the selected employee ID
+        this.employee_ids = selectedEmployees.map(employee => employee.employee_id);
+        this.getMandaysAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    }
+
+    assignCompanyId(selectedCompanies: Company[]) {
+        // Set the search query to the selected company ID
+        this.company_names = selectedCompanies.map(company => company.name);
+        this.getMandaysAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    }
+
+    assignLocationId(selectedLocations: Location[]) {
+        // Set the search query to the selected company ID
+        this.location_names = selectedLocations.map(location => location.name);
+        this.getMandaysAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    }
+
+    assignDepartmentId(selectedDepartments: Department[]) {
+        // Set the search query to the selected company ID
+        this.department_names = selectedDepartments.map(department => department.name);
+        this.getMandaysAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    }
+
+    assignDesignationId(selectedDesignations: Designation[]) {
+        // Set the search query to the selected company ID
+        this.designation_names = selectedDesignations.map(designation => designation.name);
+        this.getMandaysAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
+    }
+
+    onSearchChange(query: string): void {
+        this.searchQuery = query;
+        this.dt.filterGlobal(query, 'contains');
+    }
 
     formatDate(date: Date): string {
         if (!date) {
@@ -62,15 +222,25 @@ export class MandaysComponent implements OnInit {
         const year = date.getFullYear().toString(); // Keeping the full year
         const month = ('0' + (date.getMonth() + 1)).slice(-2); // Adding 1 to month as it's 0-indexed
         const day = ('0' + date.getDate()).slice(-2);
-        return `${year}-${month}-${day}`; // Format mm-dd-yyyy
+        return `${month}-${day}-${year}`; // Format mm-dd-yyyy
     }
 
     downloadMandaysAttendanceReport() {
         this.visible = true;
 
         const params: any = {
-            date: this.dateSelectedString,
+            search: this.searchQuery || '',
+            employee_ids: this.employee_ids.join(','),
+            company_name: this.company_names.join(','),
+            location_name: this.location_names.join(','),
+            department_name: this.department_names.join(','),
+            designation_name: this.designation_names.join(','),
         };
+
+        if (this.rangeDates && this.rangeDates.length === 2 && this.rangeDates[0] && this.rangeDates[1]) {
+            params.date_from = this.formatDate(this.rangeDates[0]);
+            params.date_to = this.formatDate(this.rangeDates[1]);
+        }
 
         this.service.downloadMandaysAttendanceReport(params).subscribe({
             next: (data) => {
@@ -139,8 +309,18 @@ export class MandaysComponent implements OnInit {
         this.visible = true;
 
         const params: any = {
-            date: this.dateSelectedString,
+            search: this.searchQuery || '',
+            employee_ids: this.employee_ids.join(','),
+            company_name: this.company_names.join(','),
+            location_name: this.location_names.join(','),
+            department_name: this.department_names.join(','),
+            designation_name: this.designation_names.join(','),
         };
+
+        if (this.rangeDates && this.rangeDates.length === 2 && this.rangeDates[0] && this.rangeDates[1]) {
+            params.date_from = this.formatDate(this.rangeDates[0]);
+            params.date_to = this.formatDate(this.rangeDates[1]);
+        }
 
         this.service.downloadMandaysWorkedReport(params).subscribe({
             next: (data) => {
@@ -214,6 +394,21 @@ export class MandaysComponent implements OnInit {
         });
     }
 
+    onDateRangeChange(event: any) {
+        if (this.rangeDates && this.rangeDates.length === 2 && this.rangeDates[0] && this.rangeDates[1]) {
+            const params: any = {
+                page: ((event.first || 0 ) / (event.rows || 5) + 1).toString(),
+                page_size: (event.rows || 10).toString(),
+                sortField: event.sortField || '',
+                ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '',
+                date_from: this.formatDate(this.rangeDates[0]),
+                date_to: this.formatDate(this.rangeDates[1]),
+            };
+
+        this.getMandaysAttendanceReport(params);
+        }
+    }
+
     downloadMandaysMissedPunchReport() {
         this.visible = true;
 
@@ -277,10 +472,25 @@ export class MandaysComponent implements OnInit {
         this.loading = true;
 
         const params: any = {
-            logdate: this.dateSelectedString,
+            page: ((event.first || 0 ) / (event.rows || 5) + 1).toString(),
+            page_size: (event.rows || 10).toString(),
+            sortField: event.sortField || '',
+            ordering: event.sortField ? `${event.sortOrder === 1 ? '' : '-'}${event.sortField}` : '',
+            search: this.searchQuery || '',
+            employee_ids: this.employee_ids.join(','),
+            company_name: this.company_names.join(','),
+            location_name: this.location_names.join(','),
+            department_name: this.department_names.join(','),
+            designation_name: this.designation_names.join(','),
         };
 
+        if (this.rangeDates && this.rangeDates.length === 2 && this.rangeDates[0] && this.rangeDates[1]) {
+            params.date_from = this.formatDate(this.rangeDates[0]);
+            params.date_to = this.formatDate(this.rangeDates[1]);
+        }
+
         this.service.getMandaysAttendanceList(params).subscribe((data: any) => {
+            console.log(data);
             this.mandaysAttendanceList = data.results;
             this.totalRecords = data.count;
             this.loading = false;

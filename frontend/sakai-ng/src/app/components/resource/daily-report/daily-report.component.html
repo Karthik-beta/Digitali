@@ -339,9 +339,6 @@
             <th>
                 OT Hours
             </th>
-            <th>
-                Status
-            </th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-item let-i="rowIndex">
@@ -361,19 +358,16 @@
             <td>{{ item.designation_name }}</td>
             <td>{{ item.logdate | date: 'dd/MM/yyyy' }}</td>
             <td>{{ item.shift }}</td>
-            <!-- <td><span [class]="'status-badge status-' + item.shift_status">{{ item.shift_status }}</span></td> -->
-            <td><span [class]="getClassForShiftStatus(item.shift_status)">{{ item.shift_status }}</span></td>
+            <td class="text-center"><span [class]="'status-badge status-' + item.shift_status">{{ item.shift_status }}</span></td>
             <td>{{ item.first_logtime }}</td>
             <td>{{ item.last_logtime }}</td>
-            <td><span [class]="getClassForTotalTime(item.total_time)">{{ item.total_time }}</span></td>
+            <td><span>{{ item.total_time }}</span></td>
             <td *ngIf="item.late_entry !== '00:00:00'; else emptyLateEntry">{{ item.late_entry }}</td>
             <ng-template #emptyLateEntry><td></td></ng-template>
             <td *ngIf="item.early_exit !== '00:00:00'; else emptyEarlyExit">{{ item.early_exit }}</td>
             <ng-template #emptyEarlyExit><td></td></ng-template>
             <td *ngIf="item.overtime !== '00:00:00'; else emptyOvertime">{{ item.overtime }}</td>
             <ng-template #emptyOvertime><td></td></ng-template>
-            <td style="padding: 0em">
-            </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">

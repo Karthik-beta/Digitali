@@ -615,7 +615,7 @@
                             <div class="grid p-fluid">
                                 <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
                                     <span class="p-float-label">
-                                        <p-dropdown [options]="shifts" [(ngModel)]="selectedShift" (onChange)="assignShiftId(selectedShift)" placeholder="Select Shift" optionLabel="name" class="p-inputtext-sm" inputId="shift"></p-dropdown>
+                                        <p-dropdown [options]="shifts" [(ngModel)]="selectedFixedShift" (onChange)="assignFixedShift(selectedFixedShift)" placeholder="Select Shift" optionLabel="name" class="p-inputtext-sm" inputId="shift"></p-dropdown>
                                         <label for="shift">Assigned Shift</label>
                                     </span>
                                 </div>
@@ -626,55 +626,18 @@
                             <!-- <p-fieldset legend="Default/Auto Shift Rotation Setting" [toggleable]="true" [(collapsed)]="shiftRotationCollapsed" (onBeforeToggle)="toggleWeeklyOff()"> -->
                                 <p-fieldset legend="Shift Configuration" [toggleable]="true" [(collapsed)]="shiftRotationCollapsed" (onBeforeToggle)="toggleWeeklyOff()">
 
-                                <!-- <div class="grid p-fluid">
-                                    <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
-                                        <span class="p-float-label">
-                                            <p-dropdown [options]="cities" [(ngModel)]="shift_1" placeholder="Select Shift" optionLabel="name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
-                                            <label for="shift_1">Shift 1</label>
-                                        </span>
-                                    </div>
-
-                                    <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
-                                        <span class="p-float-label">
-                                            <p-dropdown [options]="cities" [(ngModel)]="shift_1" placeholder="Select Shift" optionLabel="name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
-                                            <label for="shift_1">Shift 2</label>
-                                        </span>
-                                    </div>
-
-                                    <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
-                                        <span class="p-float-label">
-                                            <p-dropdown [options]="cities" [(ngModel)]="shift_1" placeholder="Select Shift" optionLabel="name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
-                                            <label for="shift_1">Shift 3</label>
-                                        </span>
-                                    </div>
-
-                                    <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
-                                        <span class="p-float-label">
-                                            <p-inputNumber inputId="integeronly" [(ngModel)]="value1" [iconDisplay]="'input'" [showButtons]="true" [min]="0" class="p-inputtext-sm" [buttonStyleClass]="'p-button-sm'"> </p-inputNumber>
-                                            <label for="rotation_date">No of Days for Rotation</label>
-                                        </span>
-                                    </div>
-
-                                    <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
-                                        <span class="p-float-label">
-                                            <p-calendar [(ngModel)]="rotation_date" inputId="rotation_date" [iconDisplay]="'input'" [showIcon]="true" class="p-inputtext-sm"></p-calendar>
-                                            <label for="rotation_date">Rotation Start Date</label>
-                                        </span>
-                                    </div>
-                                </div> -->
-
                                 <div class="grid p-fluid">
                                     <div class="field col-12 md:col-12 lg:col-12 xl:col-12">
                                         <div class="flex align-items-center gap-2">
-                                            <p-inputSwitch [(ngModel)]="flexi_time" class="p-inputswitch-sm"></p-inputSwitch>
+                                            <p-inputSwitch [(ngModel)]="fixed_shift" class="p-inputswitch-sm"></p-inputSwitch>
                                             <span class="block font-bold">Fixed Shift</span>
                                         </div>
                                         <div class="flex align-items-center gap-2">
-                                            <p-inputSwitch [(ngModel)]="consider_late_entry" class="p-inputswitch-sm"></p-inputSwitch>
+                                            <p-inputSwitch [(ngModel)]="auto_shift" class="p-inputswitch-sm"></p-inputSwitch>
                                             <span class="block font-bold">Auto shift</span>
                                         </div>
                                         <div class="flex align-items-center gap-2">
-                                            <p-inputSwitch [(ngModel)]="consider_early_exit" class="p-inputswitch-sm"></p-inputSwitch>
+                                            <p-inputSwitch [(ngModel)]="assign_shift" class="p-inputswitch-sm"></p-inputSwitch>
                                             <span class="block font-bold">Assign Shift</span>
                                         </div>
                                     </div>
@@ -690,14 +653,14 @@
                                 <div class="grid p-fluid">
                                     <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
                                         <span class="p-float-label">
-                                            <p-dropdown [options]="week_days" [(ngModel)]="shift_1" placeholder="Select Day" optionLabel="display_name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
+                                            <p-dropdown [options]="week_days" [(ngModel)]="selectedShift1" placeholder="Select Day" optionLabel="display_name" class="p-inputtext-sm" inputId="shift_1" (onChange)="assignFirstWeeklyOff(selectedShift1)"></p-dropdown>
                                             <label for="shift_1" class="font-small">1st Week Off</label>
                                         </span>
                                     </div>
 
                                     <div class="field col-12 md:col-6 lg:col-6 xl:col-6">
                                         <span class="p-float-label">
-                                            <p-dropdown [options]="week_days" [(ngModel)]="shift_1" placeholder="Select Day" optionLabel="display_name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
+                                            <p-dropdown [options]="week_days" [(ngModel)]="shift_2" placeholder="Select Day" optionLabel="display_name" class="p-inputtext-sm" inputId="shift_1"></p-dropdown>
                                             <label for="shift_1" class="font-small">2nd Week Off</label>
                                         </span>
                                     </div>

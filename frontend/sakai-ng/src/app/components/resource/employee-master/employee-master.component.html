@@ -281,7 +281,7 @@
 						<span class="image-text ml-2">{{ item.country_name}}</span>
                     </td>
                     <td>{{ item.date_of_joining | date: 'dd/MM/yyyy' }}</td>
-                    <td></td>
+                    <td>{{ item.date_of_leaving | date: 'dd/MM/yyyy' }}</td>
                     <td><span [class]="'status-badge status-' + item.job_status">{{ item.job_status }}</span></td>
                     <!-- <td><span [class]="'status-badge '+ (item.planned_date ? 'status-planned' : '')">{{ item.planned_date }}</span></td>
                     <td><span [class]="'status-badge '+ (item.processing_date ? 'status-processing' : '')">{{ item.processing_date }}</span></td>

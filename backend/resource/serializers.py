@@ -17,6 +17,28 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = '__all__'
 
+    def to_internal_value(self, data):
+        """
+        Override to handle cases where shift is 0 or a string instead of pk.
+        Ensure mutable data before modifying.
+        """
+        # Make sure the data dictionary is mutable
+        data = data.copy()
+
+        if 'shift' in data:
+            shift_value = data.get('shift')
+            # If shift is "0" or any invalid value, convert it to None
+            if shift_value == '0' or shift_value == 'NaN' or shift_value == 'null':
+                data['shift'] = None
+            else:
+                try:
+                    # Convert string to integer (to ensure pk value is passed)
+                    data['shift'] = int(shift_value)
+                except ValueError:
+                    raise serializers.ValidationError({'shift': 'Incorrect type. Expected pk value, received str.'})
+
+        return super().to_internal_value(data)
+
 class EmployeeDropdownSerializer(serializers.ModelSerializer):
     combined_field = serializers.SerializerMethodField()
 
@@ -75,6 +97,7 @@ class ManDaysAttendanceSerializer(serializers.ModelSerializer):
     location_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.location.name')
     job_type = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.job_type')
     department_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.department.name')
+    designation_name = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.designation.name')
     category = serializers.PrimaryKeyRelatedField(read_only=True, source='employeeid.category')
     
     class Meta:

@@ -25,10 +25,26 @@ export class ShiftComponent implements OnInit, OnDestroy {
 
     id: number = 0;
     name: string = '';
-    start_time: string = '';
-    end_time: string = '';
-    grace_period: string = '';
-    overtime_threshold: string = '';
+    shift_id: string = '';
+    start_time: Date = new Date();
+    end_time: Date = new Date();
+    overtime_threshold: string;
+
+    tolerance_start_time: Number | undefined;
+    tolerance_end_time: Number | undefined;
+    grace_start_time: Number | undefined;
+    grace_end_time: Number | undefined;
+    overtime_threshold_before_start: Number | undefined;
+    overtime_threshold_after_end: Number | undefined;
+    absent_threshold: Number | undefined;
+    half_day_threshold: Number | undefined;
+    full_day_threshold: Number | undefined;
+    lunch_in_time: Date = new Date();
+    lunch_out_time: Date = new Date();
+
+    is_night_shift: boolean = false;
+    consider_lunch_half_day: boolean = false;
+    consider_lunch_full_day: boolean = false;
 
     constructor(
         private service:SharedService,
@@ -40,6 +56,7 @@ export class ShiftComponent implements OnInit, OnDestroy {
     ngOnInit() {
 
     }
+
 
     totalRecords: number = 0;
     rowsPerPageOptions: number[] = [5, 10, 20, 30];
@@ -63,7 +80,7 @@ export class ShiftComponent implements OnInit, OnDestroy {
           // Add any other query parameters here
         };
 
-        this.ShiftListSubscription = this.service.getShifts(params).subscribe({
+        this.ShiftListSubscription = this.service.getAutoShifts(params).subscribe({
             next: (response) => {
                 this.shifts = response.results;
                 this.totalRecords = response.count;
@@ -86,31 +103,71 @@ export class ShiftComponent implements OnInit, OnDestroy {
         table.clear();
     }
 
-    addClick() {
+    convertTo24HourFormat(date: Date): string {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = '00';
+        return `${hours}:${minutes}:${seconds}`;
+    }
 
-        this.id = 0;
+
+    addClick() {
+        this.id = null;
         this.name = '';
-        this.start_time = '';
-        this.end_time = '';
-        this.grace_period = '';
-        this.overtime_threshold = '';
+        this.shift_id = '';
+        this.start_time = null;
+        this.end_time = null;
+        this.tolerance_start_time = null;
+        this.tolerance_end_time = null;
+        this.grace_start_time = null;
+        this.grace_end_time = null;
+        this.overtime_threshold_before_start = null;
+        this.overtime_threshold_after_end = null;
+        this.absent_threshold = null;
+        this.half_day_threshold = null;
+        this.full_day_threshold = null;
+        this.lunch_in_time = null;
+        this.lunch_out_time = null;
+        this.is_night_shift = false;
+        this.consider_lunch_half_day = false;
+        this.consider_lunch_full_day = false;
 
         this.display = true;
         this.ModalTitle = "Add New Shift";
     }
 
     addShift() {
+        // Convert start_time and end_time to 24-hour format if they are Date objects
+        const formattedStartTime = this.convertTo24HourFormat(this.start_time);
+        const formattedEndTime = this.convertTo24HourFormat(this.end_time);
+        const formattedLunchInTime = this.convertTo24HourFormat(this.lunch_in_time || new Date('1970-01-01T00:00:00'));
+        const formattedLunchOutTime = this.convertTo24HourFormat(this.lunch_out_time || new Date('1970-01-01T00:00:00'));
+
         const shift = {
             name: this.name,
-            start_time: this.start_time,
-            end_time: this.end_time,
-            grace_period: this.grace_period,
-            overtime_threshold: this.overtime_threshold
+            shift_id: this.shift_id,
+            start_time: formattedStartTime,
+            end_time: formattedEndTime,
+            tolerance_start_time: this.tolerance_start_time || 0,
+            tolerance_end_time: this.tolerance_end_time || 0,
+            grace_period_at_start_time: this.grace_start_time || 0,
+            grace_period_at_end_time: this.grace_end_time || 0,
+            overtime_threshold_before_start: this.overtime_threshold_before_start || 0,
+            overtime_threshold_after_end: this.overtime_threshold_after_end || 0,
+            absent_threshold: this.absent_threshold || 0,
+            half_day_threshold: this.half_day_threshold || 0,
+            full_day_threshold: this.full_day_threshold || 0,
+            lunch_in_time: formattedLunchInTime,
+            lunch_out_time: formattedLunchOutTime,
+            night_shift: this.is_night_shift,
+            include_lunch_break_in_half_day: this.consider_lunch_half_day,
+            include_lunch_break_in_full_day: this.consider_lunch_full_day
         }
 
+        console.log(shift);
         this.loading = true;
 
-        this.service.addShift(shift).subscribe({
+        this.service.addAutoShift(shift).subscribe({
             next: (response) => {
                 this.dt.reset();
 
@@ -121,14 +178,16 @@ export class ShiftComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                 severity: 'success',
                 summary: 'Success',
-                detail: 'Successfully Added New Shift'
+                detail: `Successfully Added ${this.name} Shift`
                 });
             },
             error: (error) => {
                 // Show error message
-                this.messageService.add({ severity: 'warn', summary: 'Failed', detail: 'Failed to Add New Shift' });
+                this.messageService.add({ severity: 'warn', summary: 'Failed', detail: `Failed to Add ${this.name} Shift` });
             }
         });
+
+        this.getShiftsList({ first: 0, rows: 10, sortField: '', sortOrder: 1 });
 
         this.loading = false;
     }
@@ -137,47 +196,80 @@ export class ShiftComponent implements OnInit, OnDestroy {
 
         this.id = item.id;
         this.name = item.name;
-        this.start_time = this.start_time,
-        this.end_time = this.end_time,
-        this.grace_period = this.grace_period,
-        this.overtime_threshold = this.overtime_threshold
+        this.shift_id = item.shift_id;
+        this.start_time = new Date(`1970-01-01T${item.start_time}`);
+        this.end_time = new Date(`1970-01-01T${item.end_time}`);
+        this.tolerance_start_time = item.tolerance_start_time;
+        this.tolerance_end_time = item.tolerance_end_time;
+        this.grace_start_time = item.grace_period_at_start_time;
+        this.grace_end_time = item.grace_period_at_end_time;
+        this.overtime_threshold_before_start = item.overtime_threshold_before_start;
+        this.overtime_threshold_after_end = item.overtime_threshold_after_end;
+        this.absent_threshold = item.absent_threshold;
+        this.half_day_threshold = item.half_day_threshold;
+        this.full_day_threshold = item.full_day_threshold;
+        this.lunch_in_time = item.lunch_in ? new Date(`1970-01-01T${item.lunch_in}`) : new Date('1970-01-01T00:00:00');
+        this.lunch_out_time = item.lunch_out ? new Date(`1970-01-01T${item.lunch_out}`) : new Date('1970-01-01T00:00:00');
+        this.is_night_shift = item.night_shift;
+        this.consider_lunch_half_day = item.include_lunch_break_in_half_day;
+        this.consider_lunch_full_day = item.include_lunch_break_in_full_day;
 
         this.display = true;
-        this.ModalTitle = "Edit Shift Details";
+        this.ModalTitle = `Edit Shift ${item.name} Details`;
     }
 
     updateShift() {
+        // Convert start_time and end_time to 24-hour format if they are Date objects
+        const formattedStartTime = this.convertTo24HourFormat(this.start_time);
+        const formattedEndTime = this.convertTo24HourFormat(this.end_time);
+        const formattedLunchInTime = this.convertTo24HourFormat(this.lunch_in_time || new Date('1970-01-01T00:00:00'));
+        const formattedLunchOutTime = this.convertTo24HourFormat(this.lunch_out_time || new Date('1970-01-01T00:00:00'));
 
         const shift = {
             id: this.id,
             name: this.name,
-            start_time: this.start_time,
-            end_time: this.end_time,
-            grace_period: this.grace_period,
-            overtime_threshold: this.overtime_threshold
+            shift_id: this.shift_id,
+            start_time: formattedStartTime,
+            end_time: formattedEndTime,
+            tolerance_start_time: this.tolerance_start_time || 0,
+            tolerance_end_time: this.tolerance_end_time || 0,
+            grace_period_at_start_time: this.grace_start_time || 0,
+            grace_period_at_end_time: this.grace_end_time || 0,
+            overtime_threshold_before_start: this.overtime_threshold_before_start || 0,
+            overtime_threshold_after_end: this.overtime_threshold_after_end || 0,
+            absent_threshold: this.absent_threshold || 0,
+            half_day_threshold: this.half_day_threshold || 0,
+            full_day_threshold: this.full_day_threshold || 0,
+            lunch_in: formattedLunchInTime || '00:00:00',
+            lunch_out: formattedLunchOutTime || '00:00:00',
+            night_shift: this.is_night_shift,
+            include_lunch_break_in_half_day: this.consider_lunch_half_day,
+            include_lunch_break_in_full_day: this.consider_lunch_full_day
         }
 
         this.loading = true;
+        console.log(shift);
 
-        this.service.updateShift(shift).subscribe({
+        this.service.updateAutoShift(shift).subscribe({
             next: (response) => {
                 this.dt.reset();
-
                 this.eventEmitterService.invokeGetUpdatedAtList.emit();
                 this.display = false;
 
                 // Show success message
                 this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Successfully Updated Shift Details'
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: `Successfully Updated ${this.name} Shift Details`
                 });
             },
             error: (error) => {
-                // Show error message
-                this.messageService.add({ severity: 'warn', summary: 'Failed', detail: 'Failed to Update Shift Details' });
+                // Show error message if the update fails
+                this.messageService.add({ severity: 'warn', summary: 'Failed', detail: `Failed to Update ${this.name} Shift Details` });
             }
         });
+
+        this.getShiftsList({ first: 0, rows: 10, sortField: '', sortOrder: 1 });
 
         this.loading = false;
     }
@@ -195,7 +287,7 @@ export class ShiftComponent implements OnInit, OnDestroy {
                 this.loading = true;
 
                 // Call the deleteEmployee method from the service
-                this.service.deleteLocation(id).subscribe({
+                this.service.deleteAutoShift(id).subscribe({
                     next: (response) => {
 
                         this.dt.reset();

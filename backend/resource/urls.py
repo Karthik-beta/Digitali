@@ -5,7 +5,9 @@ from resource.views import (
                             AttendanceMonthlyMetricsAPIView, LogsListCreate, LogsRetrieveUpdateDestroy,
                             EmployeeDropdownList, ExportEmployeeAttendanceExcelView, ExportAllEmployeeAttendanceExcelView, 
                             LastLogIdView, MandaysAttendanceListCreate, ManDaysAttendanceExcelExport, ManDaysWorkedExcelExport,
-                            ManDaysMissedPunchExcelExport,ExportLogsExcelView, ResetMandaysView, test_view )
+                            ManDaysMissedPunchExcelExport,ExportLogsExcelView, ResetMandaysView, test_view, ExportMonthlyDutyHourExcel, 
+                            ExportAllEmployeeAttendanceExcelView2, ExportMonthlyMusterRoleExcel, ExportMonthlyPayrollExcel, ExportMonthlyShiftRoasterExcel,
+                            ExportMonthlyOvertimeExcel, ExportMonthlyLateEntryExcel, ExportMonthlyEarlyExitExcel, ExportMonthlyAbsentExcel, ExportMonthlyPresentExcel )
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -34,6 +36,25 @@ urlpatterns = [
     re_path(r'^attendance/employee/$', ExportEmployeeAttendanceExcelView.as_view()),
 
     re_path(r'^attendance/export/allemployees/$', ExportAllEmployeeAttendanceExcelView.as_view(), name='attendance-export'),
+    re_path(r'^attendance/export/allemployees2/$', ExportAllEmployeeAttendanceExcelView2.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_duty_hours/$', ExportMonthlyDutyHourExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_muster_role/$', ExportMonthlyMusterRoleExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_payroll/$', ExportMonthlyPayrollExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_shift_roaster/$', ExportMonthlyShiftRoasterExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_overtime/$', ExportMonthlyOvertimeExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_late_entry/$', ExportMonthlyLateEntryExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_early_exit/$', ExportMonthlyEarlyExitExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_absent/$', ExportMonthlyAbsentExcel.as_view(), name='attendance-export'),
+
+    re_path(r'^attendance/export/monthly_present/$', ExportMonthlyPresentExcel.as_view(), name='attendance-export'),
 
     re_path(r'^last_log_id/$', LastLogIdView.as_view(), name='attendance-export'),
 

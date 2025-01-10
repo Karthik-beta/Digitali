@@ -139,8 +139,8 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
             this.selectedSubDivision = employee.subdivision ? this.subDivisions.find(subdivision => subdivision.id === employee.subdivision) : null;
             this.selectedShopfloor = employee.shopfloor ? this.shopfloors.find(shopfloor => shopfloor.id === employee.shopfloor) : null;
             this.selectedJobType = employee.job_type ? this.jobTypes.find(jobType => jobType.value === employee.job_type) : null;
-            this.date_of_joining = new Date(employee.date_of_joining);
-            this.date_of_leaving = new Date(employee.date_of_leaving);
+            this.date_of_joining = employee.date_of_joining ? new Date(employee.date_of_joining) : null;
+            this.date_of_leaving = employee.date_of_leaving ? new Date(employee.date_of_leaving) : null;
             this.jobStatus = employee.job_status;
             this.reason_for_leaving = employee.reason_for_leaving;
 
@@ -156,6 +156,10 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
             this.pan_no = employee.pan_no;
             this.voter_id = employee.voter_id;
             this.driving_license = employee.driving_license;
+
+            this.selectedShift1 = employee.first_weekly_off ? this.week_days.find(week_day => week_day.value === employee.first_weekly_off) : null;
+            this.assignFirstWeeklyOff(this.selectedShift1);
+            this.fixed_shift = employee.fixed_shift ? this.shifts.find(shift => shift.id === employee.fixed_shift) : null;
 
         }
     });
@@ -175,40 +179,32 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
 
     fileName = '';
 
-
     selectFile(event: any): void {
-      this.message = '';
-      this.preview = '';
-      const selectedFiles = event.target.files;
+        this.message = '';
+        const selectedFiles = event.target.files;
 
-      this.image_file_post = event.target.files[0];
+        if (selectedFiles && selectedFiles.length > 0) {
+            const file: File | null = selectedFiles.item(0);
 
-      if (selectedFiles) {
-        const file: File | null = selectedFiles.item(0);
+            if (file) {
+                this.image_file_post = file; // Assign selected file for uploading
+                const reader = new FileReader();
 
-        if (file) {
-          this.preview = '';
-          this.currentFile = file;
+                reader.onload = (e: any) => {
+                    this.preview = e.target.result; // Set preview for the image
+                    this.fileName = file.name;
+                };
 
-          const reader = new FileReader();
-
-          reader.onload = (e: any) => {
-            this.preview = e.target.result;
-
-            this.fileName = file.name;
-
-            const image_file_post = new FormData();
-
-            image_file_post.append("profile_pic", file);
-            console.log("Preview:", image_file_post);
-          };
-
-          reader.readAsDataURL(this.currentFile);
+                reader.readAsDataURL(file);
+            }
+        } else {
+            // If no file is selected, reset values and set default preview
+            this.image_file_post = null;
+            this.preview = 'assets/layout/images/profile_placeholder.jpg'; // Set default preview image
+            this.fileName = '';
+            console.log("No file selected.");
         }
-      }
     }
-
-
 
     shiftRotationCollapsed = false;
     weeklyOffCollapsed = true;
@@ -247,6 +243,8 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     selectedSubDivision: any;
     selectedShopfloor: any;
     selectedShift: any;
+    selectedShift1: number | null;
+    selectedFixedShift: any;
 
 
     assignShiftId(selectedShift: any) {
@@ -257,7 +255,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     // Method to assign the selected company's ID to the 'selectedCompanyId' variable
     assignCompanyId(selectedCompany: any) {
         this.company = selectedCompany ? selectedCompany.id : null;
-        // console.log("Selected Company ID:", this.company);
+        console.log("Selected Company ID:", this.company);
     }
 
     assignLocationId(selectedLocation: any) {
@@ -321,6 +319,15 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         this.country_code = selectedCountry ? selectedCountry.code : null;
     }
 
+    assignFirstWeeklyOff(selectedShift1: any): void {
+        this.shift_1 = selectedShift1 ? selectedShift1.value : null;
+    }
+
+    assignFixedShift(selectedFixedShift: any): void {
+        this.fixed_shift = selectedFixedShift ? selectedFixedShift.id : null;
+    }
+
+
 
 
     employee_id: string='';
@@ -341,7 +348,6 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     ifsc_code: string = '';
 
     shift!: number;
-    auto_shift: boolean = true;
     company!: number;
     location!: number;
     category: string = '';
@@ -371,6 +377,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     gender: string = '';
     present_address: string = '';
     permanent_address: string = '';
+    shift_1!: number;
 
     flexi_time: boolean = false;
     consider_late_entry: boolean = true;
@@ -380,6 +387,11 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
     consider_early_exit_on_holiday: boolean = true;
     consider_extra_hours_worked_on_holiday: boolean = true;
     search_next_day: boolean = false;
+
+    fixed_shift!: number;
+    auto_shift: boolean = true;
+    assign_shift: boolean = false;
+
 
 
     resetForm() {
@@ -427,6 +439,8 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         this.gender = '';
         this.present_address = '';
         this.permanent_address = '';
+        this.shift_1 = undefined;
+        this.fixed_shift = undefined;
     }
 
     PostEmployee(): void {
@@ -485,8 +499,9 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('present_address', this.present_address);
         formData.append('permanent_address', this.permanent_address);
 
-        formData.append('shift', this.shift ? '1' : '');
+        formData.append('shift', Number(this.fixed_shift).toString());
         formData.append('auto_shift', this.auto_shift ? '1' : '0');
+        formData.append('first_weekly_off', this.shift_1 !== null ? this.shift_1.toString() : '');
         formData.append('flexi_time', this.flexi_time ? '1' : '0');
         formData.append('consider_late_entry', this.consider_late_entry ? '1' : '0');
         formData.append('consider_early_exit', this.consider_early_exit ? '1' : '0');
@@ -574,8 +589,9 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
         formData.append('present_address', this.present_address);
         formData.append('permanent_address', this.permanent_address);
 
-        formData.append('shift', this.shift ? '1' : '');
+        formData.append('shift', Number(this.fixed_shift).toString());
         formData.append('auto_shift', this.auto_shift ? '1' : '0');
+        formData.append('first_weekly_off', this.shift_1 !== null ? this.shift_1.toString() : '');
         formData.append('flexi_time', this.flexi_time ? '1' : '0');
         formData.append('consider_late_entry', this.consider_late_entry ? '1' : '0');
         formData.append('consider_early_exit', this.consider_early_exit ? '1' : '0');
@@ -633,7 +649,7 @@ export class AddEditEmployeeComponent implements OnInit, OnDestroy {
                 this.marital_statuses = data.actions.POST.marital_status.choices;
                 this.jobTypes = data.actions.POST.job_type.choices;
                 this.week_days = data.actions.POST.first_weekly_off.choices;
-                // console.log("category:", this.category);
+                console.log("week_days:", this.week_days);
         });
     }
 

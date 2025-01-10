@@ -20,13 +20,7 @@
 
     &.status-A {
         background: #FFCDD2;
-        // color: #694382;
         color: #C63737;
-    }
-
-    &.status-NA {
-        background: #BDBDBD;
-        color: #000;
     }
 
     &.status-HD {
@@ -40,8 +34,13 @@
     }
 
     &.status-MP {
-        background: #FFD54F;
-        color: #8A5340;
+        background: #FFF4E6; // Pale Orange Peach
+        color: #D84315;      // Burnt Orange
+    }
+
+    &.status-IH {
+        background: #FFF3CD; // Pale Red
+        color: #856404;      // Crimson Red
     }
 
     &.status-WW {
@@ -49,4 +48,3 @@
         color: #256029;
     }
 }
-

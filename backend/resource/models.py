@@ -65,17 +65,17 @@ class Employee(models.Model):
     )
 
     WEEK_DAYS_CHOICES = (
-        ('Sunday', 'Sunday'),
-        ('Monday', 'Monday'),
-        ('Tuesday', 'Tuesday'),
-        ('Wednesday', 'Wednesday'),
-        ('Thursday', 'Thursday'),
-        ('Friday', 'Friday'),
-        ('Saturday', 'Saturday'),
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday')
     )
     
     id = models.AutoField(primary_key=True)
-    profile_pic = models.ImageField(default="default_pic.jpg",upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(default="profile_pics/default_pic.jpg",upload_to='profile_pics/', blank=True, null=True)
     employee_id = models.CharField(max_length=20, unique=True)
     employee_name = models.CharField(max_length=100)
     device_enroll_id = models.CharField(max_length=20, blank=True, null=True)
@@ -144,8 +144,8 @@ class Employee(models.Model):
     # Weekly Off and Shifts
     shift = models.ForeignKey('config.Shift', on_delete=models.SET_NULL, blank=True, null=True)
     auto_shift = models.BooleanField(default=False)
-    first_weekly_off = models.CharField(max_length=20, choices=WEEK_DAYS_CHOICES, blank=True, null=True)
-    second_weekly_off = models.CharField(max_length=20, choices=WEEK_DAYS_CHOICES, blank=True, null=True)
+    first_weekly_off = models.IntegerField(default=6, choices=WEEK_DAYS_CHOICES, blank=True, null=True)
+    second_weekly_off = models.IntegerField(default=6, choices=WEEK_DAYS_CHOICES, blank=True, null=True)
     week_off_effective_date = models.DateField(blank=True, null=True)
 
     # Late/Early/Overtime/Flexi Time Marking

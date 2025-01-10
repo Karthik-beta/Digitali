@@ -143,7 +143,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
 
     selectedCompanies: Company[] = [];
 
-    selectedEmplyees: Employee[] = [];
+    selectedEmployees: Employee[] = [];
 
     selectedDepartments: Department[] = [];
 
@@ -339,8 +339,6 @@ export class DailyReportComponent implements OnInit, OnDestroy {
             params.date_to = this.formatDate(this.rangeDates[1]);
         }
 
-        console.log('Params:', params); // Check the params object
-
         this.service.getAttendanceList(params).pipe(
             timeout(10000), // Set timeout to 10 seconds
             catchError(error => {
@@ -486,7 +484,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         this.location_names = [];
         this.department_names = [];
         this.designation_names = [];
-        this.selectedEmplyees = [];
+        this.selectedEmployees = [];
         this.selectedCompanies = [];
         this.selectedLocations = [];
         this.selectedDepartments = [];
@@ -511,6 +509,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         const params: any = {
             employee_id: this.searchQuery || '',
             shift_status: this.shift_status || '',
+            employee_ids: this.employee_ids.join(','),
             company_name: this.company_names.join(','),
             location_name: this.location_names.join(','),
             department_name: this.department_names.join(','),
@@ -677,11 +676,6 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
     }
 
-    // assignLocationId(selectedLocation: any) {
-    //     // Set the search query to the selected company ID
-    //     this.location_name = selectedLocation.name;
-    //     this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
-    // }
     assignLocationId(selectedLocations: Location[]) {
         // Set the search query to the selected company ID
         this.location_names = selectedLocations.map(location => location.name);
@@ -699,22 +693,6 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         this.designation_names = selectedDesignations.map(designation => designation.name);
         this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
     }
-
-    getClassForShiftStatus(shiftStatus: string): string {
-        return 'status-badge status-' +
-                (shiftStatus === 'P' ? 'P' : '') +
-                (shiftStatus === 'A' ? 'A' : '') +
-                (shiftStatus === 'HD' ? 'HD' : '') +
-                (shiftStatus === 'P/A' ? 'Resigned' : '') +
-                (shiftStatus === 'A/P' ? 'Resigned' : '') +
-                (shiftStatus === 'WO' ? 'Resigned' : '') +
-                (shiftStatus === 'WW' ? 'P' : '');
-    }
-
-    getClassForTotalTime(totalTime: string): string {
-        return '' +
-               (totalTime < '08:00:00' ? 'status-badge status-A' : '');
-      }
 
     ngOnDestroy() {
         if (this.AttendanceListSubscription) {

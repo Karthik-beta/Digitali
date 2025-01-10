@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 class ShiftWindow:
     start_time: datetime
     end_time: datetime
-    start_window: time
-    end_window: time
-    start_time_with_grace: time
-    end_time_with_grace: time
+    start_window: datetime
+    end_window: datetime
+    start_time_with_grace: datetime
+    end_time_with_grace: datetime
     overtime_before_start: timedelta
     overtime_after_end: timedelta
     half_day_threshold: timedelta
@@ -69,7 +69,7 @@ class AttendanceProcessor:
             if success:
                 # Update the last processed log ID only if all logs are processed successfully
                 last_log_id_record.last_log_id = new_logs.last().id
-                # last_log_id_record.save()
+                last_log_id_record.save()
             
             return success
         except Exception as e:
@@ -113,10 +113,10 @@ class AttendanceProcessor:
                 log_datetime = timezone.make_naive(log.log_datetime)
             else:
                 log_datetime = log.log_datetime
-                
+
             log_time = log_datetime.time()
             log_date = log_datetime.date()
-            
+
             # Check if there's already an attendance record for this day
             existing_attendance = Attendance.objects.filter(
                 employeeid=employee,
@@ -124,11 +124,11 @@ class AttendanceProcessor:
             ).first()
 
             # Find the matching shift for this IN punch
-            for auto_shift in self.auto_shifts:
+            for auto_shift in AutoShift.objects.all():
                 try:
                     shift_window = self._calculate_shift_window(auto_shift, log_datetime)
-                        
-                    if shift_window.start_window <= log_time <= shift_window.end_window:
+
+                    if shift_window.start_window <= log_datetime <= shift_window.end_window:
 
                         if existing_attendance:
                             if existing_attendance.first_logtime is None:
@@ -142,7 +142,7 @@ class AttendanceProcessor:
                             else:
                                 # Skip if attendance exists and first_logtime is not None
                                 return True
-                        
+
                         else:
                             attendance = Attendance.objects.create(
                                 employeeid=employee,
@@ -153,292 +153,208 @@ class AttendanceProcessor:
                                 shift_status='MP'
                             )
 
-                        if log_time > shift_window.start_time_with_grace:
-                            attendance.late_entry = datetime.combine(
-                                log_date,
-                                log_time
-                            ) - datetime.combine(
-                                log_date,
-                                auto_shift.start_time
-                            )
-                            
+                        if log_datetime > shift_window.start_time_with_grace:
+                            attendance.late_entry = log_datetime - shift_window.start_time
+
                         attendance.save()
-                        # self.logger.info(
-                        #     f"Created attendance record for employee {employee.employee_id} "
-                        #     f"with first IN at {log_time}"
-                        # )
                         return True
                 except Exception as e:
-                    # self.logger.error(f"Error processing shift {auto_shift.name}: {str(e)}")
                     continue
 
             return True
 
         except Exception as e:
-            # self.logger.error(f"Error in _handle_in_log: {str(e)}")
             return False
 
     def _handle_out_log(self, employee: Employee, log: Logs) -> bool:
         """
-        Handle outgoing attendance log with optimized database interactions.
+        Handle outgoing attendance log.
+        Updates the last OUT time of an existing attendance record or creates a new OUT log if no valid IN found.
         """
         try:
-            # Normalize datetime
-            log_datetime = timezone.make_naive(log.log_datetime) if timezone.is_aware(log.log_datetime) else log.log_datetime
+            # Convert to naive datetime if timezone-aware
+            if timezone.is_aware(log.log_datetime):
+                log_datetime = timezone.make_naive(log.log_datetime)
+            else:
+                log_datetime = log.log_datetime
+
             log_time = log_datetime.time()
             log_date = log_datetime.date()
 
-            # Preliminary queries to find potential attendance record
-            attendance_lookups = [
-                Q(employeeid=employee, logdate=log_date, first_logtime__isnull=False),
-                Q(employeeid=employee, logdate=log_date - timedelta(days=1), first_logtime__isnull=False),
-                Q(employeeid=employee, logdate=log_date, first_logtime__isnull=True)
-            ]
+            # First check if there are any earlier logs for this day
+            attendance = Attendance.objects.filter(
+                employeeid=employee,
+                logdate=log_date,
+                first_logtime__isnull=False
+            ).first()
 
-            # Bulk fetch potential attendance records to minimize database hits
-            potential_attendances = Attendance.objects.filter(
-                reduce(operator.or_, attendance_lookups)
-            ).select_related('shift').all()
-
-            # Find the most appropriate attendance record
-            attendance = None
-            for potential in potential_attendances:
-                if (potential.logdate == log_date and potential.first_logtime is not None) or \
-                (potential.logdate == log_date - timedelta(days=1) and potential.first_logtime is not None):
-                    attendance = potential
-                    break
-            
             if not attendance:
-                attendance = potential_attendances.filter(first_logtime__isnull=True).first()
-                if attendance:
-                    # Create a new attendance record for the OUT punch
-                    attendance, created = Attendance.objects.update_or_create(
+                prev_date = log_date - timedelta(days=1)
+                attendance = Attendance.objects.filter(
+                    employeeid=employee,
+                    logdate=prev_date,
+                    first_logtime__isnull=False,
+                    last_logtime__isnull=True  # Must not have an OUT punch already
+                ).first()
+
+                if not attendance:
+                    # Create or update an OUT log with shift_status as 'MP' if no valid IN found
+                    attendance = Attendance.objects.update_or_create(
                         employeeid=employee,
                         logdate=log_date,
                         defaults={
                             'last_logtime': log_time,
-                            'shift': '',
+                            'shift': '',  # Or set it as needed
                             'direction': 'Machine',
                             'shift_status': 'MP'
                         }
-                    )
-                    return True
+                    )[0]
+                    attendance.save()
 
-            # Validate shift and process attendance
-            auto_shift = next((shift for shift in self.auto_shifts if shift.name == attendance.shift), None)
-            if not auto_shift:
+            if not attendance:
+                # self.logger.warning(f"No valid IN log found for employee {employee.employee_id} before OUT")
+                return True
+
+            # Get the shift details
+            try:
+                auto_shift = AutoShift.objects.get(name=attendance.shift)
+            except AutoShift.DoesNotExist:
+                # self.logger.error(f"Shift {attendance.shift} not found for employee {employee.employee_id}")
                 return False
 
-            # Determine shift end datetime
-            shift_end = datetime.combine(
-                attendance.logdate + timedelta(days=1) if auto_shift.is_night_shift() else attendance.logdate, 
-                auto_shift.end_time
-            )
-
+            # Check if this is a valid OUT punch for the attendance
             in_datetime = datetime.combine(attendance.logdate, attendance.first_logtime)
-            out_datetime = log_datetime
+            if auto_shift.is_night_shift() and log_date > attendance.logdate:
+                # If it's next day and night shift, adjust OUT time comparison
+                out_datetime = log_datetime
+            else:
+                # For same day comparison
+                out_datetime = log_datetime
 
-            # Update attendance details
-            update_fields = ['last_logtime', 'direction', 'total_time', 'early_exit', 'overtime', 'shift_status']
+            if auto_shift.is_night_shift():
+                # For night shift, OUT can be next day
+                shift_end = datetime.combine(
+                    attendance.logdate + timedelta(days=1) if auto_shift.is_night_shift() else attendance.logdate,
+                    auto_shift.end_time
+                )
+            else:
+                # For regular shift, OUT should be same day
+                shift_end = datetime.combine(
+                    attendance.logdate,
+                    auto_shift.end_time
+                )
             
-            attendance.last_logtime = log_time
-            attendance.direction = 'Machine'
-            attendance.total_time = out_datetime - in_datetime
+            is_weekoff = employee.first_weekly_off
+            absent_threshold = auto_shift.absent_threshold
+            half_day_threshold = auto_shift.half_day_threshold
+            full_day_threshold = auto_shift.full_day_threshold
 
-            # Early exit calculation
-            attendance.early_exit = shift_end - out_datetime if out_datetime < shift_end else None
+            # Update attendance if this OUT is after IN and the latest one
+            if out_datetime > in_datetime:
+                if not attendance.last_logtime or out_datetime.time() > attendance.last_logtime:
+                    attendance.last_logtime = log_time
+                    attendance.direction = 'Machine'
 
-            # Overtime calculation
-            overtime_threshold = shift_end + auto_shift.overtime_threshold_after_end
-            attendance.overtime = out_datetime - shift_end if out_datetime > overtime_threshold else None
+                    # Calculate total time
+                    total_time = out_datetime - in_datetime
 
-            # Shift status
-            attendance.shift_status = (
-                'WW' if attendance.logdate.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']
-                else 'P' if attendance.total_time > auto_shift.half_day_threshold 
-                else 'HD'
-            )
+                    if auto_shift.include_lunch_break_in_half_day:
+                        total_time -= auto_shift.lunch_duration
+                        attendance.total_time = total_time
+                    else:
+                        if auto_shift.include_lunch_break_in_full_day:
+                            total_time -= auto_shift.lunch_duration
+                            attendance.total_time = total_time
+                        else:
+                            attendance.total_time = total_time
 
-            # Atomic save with only modified fields
-            Attendance.objects.filter(id=attendance.id).update(**{
-                field: getattr(attendance, field) for field in update_fields
-            })
+                    # Calculate early exit
+                    if out_datetime < shift_end:
+                        attendance.early_exit = shift_end - out_datetime
+                    else:
+                        attendance.early_exit = None
+
+                    # Calculate overtime
+                    overtime_threshold = shift_end + auto_shift.overtime_threshold_after_end
+                    if out_datetime > overtime_threshold:
+                        attendance.overtime = out_datetime - shift_end
+                    else:
+                        attendance.overtime = None
+
+                    # Update status based on thresholds
+                    weekoff_days = [is_weekoff] if is_weekoff is not None else WEEK_OFF_CONFIG.get('DEFAULT_WEEK_OFF', [])
+
+                    if attendance.logdate.weekday() in weekoff_days:
+                        attendance.shift_status = 'WW'
+                    elif absent_threshold is not None and total_time < absent_threshold:
+                        attendance.shift_status = 'A'
+                    elif half_day_threshold is not None and total_time < half_day_threshold:
+                        attendance.shift_status = 'HD'
+                    elif full_day_threshold is not None and total_time < full_day_threshold:
+                        attendance.shift_status = 'IH'
+                    else:
+                        attendance.shift_status = 'P' if total_time > full_day_threshold else ''
+
+                            
+                    # if attendance.logdate.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']:
+                    #     attendance.shift_status = 'WW'
+                    # else:
+                    #     attendance.shift_status = 'P' if total_time > auto_shift.half_day_threshold else 'HD'
+
+                    attendance.save()
+                    # self.logger.info(
+                    #     f"Updated attendance for employee {employee.employee_id}: "
+                    #     f"Date: {attendance.logdate}, "
+                    #     f"IN: {attendance.first_logtime}, "
+                    #     f"OUT: {log_time}"
+                    # )
 
             return True
 
         except Exception as e:
-            # Log error if needed
+            # self.logger.error(f"Error in _handle_out_log for employee {employee.employee_id}: {str(e)}")
             return False
 
+
     def _calculate_shift_window(self, auto_shift: AutoShift, log_datetime: datetime) -> ShiftWindow:
-        """Calculate shift time windows handling timezone-aware datetimes."""
+        """Calculate shift time windows considering both date and time."""
         try:
             # Ensure we're working with naive datetime
             if timezone.is_aware(log_datetime):
                 log_datetime = timezone.make_naive(log_datetime)
-                
+
             base_date = log_datetime.date()
-            
+
+            # Check which shift is closer to the log time
+            if auto_shift.is_night_shift() and log_datetime.time() < auto_shift.start_time:
+                base_date -= timedelta(days=1)
+            elif not auto_shift.is_night_shift() and log_datetime.time() > auto_shift.start_time:
+                base_date += timedelta(days=1)
+
+
             # Calculate start and end times
             start_time = datetime.combine(base_date, auto_shift.start_time)
             end_time = datetime.combine(
-                base_date + timedelta(days=1) if auto_shift.is_night_shift() else base_date,
+                base_date + timedelta(days=1) if auto_shift.is_night_shift() and auto_shift.end_time < auto_shift.start_time else base_date,
                 auto_shift.end_time
             )
-            
+
             # Calculate window times
-            start_window = (start_time - auto_shift.tolerance_start_time).time()
-            end_window = (start_time + auto_shift.tolerance_end_time).time()
-            
+            start_window = start_time - auto_shift.tolerance_start_time
+            end_window = start_time + auto_shift.tolerance_end_time
+
             return ShiftWindow(
                 start_time=start_time,
                 end_time=end_time,
                 start_window=start_window,
                 end_window=end_window,
-                start_time_with_grace=(start_time + auto_shift.grace_period_at_start_time).time(),
-                end_time_with_grace=(end_time - auto_shift.grace_period_at_end_time).time(),
+                start_time_with_grace=start_time + auto_shift.grace_period_at_start_time,
+                end_time_with_grace=end_time - auto_shift.grace_period_at_end_time,
                 overtime_before_start=auto_shift.overtime_threshold_before_start,
                 overtime_after_end=auto_shift.overtime_threshold_after_end,
                 half_day_threshold=auto_shift.half_day_threshold
             )
         except Exception as e:
-            # self.logger.error(f"Error in _calculate_shift_window: {str(e)}")
-            raise
-
-    def _create_or_update_attendance(self, employee: Employee, log_datetime: datetime, 
-                                   shift_name: str, shift_window: ShiftWindow) -> Optional[Attendance]:
-        """Create or update attendance record for incoming log."""
-        try:
-            log_time = log_datetime.time()
-            attendance, created = Attendance.objects.update_or_create(
-                employeeid=employee,
-                logdate=log_datetime.date(),
-                defaults={
-                    'first_logtime': log_time,
-                    'shift': shift_name,
-                    'direction': 'Machine',
-                    'shift_status': 'MP'
-                }
-            )
-
-            if log_time > shift_window.start_time_with_grace:
-                attendance.late_entry = log_datetime - shift_window.start_time
-                
-            attendance.save()
-            return attendance
-        except Exception as e:
-            # self.logger.error(f"Error in _create_or_update_attendance: {str(e)}")
-            return None
-
-    def _get_attendance_record(self, employee: Employee, log_datetime: datetime) -> Optional[Attendance]:
-        """
-        Get existing attendance record for outgoing log.
-        Only matches with attendance records that have an in-time before this out-time.
-        """
-        try:
-            # First try to find an attendance record from the same day
-            # but only if the first_logtime is before our out-time
-            current_day_attendance = Attendance.objects.filter(
-                employeeid=employee,
-                logdate=log_datetime.date(),
-                first_logtime__isnull=False,
-                first_logtime__lt=log_datetime.time(),
-                last_logtime__isnull=True  # Ensure we haven't already processed an out-time
-            ).first()
-            
-            if current_day_attendance:
-                return current_day_attendance
-
-            # If no valid same-day record found, check previous day
-            # This handles overnight shifts
-            previous_day = log_datetime.date() - timedelta(days=1)
-            previous_day_attendance = Attendance.objects.filter(
-                employeeid=employee,
-                logdate=previous_day,
-                first_logtime__isnull=False,
-                last_logtime__isnull=True  # Ensure we haven't already processed an out-time
-            ).first()
-            
-            if previous_day_attendance:
-                return previous_day_attendance
-
-            # self.logger.warning(
-            #     f"No valid IN log found for employee {employee.employee_id} "
-            #     f"before out-time {log_datetime}"
-            # )
-            return None
-            
-        except Exception as e:
-            # self.logger.error(
-            #     f"Error in _get_attendance_record for employee {employee.employee_id}: {str(e)}"
-            # )
-            return None
-
-    def _update_attendance_out_log(self, attendance: Attendance, log_datetime: datetime, 
-                                 shift_window: ShiftWindow, is_night_shift: bool):
-        """Update attendance record for outgoing log."""
-        try:
-            log_time = log_datetime.time()
-            attendance.last_logtime = log_time
-            attendance.direction = 'Machine'
-
-            if log_time < shift_window.end_time_with_grace:
-                attendance.early_exit = shift_window.end_time - log_datetime
-
-            if is_night_shift:
-                attendance.total_time = (
-                    timezone.make_aware(datetime.combine(attendance.logdate, attendance.last_logtime) + 
-                                      timedelta(days=1)) - 
-                    timezone.make_aware(datetime.combine(attendance.logdate, attendance.first_logtime))
-                )
-            else:
-                attendance.total_time = (
-                    log_datetime - 
-                    timezone.make_aware(datetime.combine(log_datetime.date(), attendance.first_logtime))
-                )
-            
-            if attendance.logdate.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']:
-                attendance.shift_status = 'WW' 
-            else:
-                attendance.shift_status = 'P' if attendance.total_time > shift_window.half_day_threshold else 'HD'
-            
-            self._calculate_overtime(attendance, shift_window)
-            attendance.save()
-        except Exception as e:
-            # self.logger.error(f"Error in _update_attendance_out_log: {str(e)}")
-            raise
-
-    def _calculate_overtime(self, attendance: Attendance, shift_window: ShiftWindow):
-        """Calculate overtime for attendance record."""
-        try:
-            first_log_time = timezone.make_aware(
-                datetime.combine(attendance.logdate, attendance.first_logtime)
-            )
-            last_log_time = timezone.make_aware(
-                datetime.combine(attendance.logdate, attendance.last_logtime)
-            )
-
-            if (first_log_time < (shift_window.start_time - shift_window.overtime_before_start) or 
-                last_log_time > (shift_window.end_time + shift_window.overtime_after_end)):
-                
-                start_overtime = (
-                    (shift_window.start_time - first_log_time)
-                    if first_log_time < (shift_window.start_time - shift_window.overtime_before_start)
-                    else timedelta(0)
-                )
-                
-                end_overtime = (
-                    (last_log_time - shift_window.end_time)
-                    if last_log_time > (shift_window.end_time + shift_window.overtime_after_end)
-                    else timedelta(0)
-                )
-                
-                total_overtime = start_overtime + end_overtime
-                if total_overtime > timedelta(0):
-                    attendance.overtime = total_overtime
-
-        except Exception as e:
-            # self.logger.error(f"Error in _calculate_overtime: {str(e)}")
             raise
 
 # Function to be imported by tasks.py

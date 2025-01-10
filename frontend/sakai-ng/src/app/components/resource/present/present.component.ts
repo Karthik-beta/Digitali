@@ -698,22 +698,6 @@ export class PresentComponent implements OnInit, OnDestroy {
         this.designation_names = selectedDesignations.map(designation => designation.name);
         this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
     }
-
-    getClassForShiftStatus(shiftStatus: string): string {
-        return 'status-badge status-' +
-                (shiftStatus === 'P' ? 'P' : '') +
-                (shiftStatus === 'A' ? 'A' : '') +
-                (shiftStatus === 'P/A' ? 'Resigned' : '') +
-                (shiftStatus === 'A/P' ? 'Resigned' : '') +
-                (shiftStatus === 'WO' ? 'Resigned' : '') +
-                (shiftStatus === 'WW' ? 'P' : '');
-    }
-
-    getClassForTotalTime(totalTime: string): string {
-        return '' +
-               (totalTime < '08:00:00' ? 'status-badge status-A' : '');
-      }
-
     ngOnDestroy() {
         if (this.AttendanceListSubscription) {
             this.AttendanceListSubscription.unsubscribe();

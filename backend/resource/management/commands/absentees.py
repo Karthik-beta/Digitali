@@ -1,13 +1,12 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import Q
 from django.utils import timezone
 from resource.models import Attendance, Employee
 from tqdm import tqdm
 from typing import List, Dict, Set
-from datetime import date
+from datetime import date, timedelta
 from collections import defaultdict
-
 from value_config import WEEK_OFF_CONFIG
 
 class Command(BaseCommand):
@@ -15,6 +14,7 @@ class Command(BaseCommand):
     BATCH_SIZE = 1000  # Number of records to create at once
 
     def add_arguments(self, parser):
+        """Define command arguments."""
         parser.add_argument(
             '--days',
             type=int,
@@ -25,77 +25,87 @@ class Command(BaseCommand):
     def get_dates_to_process(self, num_days: int) -> List[date]:
         """Generate list of dates to process."""
         today = timezone.now().date()
-        return [today - timezone.timedelta(days=i) for i in range(num_days)]
+        return [today - timedelta(days=i) for i in range(num_days)]
 
-    def get_existing_attendance(self, dates: List[date], employee_ids: List[int]) -> Set[tuple]:
-        """Get existing attendance records for the given dates and employees."""
-        existing = Attendance.objects.filter(
-            logdate__in=dates,
-            employeeid_id__in=employee_ids
-        ).values_list('employeeid_id', 'logdate')
-        return set(map(tuple, existing))
+    def fetch_existing_attendance(self, dates: List[date]) -> Dict[int, Set[date]]:
+        """Fetch existing attendance records grouped by employee ID."""
+        existing_records = defaultdict(set)
+        queryset = Attendance.objects.filter(logdate__in=dates).values_list('employeeid_id', 'logdate')
+        for employee_id, logdate in queryset:
+            existing_records[employee_id].add(logdate)
+        return existing_records
 
-    def create_attendance_objects(self, 
-                                employees: List[Employee], 
-                                dates: List[date],
-                                existing_records: Set[tuple]) -> List[Attendance]:
-        """Create attendance objects for bulk insertion."""
+    def create_attendance_objects(self, employees: List[Employee], dates: List[date], existing_records: Dict[int, Set[date]]):
+        """Generate attendance objects for batch insertion."""
         attendance_objects = []
-        
-        for process_date in dates:
-            is_sunday = process_date.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']
-            
-            for employee in employees:
-                # Skip if attendance already exists
-                if (employee.id, process_date) in existing_records:
+
+        for employee in employees:
+            join_date = employee.date_of_joining or dates[-1]
+            leave_date = employee.date_of_leaving or dates[0]
+            # Convert first_weekoff to an integer if it's a string
+            first_weekoff = employee.first_weekly_off
+            if isinstance(first_weekoff, str):
+                try:
+                    first_weekoff = int(first_weekoff)
+                except ValueError:
+                    raise ValueError
+
+            for process_date in dates:
+                if process_date < join_date or process_date > leave_date:
                     continue
-                
-                # Create new attendance object
+
+                # is_week_off = process_date.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']
+                if first_weekoff:
+                    is_week_off = process_date.weekday() == first_weekoff
+                else:
+                    is_week_off = process_date.weekday() in WEEK_OFF_CONFIG['DEFAULT_WEEK_OFF']
+
+                if process_date in existing_records.get(employee.id, set()):
+                    continue
+
                 attendance_objects.append(
                     Attendance(
                         employeeid=employee,
                         logdate=process_date,
-                        shift_status='WO' if is_sunday else 'A'
+                        shift_status='WO' if is_week_off else 'A'
                     )
                 )
-                
-                # If we've reached batch size, yield the current batch
+
                 if len(attendance_objects) >= self.BATCH_SIZE:
                     yield attendance_objects
                     attendance_objects = []
-        
-        # Yield any remaining objects
+
         if attendance_objects:
             yield attendance_objects
 
     @transaction.atomic
     def handle(self, *args, **options):
+        """Main command logic."""
         num_days = options['days']
         dates = self.get_dates_to_process(num_days)
-        
-        # Get all employees at once
-        employees = list(Employee.objects.all())
-        if not employees:
+
+        employees = Employee.objects.only('id', 'date_of_joining', 'date_of_leaving')  # Fetch only required fields
+        if not employees.exists():
             self.stdout.write(self.style.WARNING("No employees found"))
             return
-        
-        employee_ids = [emp.id for emp in employees]
-        
-        # Get existing attendance records
-        existing_records = self.get_existing_attendance(dates, employee_ids)
-        
-        # Calculate total number of records to be created
-        total_records = len(dates) * len(employees) - len(existing_records)
-        
-        with tqdm(total=total_records, desc="Creating attendance records", unit="records") as pbar:
-            # Process in batches
+
+        existing_records = self.fetch_existing_attendance(dates)
+
+        records_to_create = 0
+        for employee in employees:
+            join_date = employee.date_of_joining or dates[-1]
+            leave_date = employee.date_of_leaving or dates[0]
+            valid_dates = [date for date in dates if join_date <= date <= leave_date]
+            existing_dates_for_employee = existing_records.get(employee.id, set())
+            records_to_create += len(valid_dates) - len(existing_dates_for_employee)
+
+        with tqdm(total=records_to_create, desc="Creating attendance records", unit="records") as pbar:
             for batch in self.create_attendance_objects(employees, dates, existing_records):
-                # Bulk create the batch
                 Attendance.objects.bulk_create(batch)
                 pbar.update(len(batch))
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Successfully processed attendance for {num_days} days with {len(employees)} employees"
+                f"Successfully processed attendance for {num_days} days with {employees.count()} employees"
             )
         )

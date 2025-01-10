@@ -4,26 +4,72 @@
 
         <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
             <span class="p-float-label">
-                <p-calendar [(ngModel)]="dateDelected" [iconDisplay]="'input'"
-                [showIcon]="true"
-                inputId="icondisplay"
-                dateFormat="dd/mm/yy"
-                class="p-inputtext-md"
-                (onSelect)="onDateChange($event)" inputId="dateRange" #calendar></p-calendar>
-                <label for="dateRange">Select Date</label>
-            </span>
-        </div>
-
-        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
-            <span class="p-float-label">
                 <p-calendar [(ngModel)]="rangeDates" [iconDisplay]="'input'" [showIcon]="true" selectionMode="range" dateFormat="dd/mm/yy" class="p-inputtext-md"
                 (onSelect)="onDateRangeChange($event)" inputId="dateRange"></p-calendar>
                 <label for="dateRange">Date Range</label>
             </span>
         </div>
 
-    </div>
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-multiSelect [options]="employeeList" [(ngModel)]="selectedEmployees" placeholder="Select a Employee"
+                [autoDisplayFirst]="true" optionLabel="combined_field" class="p-inputtext-sm"
+                inputId="employee" (onChange)="assignEmployeeId(selectedEmployees)">
+                </p-multiSelect>
+                <label for="employee">Employee</label>
+            </span>
+        </div>
 
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-multiSelect [options]="companies" [(ngModel)]="selectedCompanies" placeholder="Select a Company"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="company" (onChange)="assignCompanyId(selectedCompanies)">
+                </p-multiSelect>
+                <label for="company">Company</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-multiSelect [options]="locations" [(ngModel)]="selectedLocations" placeholder="Select Locations"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-multiselect-sm"
+                inputId="location" (onChange)="assignLocationId(selectedLocations)">
+                </p-multiSelect>
+                <label for="location">Location</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-multiSelect [options]="departments" [(ngModel)]="selectedDepartments" placeholder="Select a Department"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="department" (onChange)="assignDepartmentId(selectedDepartments)">
+                </p-multiSelect>
+                <label for="department">Department</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-multiSelect [options]="designations" [(ngModel)]="selectedDesignations" placeholder="Select a Designation"
+                [autoDisplayFirst]="true" optionLabel="name" class="p-inputtext-sm"
+                inputId="designation" (onChange)="assignDesignationId(selectedDesignations)">
+                </p-multiSelect>
+                <label for="designation">Designation</label>
+            </span>
+        </div>
+
+        <div class="field col-12 md:col-3 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+                <p-dropdown
+                optionLabel="name"
+                placeholder="Select Employee Type"></p-dropdown>
+                <label for="employeeType">Employee Type</label>
+            </span>
+        </div>
+
+    </div>
 </div>
 
 
@@ -65,6 +111,18 @@
             </th>
             <th>
                 Location
+            </th>
+            <th>
+                Job Type
+            </th>
+            <th>
+                Department
+            </th>
+            <th>
+                Employee Type
+            </th>
+            <th>
+                Designation
             </th>
             <th>
                 Log Date
@@ -145,6 +203,10 @@
             </td>
             <td>{{ item.company_name }}</td>
             <td>{{ item.location_name }}</td>
+            <td>{{ item.job_type }}</td>
+            <td>{{ item.department_name }}</td>
+            <td>{{ item.employee_type }}</td>
+            <td>{{ item.designation_name }}</td>
             <td>{{ item.logdate | date: 'dd/MM/yyyy' }}</td>
             <td>{{ item.duty_in_1 }}</td>
             <td>{{ item.duty_out_1 }}</td>

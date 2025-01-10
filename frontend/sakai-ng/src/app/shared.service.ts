@@ -235,6 +235,22 @@ export class SharedService {
       return this.http.delete<any>(`${this.APIUrl}/shift/${id}/`);
     }
 
+    getAutoShifts(params: any): Observable<any> {
+        return this.http.get<any>(`${this.APIUrl}/autoshift/`, { params });
+    }
+
+    addAutoShift(shift: any): Observable<any> {
+        return this.http.post<any>(`${this.APIUrl}/autoshift/`, shift);
+    }
+
+    updateAutoShift(shift: any): Observable<any> {
+        return this.http.put<any>(`${this.APIUrl}/autoshift/${shift.id}/`, shift);
+    }
+
+    deleteAutoShift(id: number): Observable<any> {
+        return this.http.delete<any>(`${this.APIUrl}/autoshift/${id}/`);
+    }
+
     // Shopfloor Resource
     // List and Create
     getShopfloors(params: any): Observable<any> {
@@ -419,21 +435,22 @@ export class SharedService {
         });
     }
 
-    downloadAllEmployeeMonthlyReport(params: any): Observable<any> {
-
+    downloadAllEmployeeMonthlyReport(params: any, actionType: string): Observable<any> {
         let httpParams = new HttpParams();
 
         for (const key in params) {
-          if (params.hasOwnProperty(key)) {
-            httpParams = httpParams.append(key, params[key]);
-          }
+            if (params.hasOwnProperty(key)) {
+                httpParams = httpParams.append(key, params[key]);
+            }
         }
 
-        return this.http.get(`${this.APIUrl}/attendance/export/allemployees/`, {
+        // Include actionType in the API URL
+        return this.http.get(`${this.APIUrl}/attendance/export/${actionType}/`, {
             params: httpParams,
             responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
         });
     }
+
 
     getMandaysAttendanceList(params: any): Observable<any> {
         let httpParams = new HttpParams();

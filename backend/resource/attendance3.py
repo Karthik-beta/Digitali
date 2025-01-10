@@ -13,19 +13,18 @@ class ManDaysAttendanceProcessor:
     def __init__(self):
         self.last_processed_id = self._get_last_processed_id()
         self.valid_employee_ids = self._get_valid_employee_ids()
+        self.employee_details = self._get_employee_details()
         
     def _get_last_processed_id(self) -> int:
         last_log = LastLogIdMandays.objects.first()
         return last_log.last_log_id if last_log else 0
     
     def _get_valid_employee_ids(self) -> set:
-        return set(Employee.objects.values_list('id', flat=True))
-    
-    # def _get_new_logs(self) -> List:
-    #     return (Logs.objects
-    #             .filter(id__gt=self.last_processed_id)
-    #             .order_by('log_datetime', 'id')
-    #             .values('id', 'employeeid', 'log_datetime', 'direction'))
+        return set(Employee.objects.values_list('employee_id', flat=True))
+
+    def _get_employee_details(self) -> Dict:
+        employee_data = {str(emp['employee_id']): emp for emp in Employee.objects.values('id', 'employee_id')}
+        return employee_data
 
     def _get_new_logs(self) -> List:
         """Get new logs with distinct employee punches."""
@@ -158,10 +157,12 @@ class ManDaysAttendanceProcessor:
 
     def _group_logs_by_employee_and_date(self, logs: List) -> Dict:
         grouped_logs = {}
+        logger.info(f"Grouping logs by employee and date {grouped_logs}")
         for log in logs:
             emp_id = log['employeeid']
             
             if not self._is_valid_employee(emp_id):
+                logger.warning(f"Skipping log for invalid employee ID: {emp_id}")
                 continue
                 
             log_date = log['log_datetime'].date()
@@ -172,17 +173,18 @@ class ManDaysAttendanceProcessor:
                 grouped_logs[emp_id][log_date] = []
                 
             grouped_logs[emp_id][log_date].append(log)
-        
+    
         return grouped_logs
 
     def _create_attendance_record(self, emp_id: str, log_date: date, processed_logs: List[Dict]) -> None:
         try:
             if not self._is_valid_employee(emp_id):
-                logger.warning(f"Skipping attendance record for invalid employee ID: {emp_id}")
+                # logger.warning(f"Skipping attendance record for invalid employee ID: {emp_id}")
                 return
                 
+            empid_id = self.employee_details[emp_id]['id']
             attendance_data = {
-                'employeeid_id': emp_id,
+                'employeeid_id': empid_id,
                 'logdate': log_date,
                 'shift': '',
                 'shift_status': ''
@@ -206,19 +208,21 @@ class ManDaysAttendanceProcessor:
             attendance_data['total_hours_worked'] = total_hours
             
             ManDaysAttendance.objects.update_or_create(
-                employeeid_id=emp_id,
+                employeeid_id=empid_id,
                 logdate=log_date,
                 defaults=attendance_data
             )
             
         except Exception as e:
-            logger.error(f"Error creating attendance record for employee {emp_id}: {str(e)}")
+            logger.error(f"Error creating attendance record for employee {empid_id}: {str(e)}")
 
     def _is_valid_employee(self, emp_id: str) -> bool:
         try:
-            emp_id = int(emp_id)
-            return emp_id in self.valid_employee_ids
+            is_valid = emp_id in self.valid_employee_ids
+            # return emp_id in self.valid_employee_ids
+            return is_valid
         except (ValueError, TypeError):
+            logger.warning(f"Invalid employee ID format: {emp_id}")
             return False
 
     @transaction.atomic
@@ -226,7 +230,7 @@ class ManDaysAttendanceProcessor:
         try:
             new_logs = self._get_new_logs()
             if not new_logs:
-                logger.info("No new logs to process")
+                print("No new logs to process")
                 return
                 
             grouped_logs = self._group_logs_by_employee_and_date(new_logs)
@@ -240,9 +244,10 @@ class ManDaysAttendanceProcessor:
                         # Get previous day's record if exists
                         prev_day_record = None
                         if i > 0:
+                            empid_id = self.employee_details[emp_id]['id']
                             prev_day = sorted_dates[i - 1]
                             prev_day_record = ManDaysAttendance.objects.filter(
-                                employeeid_id=emp_id,
+                                employeeid_id=empid_id,
                                 logdate=prev_day
                             ).first()
                             
@@ -253,7 +258,7 @@ class ManDaysAttendanceProcessor:
                             prev_day_record
                         )
                         
-                        if processed_logs:
+                        if processed_logs:                            
                             self._create_attendance_record(emp_id, log_date, processed_logs)
                         pbar.update(1)
             

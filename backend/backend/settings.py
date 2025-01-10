@@ -130,6 +130,10 @@ DATABASES = {
         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DATABASE_PORT'),
+        'OPTIONS': {
+            'connect_timeout': 600,  # Increased connection timeout
+            'options': '-c statement_timeout=60000'  # Set a longer query timeout
+        },
     }
 }
 

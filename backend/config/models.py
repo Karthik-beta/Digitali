@@ -114,11 +114,14 @@ class Shopfloor(models.Model):
         db_table = 'shopfloor'
 
 class Shift(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
+    shift_id = models.CharField(max_length=10, blank=True, null=True)
     start_time = models.TimeField()
     end_time = models.TimeField()
     grace_period_at_start_time = models.DurationField() 
     grace_period_at_end_time = models.DurationField()
+    absent_threshold = models.DurationField()
     half_day_threshold = models.DurationField()
     full_day_threshold = models.DurationField()    
     overtime_threshold_before_start = models.DurationField()  
@@ -127,6 +130,8 @@ class Shift(models.Model):
     lunch_out = models.TimeField(blank=True, null=True)
     lunch_duration = models.DurationField(blank=True, null=True)
     night_shift = models.BooleanField(default=False)
+    include_lunch_break_in_half_day = models.BooleanField(default=False)
+    include_lunch_break_in_full_day = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -150,20 +155,24 @@ class Shift(models.Model):
 
 class AutoShift(models.Model):
     name = models.CharField(max_length=100)
+    shift_id = models.CharField(max_length=10, blank=True, null=True)
     start_time = models.TimeField()
     end_time = models.TimeField()
     tolerance_start_time = models.DurationField()
     tolerance_end_time = models.DurationField()
     grace_period_at_start_time = models.DurationField(default=timedelta(seconds=0))
     grace_period_at_end_time = models.DurationField(default=timedelta(seconds=0))
+    absent_threshold = models.DurationField()
     half_day_threshold = models.DurationField()
     full_day_threshold = models.DurationField()    
     overtime_threshold_before_start = models.DurationField()  
     overtime_threshold_after_end = models.DurationField() 
-    lunch_in = models.TimeField()
-    lunch_out = models.TimeField()
-    lunch_duration = models.DurationField()
+    lunch_in = models.TimeField(blank=True, null=True)
+    lunch_out = models.TimeField(blank=True, null=True)
+    lunch_duration = models.DurationField(blank=True, null=True)
     night_shift = models.BooleanField(default=False)
+    include_lunch_break_in_half_day = models.BooleanField(default=False)
+    include_lunch_break_in_full_day = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
