@@ -383,26 +383,15 @@
     </p-table>
 </div>
 
-
-
-
-
-
-
-
-
 <p-dialog
-        header=""
-        [(visible)]="visible"
-        [position]="position"
-        [style]="{ width: '30rem' }">
-            <span class="p-text-secondary block mb-5">
-                Preparing report for download. Please wait..
-            </span>
-            <p-progressBar mode="indeterminate" [style]="{ height: '8px' }"></p-progressBar>
-    </p-dialog>
-
-
-
+    header=""
+    [(visible)]="visible"
+    [position]="position"
+    [style]="{ width: '35rem' }">
+    <span class="p-text-secondary block text-center mb-5">
+        Preparing report for download. Please wait... ({{ counter.toFixed(1) }} seconds elapsed)
+    </span>
+    <p-progressBar mode="indeterminate" [style]="{ height: '8px' }"></p-progressBar>
+</p-dialog>
 
 <p-toast></p-toast>

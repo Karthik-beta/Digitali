@@ -70,7 +70,7 @@ class AttendanceProcessor:
 
             if success and processed_logs:
                 last_log_id_record.last_log_id = max(processed_logs)
-                # last_log_id_record.save()
+                last_log_id_record.save()
             
             return success
             
@@ -120,7 +120,7 @@ class AttendanceProcessor:
                 log_datetime = timezone.make_naive(log.log_datetime)
             else:
                 log_datetime = log.log_datetime
-
+            
             log_time = log_datetime.time()
             log_date = log_datetime.date()
 
@@ -183,6 +183,7 @@ class AttendanceProcessor:
             else:
                 log_datetime = log.log_datetime
 
+
             log_time = log_datetime.time()
             log_date = log_datetime.date()
 
@@ -199,7 +200,7 @@ class AttendanceProcessor:
                     employeeid=employee,
                     logdate=prev_date,
                     first_logtime__isnull=False,
-                    last_logtime__isnull=True  # Must not have an OUT punch already
+                    # last_logtime__isnull=True  # Must not have an OUT punch already
                 ).first()
 
                 if not attendance:
@@ -365,10 +366,13 @@ class AttendanceProcessor:
                     overtime_before = max(timedelta(), overtime_threshold_before - in_datetime) if in_datetime < overtime_threshold_before else timedelta()
                     overtime_after = max(timedelta(), out_datetime - overtime_threshold_after) if out_datetime > overtime_threshold_after else timedelta()
                     
-                    attendance.overtime = overtime_before + overtime_after if (overtime_before + overtime_after) > timedelta() else None
-
                     # Update status based on thresholds
                     weekoff_days = [is_weekoff] if is_weekoff is not None else WEEK_OFF_CONFIG.get('DEFAULT_WEEK_OFF', [])
+
+                    if attendance.logdate.weekday() in weekoff_days:
+                        attendance.overtime = total_time
+                    else:                        
+                        attendance.overtime = overtime_before + overtime_after if (overtime_before + overtime_after) > timedelta() else None
 
                     if attendance.logdate.weekday() in weekoff_days:
                         attendance.shift_status = 'WW'
@@ -413,18 +417,24 @@ class AttendanceProcessor:
                 # If log time is between 23:00 and midnight
                 if time(23, 0) <= log_time <= time(23, 59, 59):
                     base_date = base_date + timedelta(days=1)
-            # Regular night shift handling
-            elif auto_shift.is_night_shift():
-                if auto_shift.start_time > auto_shift.end_time:
-                    # For logs between shift start (e.g., 22:00) and midnight
-                    if log_time >= auto_shift.start_time:
-                        base_date = base_date + timedelta(days=1)
-                    # For logs between midnight and shift end (e.g., 07:00)
-                    elif log_time <= auto_shift.end_time:
-                        base_date = base_date
-                else:  # Night shift within same calendar date
-                    if not (auto_shift.start_time <= log_time <= auto_shift.end_time):
-                        base_date = base_date + timedelta(days=1)
+            
+            if auto_shift.end_time == time(0, 0):
+                # If log time is between midnight and 01:00
+                if time(0, 0) <= log_time <= time(1, 0):
+                    base_date = base_date - timedelta(days=1)
+
+            # # Regular night shift handling
+            # elif auto_shift.is_night_shift():
+            #     if auto_shift.start_time > auto_shift.end_time:
+            #         # For logs between shift start (e.g., 22:00) and midnight
+            #         if log_time >= auto_shift.start_time:
+            #             base_date = base_date + timedelta(days=1)
+            #         # For logs between midnight and shift end (e.g., 07:00)
+            #         elif log_time <= auto_shift.end_time:
+            #             base_date = base_date
+            #     else:  # Night shift within same calendar date
+            #         if not (auto_shift.start_time <= log_time <= auto_shift.end_time):
+            #             base_date = base_date + timedelta(days=1)
 
             # Calculate start and end times
             start_time = datetime.combine(base_date, auto_shift.start_time)

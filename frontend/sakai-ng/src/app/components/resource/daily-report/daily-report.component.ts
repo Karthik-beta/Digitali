@@ -505,6 +505,8 @@ export class DailyReportComponent implements OnInit, OnDestroy {
 
     downloadAttendanceReport() {
         this.visible = true;
+        this.counter = 0;
+        this.startCounter();
 
         const params: any = {
             employee_id: this.searchQuery || '',
@@ -556,6 +558,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
 
                 // Set visibility to false and show success message
                 this.visible = false;
+                this.stopCounter();
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Report Downloaded',
@@ -568,6 +571,7 @@ export class DailyReportComponent implements OnInit, OnDestroy {
 
                 // Set visibility to false and show error message
                 this.visible = false;
+                this.stopCounter();
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
@@ -575,6 +579,24 @@ export class DailyReportComponent implements OnInit, OnDestroy {
                 });
             }
         });
+    }
+
+    counter: number = 0;
+    private intervalId: any;
+
+    startCounter() {
+        this.intervalId = setInterval(() => {
+            this.counter += 0.1; // Increment counter by 10ms in seconds
+        }, 100); // Run every 10ms
+    }
+
+    stopCounter() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            this.counter = 0;
+        }
+        this.counter = 0;
     }
 
 

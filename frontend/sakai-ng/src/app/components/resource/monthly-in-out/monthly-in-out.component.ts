@@ -555,6 +555,7 @@ export class MonthlyInOutComponent implements OnInit {
 
                 // Set visibility to false and show success message
                 this.visible = false;
+                this.stopCounter();
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Report Downloaded',
