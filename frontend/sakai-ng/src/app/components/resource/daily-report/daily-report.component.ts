@@ -5,6 +5,7 @@ import { Table } from 'primeng/table';
 import { MessageService } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api';
 import { debounceTime, distinctUntilChanged, startWith, switchMap, timeout, catchError } from 'rxjs/operators';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, Subscription, interval, timer } from 'rxjs';
 import { of } from 'rxjs';
 
@@ -429,7 +430,6 @@ export class DailyReportComponent implements OnInit, OnDestroy {
         // Perform the search
         this.getAttendanceReport({ first: 0, rows: this.rows, sortField: '', sortOrder: 1 });
 
-        console.log('Search criteria:', criteria);
     }
 
     performAttendanceAction(actionType: string) {

@@ -336,3 +336,22 @@ class LastUpdatedAtAPIView(APIView):
                 data[key] = 'Never Updated'
 
         return Response(data)
+
+class AttendanceCorrectionConfigListCreate(generics.ListCreateAPIView):
+    queryset = models.AttendanceCorrectionConfig.objects.all()
+    serializer_class = serializers.AttendanceCorrectionConfigSerializer
+    pagination_class = None
+
+    def list(self, request, *args, **kwargs):
+        instance = self.queryset.first()
+        if not instance:
+            instance = models.AttendanceCorrectionConfig.objects.create()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+class AttendanceCorrectionConfigRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = models.AttendanceCorrectionConfig.objects.all()
+    serializer_class = serializers.AttendanceCorrectionConfigSerializer
+
+    def get_object(self):
+        return self.queryset.first()

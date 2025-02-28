@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpEvent } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../environments/environment';
@@ -209,17 +209,21 @@ export class SharedService {
 
     // Shift Resource
     // List and Create
+    // getShifts(params: any): Observable<any> {
+    //     return this.http.get<any>(`${this.APIUrl}/shift/`, { params })
+    //     .pipe(
+    //         map(response => ({
+    //             ...response,
+    //             results: response.results.map((shift: any) => ({
+    //                 id: shift.id,
+    //                 name: shift.name
+    //             }))
+    //         }))
+    //     );
+    // }
+
     getShifts(params: any): Observable<any> {
-        return this.http.get<any>(`${this.APIUrl}/shift/`, { params })
-        .pipe(
-            map(response => ({
-                ...response,
-                results: response.results.map((shift: any) => ({
-                    id: shift.id,
-                    name: shift.name
-                }))
-            }))
-        );
+        return this.http.get<any>(`${this.APIUrl}/shift/`, { params });
     }
 
     // Retrieve, Update, Destroy
@@ -362,22 +366,22 @@ export class SharedService {
     return this.http.get(`${this.APIUrl}/attendance/`, { params: httpParams });
   }
 
-  // Download attendance report
-  downloadAttendanceReport(params: any): Observable<any> {
+    // Download attendance report
+    downloadAttendanceReport(params: any): Observable<any> {
 
-    let httpParams = new HttpParams();
+        let httpParams = new HttpParams();
 
-    for (const key in params) {
-      if (params.hasOwnProperty(key)) {
-        httpParams = httpParams.append(key, params[key]);
-      }
+        for (const key in params) {
+        if (params.hasOwnProperty(key)) {
+            httpParams = httpParams.append(key, params[key]);
+        }
+        }
+
+        return this.http.get(`${this.APIUrl}/attendance/export/`, {
+            params: httpParams,
+            responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
+        });
     }
-
-    return this.http.get(`${this.APIUrl}/attendance/export/`, {
-        params: httpParams,
-        responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
-    });
-  }
 
     // Attendance Metrics
     getAttendanceMetrics(): Observable<any> {
@@ -398,11 +402,11 @@ export class SharedService {
           }
         }
 
-        return this.http.get(`${this.APIUrl}/logs/`, { params: httpParams });
+        return this.http.get(`${this.APIUrl}/manual_log/`, { params: httpParams });
     }
 
     postLog(formData: any): Observable<any> {
-        return this.http.post(`${this.APIUrl}/logs/`, formData);
+        return this.http.post(`${this.APIUrl}/manual_log/`, formData);
     }
 
     updateLog(id: number, formData: any): Observable<any> {
@@ -534,5 +538,65 @@ export class SharedService {
                 responseType: 'blob' as 'json', // Set the response type to 'blob' for binary data
             });
         }
+
+    getOvertimeRulesList(): Observable<any> {
+        return this.http.get(`${this.APIUrl}/overtime_rules/`);
+    }
+
+    getOvertimeRulesOptions(): Observable<any> {
+        return this.http.options(`${this.APIUrl}/overtime_rules/`);
+      }
+
+    updateOvertimeRules(id: number, formData: any): Observable<any> {
+        return this.http.put(`${this.APIUrl}/overtime_rules/${id}/`, formData);
+    }
+
+    getMonthlyAttendanceOverview(params: any): Observable<any> {
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                httpParams = httpParams.append(key, params[key]);
+            }
+            }
+
+        return this.http.get(`${this.APIUrl}/attendance/monthly_overview/`, { params: httpParams });
+    }
+
+    updateMissedPunch(id: number, formData: any): Observable<any> {
+        return this.http.patch(`${this.APIUrl}/attendance/monthly_overview/${formData.id}/`, formData);
+    }
+
+    getHolidayList(params: any): Observable<any> {
+        let httpParams = new HttpParams();
+
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                httpParams = httpParams.append(key, params[key]);
+            }
+            }
+
+        return this.http.get(`${this.APIUrl}/holiday_list/`, { params: httpParams });
+    }
+
+    addHolidayList(formData: any): Observable<any> {
+        return this.http.post(`${this.APIUrl}/holiday_list/`, formData);
+    }
+
+    updateHolidayList(id: number, formData: any): Observable<any> {
+        return this.http.put(`${this.APIUrl}/holiday_list/${id}/`, formData);
+    }
+
+    deleteHolidayList(id: number): Observable<any> {
+        return this.http.delete(`${this.APIUrl}/holiday_list/${id}/`);
+    }
+
+    getAutoAbsenceCorrectionSettings(): Observable<any> {
+        return this.http.get(`${this.APIUrl}/auto_absence_config/`);
+    }
+
+    updateAutoAbsenceCorrectionSettings(id: number, formData: any): Observable<any> {
+        return this.http.put(`${this.APIUrl}/auto_absence_config/${id}/`, formData);
+    }
 
 }

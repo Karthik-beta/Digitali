@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import timedelta
+import datetime
 
 class Company(models.Model):
     name = models.CharField(max_length=100)
@@ -193,3 +194,29 @@ class AutoShift(models.Model):
     
     class Meta:
         db_table = 'auto_shift'
+
+class AttendanceCorrectionConfig(models.Model):
+    id = models.AutoField(primary_key=True)
+    is_enabled = models.BooleanField(default=True, help_text="Enable or disable the auto-correction feature")
+    cutoff_time = models.TimeField(default=datetime.time(6, 0, 0), help_text="Time threshold to determine if the current day should be considered or shifted to the previous day")
+
+    class Meta:
+        db_table = "attendance_correction_config"
+
+    @classmethod
+    def load(cls):
+        """Get or create the singleton instance"""
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def save(self, *args, **kwargs):
+        """Ensure only one record exists by forcing the primary key to 1"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Prevent deletion of the singleton instance"""
+        pass
+
+    def __str__(self):
+        return f"Correction Enabled: {self.is_enabled}, Cutoff Time: {self.cutoff_time}"

@@ -78,7 +78,7 @@
             </span>
         </div>
 
-        <div class="col-12 lg:col-6 xl:col-6">
+        <div class="col-12 lg:col-12 xl:col-12">
             <p-floatLabel>
                 <p-calendar
                     inputId="start_time"
@@ -95,13 +95,43 @@
                 </p-calendar>
                 <label for="start_time" class="block font-bold">Shift Start</label>
             </p-floatLabel>
-            <!-- <span class="p-float-label">
-                <input type="time" id="start_time" [hourFormat]="24" pInputText [(ngModel)]="start_time" class="p-inputtext-sm"/>
-                <label for="start_time">Start time</label>
-            </span> -->
         </div>
 
         <div class="col-12 lg:col-6 xl:col-6">
+            <p-floatLabel>
+                <p-inputNumber
+                    [(ngModel)]="tolerance_start_time"
+                    [showButtons]="true"
+                    inputId="tolerance_start_time"
+                    spinnerMode="horizontal"
+                    [step]="1"
+                    [iconDisplay]="'input'"
+                    class="p-inputtext-sm"
+                    [min]="0"
+                    [max]="1440"
+                    mode="decimal" />
+                <label for="tolerance_start_time" class="block font-bold">Tolerance Before Shift Start (in Min)</label>
+            </p-floatLabel>
+        </div>
+
+        <div class="col-12 lg:col-6 xl:col-6">
+            <p-floatLabel>
+                <p-inputNumber
+                    [(ngModel)]="tolerance_end_time"
+                    [showButtons]="true"
+                    inputId="tolerance_end_time"
+                    spinnerMode="horizontal"
+                    [step]="1"
+                    [iconDisplay]="'input'"
+                    class="p-inputtext-sm"
+                    [min]="0"
+                    [max]="1440"
+                    mode="decimal" />
+                <label for="tolerance_end_time" class="block font-bold">Tolerance After Shift Start (in Min)</label>
+            </p-floatLabel>
+        </div>
+
+        <div class="col-12 lg:col-12 xl:col-12">
             <p-floatLabel>
                 <p-calendar
                     inputId="end_time"
@@ -132,7 +162,7 @@
                     [min]="0"
                     [max]="1440"
                     mode="decimal" />
-                <label for="tolerance_start_time" class="block font-bold">Tolerance at Shift Start (in Min)</label>
+                <label for="tolerance_start_time" class="block font-bold">Tolerance Before Shift End (in Min)</label>
             </p-floatLabel>
         </div>
 
@@ -149,7 +179,7 @@
                     [min]="0"
                     [max]="1440"
                     mode="decimal" />
-                <label for="tolerance_end_time" class="block font-bold">Tolerance at Shift End (in Min)</label>
+                <label for="tolerance_end_time" class="block font-bold">Tolerance After Shift End (in Min)</label>
             </p-floatLabel>
         </div>
 

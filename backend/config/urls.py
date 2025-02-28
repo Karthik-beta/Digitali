@@ -35,4 +35,7 @@ urlpatterns = [
     re_path(r'shift/(?P<id>\d+)/$', views.ShiftRetrieveUpdateDestroy.as_view(), name='shift-retrieve-update-destroy'),
 
     re_path(r'^updated_at/$', views.LastUpdatedAtAPIView.as_view(), name='last-updated-at'),
+
+    re_path(r'^auto_absence_config/$', views.AttendanceCorrectionConfigListCreate.as_view(), name='employee-list-create'),
+    re_path(r'^auto_absence_config/(?P<id>\d+)/$', views.AttendanceCorrectionConfigRetrieveUpdateDestroy.as_view(), name='employee-retrieve-update-destroy'),
 ]

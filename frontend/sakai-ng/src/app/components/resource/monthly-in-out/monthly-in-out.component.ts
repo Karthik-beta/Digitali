@@ -160,12 +160,14 @@ export class MonthlyInOutComponent implements OnInit {
         ];
 
         this.criteria = [
+            { name: 'Monthly Movements Register', code: 'monthly_movements', command: () => this.setReportStatus('monthly_movements') },
             { name: 'In-Out Movements Register', code: 'allemployees', command: () => this.setReportStatus('allemployees')},
             { name: 'Duty Hours Register', code: 'monthly_duty_hours', command: () => this.setReportStatus('monthly_duty_hours') },
             { name: 'Musterrole Register', code: 'monthly_muster_role', command: () => this.setReportStatus('monthly_muster_role') },
             { name: 'Payroll Register', code: 'monthly_payroll', command: () => this.setReportStatus('monthly_payroll') },
             { name: 'Shift Roaster Register', code: 'monthly_shift_roaster', command: () => this.setReportStatus('monthly_shift_roaster') },
             { name: 'Overtime Register', code: 'monthly_overtime', command: () => this.setReportStatus('monthly_overtime')},
+            { name: 'Overtime Roundoff Register', code: 'monthly_overtime_roundoff', command: () => this.setReportStatus('monthly_roundoff_overtime')},
             { name: 'Late Entry Register', code: 'monthly_late_entry', command: () => this.setReportStatus('monthly_late_entry')},
             { name: 'Early Exit Register', code: 'monthly_early_exit', command: () => this.setReportStatus('monthly_early_exit')},
             { name: 'Absent Register', code: 'monthly_absent', command: () => this.setReportStatus('monthly_absent')},
@@ -591,11 +593,13 @@ export class MonthlyInOutComponent implements OnInit {
     getReportFileName(actionType: string): string {
         const reportNames: { [key: string]: string } = {
             allemployees: 'Monthly_In_Out_Movements_Register',
+            monthly_movements: 'Monthly_Movements_Register',
             monthly_duty_hours: 'Monthly_Duty_Hours_Register',
             monthly_muster_role: 'Monthly_Musterrole_Register',
             monthly_payroll: 'Monthly_Payroll_Register',
             monthly_shift_roaster: 'Monthly_Shift_Roaster_Register',
             monthly_overtime: 'Monthly_Overtime_Register',
+            monthly_overtime_roundoff: 'Monthly_Overtime_Roundoff_Register',
             monthly_late_entry: 'Monthly_Late_Entry_Register',
             monthly_early_exit: 'Monthly_Early_Exit_Register',
             monthly_absent: 'Monthly_Absent_Register',

@@ -150,3 +150,9 @@ class AutoShiftSerializer(serializers.ModelSerializer):
             data['lunch_duration'] = "00:00:00"
             
         return data
+    
+class AttendanceCorrectionConfigSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.AttendanceCorrectionConfig
+        fields = '__all__'

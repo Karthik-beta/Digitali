@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from resource.models import Attendance, Employee
+from resource.models import Attendance, Employee, HolidayList
 from tqdm import tqdm
 from typing import List, Dict, Set
 from datetime import date, timedelta
@@ -39,6 +39,10 @@ class Command(BaseCommand):
         """Generate attendance objects for batch insertion."""
         attendance_objects = []
 
+        # Fetch all holidays for the given date range
+        holidays = HolidayList.objects.filter(holiday_date__in=dates)
+        holiday_dict = {holiday.holiday_date: holiday.holiday_type for holiday in holidays}
+
         for employee in employees:
             join_date = employee.date_of_joining or dates[-1]
             leave_date = employee.date_of_leaving or dates[0]
@@ -63,11 +67,18 @@ class Command(BaseCommand):
                 if process_date in existing_records.get(employee.id, set()):
                     continue
 
+                shift_status = 'WO' if is_week_off else 'A'
+                
+                # Check if the current date is a holiday
+                if process_date in holiday_dict:
+                    shift_status = holiday_dict[process_date]
+                
+
                 attendance_objects.append(
                     Attendance(
                         employeeid=employee,
                         logdate=process_date,
-                        shift_status='WO' if is_week_off else 'A'
+                        shift_status=shift_status
                     )
                 )
 
@@ -84,7 +95,7 @@ class Command(BaseCommand):
         num_days = options['days']
         dates = self.get_dates_to_process(num_days)
 
-        employees = Employee.objects.only('id', 'date_of_joining', 'date_of_leaving')  # Fetch only required fields
+        employees = Employee.objects.only('id', 'date_of_joining', 'date_of_leaving', 'first_weekly_off')  # Fetch only required fields
         if not employees.exists():
             self.stdout.write(self.style.WARNING("No employees found"))
             return

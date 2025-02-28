@@ -12,7 +12,7 @@ import { ShiftStrengthComponent } from './components/resource/resource-dashboard
 import { EvacuationComponent } from './components/resource/resource-dashboard/evacuation/evacuation.component';
 import { AddEditEmployeeComponent } from './components/resource/employee-master/add-edit-employee/add-edit-employee.component';
 import { MonthlyInOutComponent } from './components/resource/monthly-in-out/monthly-in-out.component';
-import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
+// import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
 import { AbsentComponent } from './components/resource/absent/absent.component';
 import { LateEntryComponent } from './components/resource/late-entry/late-entry.component';
 import { EarlyExitComponent } from './components/resource/early-exit/early-exit.component';
@@ -22,6 +22,7 @@ import { MissedPunchReportComponent } from './components/resource/missed-punch-r
 import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
 import { MandaysComponent } from './components/resource/mandays/mandays.component';
 import { LogsComponent } from './components/configurations/logs/logs.component';
+import { MissedPunchComponent } from './components/resource/attendance-regularization/missed-punch/missed-punch.component';
 
 @NgModule({
     imports: [
@@ -54,8 +55,12 @@ import { LogsComponent } from './components/configurations/logs/logs.component';
                     { path: 'Monthly_In_Out', component: MonthlyInOutComponent, canActivate: [authGuard] },
                     { path: 'shift_strength', component: ShiftStrengthComponent, canActivate: [authGuard] },
                     { path: 'evacuation', component: EvacuationComponent, canActivate: [authGuard] },
-                    { path: 'missed_punch', component: MissedPunchComponent, canActivate: [authGuard] },
+                    // { path: 'missed_punch', component: MissedPunchComponent, canActivate: [authGuard] },
                     { path: 'mandays_report', component: MandaysComponent, canActivate: [authGuard] },
+
+                    // Attendance Regularization
+                    { path: 'missed_punch', component: MissedPunchComponent, canActivate: [authGuard] },
+                    // { path: 'missed_punch_2', component: MissedPunchComponent, canActivate: [authGuard] },
 
 
                     // Configuration

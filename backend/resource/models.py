@@ -218,13 +218,14 @@ class Employee(models.Model):
         verbose_name_plural = 'Employees'
         db_table = 'employee'
         indexes = [
-            models.Index(fields=['id']),
-            models.Index(fields=['employee_id', 'employee_name', 'email', 'phone_no', 'pf_no', 'esi_no', 
-                                 'insurance_no', 'bank_name', 'bank_branch', 'bank_account_no', 'bank_account_name', 
-                                 'bank_account_type', 'ifsc_code', 'category', 'job_type', 'job_status', 
-                                 'emergency_contact_name', 'emergency_contact_no', 'marital_status', 'spouse_name', 
-                                 'blood_group', 'date_of_birth', 'country_name', 'country_code', 'uid_no', 'pan_no', 
-                                 'voter_id', 'driving_license',]),
+            models.Index(fields=['employee_id'], name='idx_employee_id'),
+
+            # Composite indexes
+            models.Index(fields=['employee_id', 'employee_name'], name='idx_employee_id_name'),
+            models.Index(fields=['bank_account_no', 'bank_name'], name='idx_bank_account_bank_name'),
+            models.Index(fields=['job_type', 'job_status'], name='idx_job_type_status'),
+            models.Index(fields=['date_of_joining', 'date_of_leaving'], name='idx_joining_leaving'),
+
             # Add more indexes as needed
         ]
 
@@ -238,13 +239,17 @@ class Logs(models.Model):
 
     class Meta:   
         db_table = 'logs'
-        
+        indexes = [
+            models.Index(fields=['employeeid', 'log_datetime'], name='logs_emp_logdt'), # Composite index
+            models.Index(fields=['log_datetime'], name='logs_logdt'),
+            models.Index(fields=['direction'], name='logs_dir'),  
+        ]        
          
 class LastLogId(models.Model):
     last_log_id = models.IntegerField(default=0, editable=True)
     
     class Meta:
-        db_table = 'last_log_id'
+        db_table = 'last_log_id'        
 
 class LastLogIdMandays(models.Model):
     last_log_id = models.IntegerField(default=0, editable=True)
@@ -269,6 +274,10 @@ class Attendance(models.Model):
     class Meta:
         unique_together = ['employeeid', 'logdate']
         db_table = 'attendance'
+        indexes = [
+            models.Index(fields=['logdate'], name='idx_logdate'),  # Single index on logdate
+            models.Index(fields=['employeeid', 'logdate'], name='idx_employeeid_logdate'),  # Composite index
+        ]
     
     # def save(self, *args, **kwargs):
     #     # Check and replace "00:00:00" with null for specified fields
@@ -279,6 +288,33 @@ class Attendance(models.Model):
     #             setattr(self, field_name, None)
         
     #     super(Attendance, self).save(*args, **kwargs)
+
+class OvertimeRoundoffRules(models.Model):
+    id = models.AutoField(primary_key=True)
+    round_off_interval = models.DurationField(default=datetime.timedelta(minutes=15))
+    round_off_direction = models.CharField(
+        max_length=50, 
+        default='nearest', 
+        choices=(('Up', 'Up'), ('Down', 'Down'), ('Nearest', 'Nearest'))
+    )
+
+    class Meta:
+        db_table = 'overtime_roundoff_rules'
+
+    @classmethod
+    def load(cls):
+        """Get or create the singleton instance"""
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def save(self, *args, **kwargs):
+        """Ensure only one record exists by forcing the primary key to 1"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Prevent deletion of the singleton instance"""
+        pass
 
 class ManDaysAttendance(models.Model):
     employeeid = models.ForeignKey(Employee, on_delete=models.SET_NULL, blank=True, null=True)
@@ -349,3 +385,33 @@ class ManDaysMissedPunchAttendance(models.Model):
 
     class Meta:
         db_table = 'mandays_missed_punch_attendance'
+
+class ManualLogs(models.Model):
+    employeeid = models.CharField(max_length=50, blank=True, null=True)
+    log_datetime = models.DateTimeField(blank=True, null=True)
+    direction = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        db_table = 'manual_logs'
+        indexes = [
+             models.Index(fields=['employeeid', 'log_datetime'], name='manual_emp_logdt'),
+            models.Index(fields=['log_datetime'], name='manual_logdt'),
+            models.Index(fields=['direction'], name='manual_dir'),
+        ]
+
+class HolidayList(models.Model):
+    holiday_date = models.DateField()
+    holiday_name = models.CharField(max_length=100)
+    holiday_type = models.CharField(choices=(('PH', 'PH'), ('FH', 'FH')), default='PH', max_length=10)
+    holiday_description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'holiday_list'
+        indexes = [
+            models.Index(fields=['holiday_date'], name='idx_holiday_date'),  # Single index on holiday_date
+            models.Index(fields=['holiday_name'], name='idx_holiday_name'),  # Single index on holiday_name
+            models.Index(fields=['holiday_type'], name='idx_holiday_type'),  # Single index on holiday_type
+            models.Index(fields=['holiday_date', 'holiday_name'], name='idx_holiday_date_name'),  # Composite index
+        ]

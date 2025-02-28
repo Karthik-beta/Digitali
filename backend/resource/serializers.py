@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from resource.models import (Employee, Attendance, Logs, LastLogId, ManDaysAttendance, ManDaysMissedPunchAttendance)
+from resource.models import (Employee, Attendance, Logs, LastLogId, ManDaysAttendance, ManDaysMissedPunchAttendance, OvertimeRoundoffRules, HolidayList)
+from datetime import timedelta
 
 # from config import models as config
 # from config.models import config
@@ -130,3 +131,35 @@ class ErrorResponseSerializer(serializers.Serializer):
     """Serializer for error responses"""
     error = serializers.CharField()
     message = serializers.CharField()
+
+class OvertimeRoundoffRulesSerializer(serializers.ModelSerializer):
+    """Serializer for overtime roundoff rules with custom handling for round_off_interval"""
+
+    class DurationMinutesField(serializers.Field):
+        """Custom field to handle duration stored as minutes"""
+        def to_representation(self, value):
+            """Convert timedelta to minutes for output"""
+            if value is None:
+                return 0
+            return int(value.total_seconds() // 60)
+
+        def to_internal_value(self, value):
+            """Convert minutes to timedelta for storage"""
+            try:
+                value = int(value) if value is not None else 0
+                return timedelta(minutes=value)
+            except (TypeError, ValueError):
+                raise serializers.ValidationError("Round-off interval must be a valid integer number of minutes")
+
+    round_off_interval = DurationMinutesField()
+
+    class Meta:
+        model = OvertimeRoundoffRules
+        fields = '__all__'
+
+class HolidayListSerializer(serializers.ModelSerializer):
+    """Serializer for holiday list"""
+
+    class Meta:
+        model = HolidayList
+        fields = '__all__'

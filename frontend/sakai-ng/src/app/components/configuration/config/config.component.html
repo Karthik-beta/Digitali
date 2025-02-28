@@ -1,5 +1,6 @@
-
-
+<p-divider align="left" type="solid">
+    <b>General Configuration</b>
+</p-divider>
 
 <div class="grid">
 
@@ -220,35 +221,6 @@
             <p-panel [toggleable]="true" [collapsed]="true" >
             <ng-template pTemplate="header">
                 <div class="flex align-items-center gap-2">
-                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
-                    <span class="font-bold">Auto Shift</span>
-                </div>
-            </ng-template>
-            <ng-template pTemplate="footer">
-                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
-                    <div class="flex align-items-center gap-2">
-                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
-                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
-                    </div>
-                    <span class="p-text-secondary">
-                        {{ shift ? shift : 'No Data Found' }}
-                    </span>
-                </div>
-            </ng-template>
-            <ng-template pTemplate="icons">
-                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
-                    <span class="pi pi-cog"></span>
-                </button>
-                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
-            </ng-template>
-            <app-shift></app-shift>
-            </p-panel>
-        </div>
-
-        <div class="card">
-            <p-panel [toggleable]="true" [collapsed]="true" >
-            <ng-template pTemplate="header">
-                <div class="flex align-items-center gap-2">
                     <i class="fas fa-user text-blue-500 text-xl"></i>
                     <span class="font-bold">Employee Type/Category</span>
                 </div>
@@ -296,6 +268,183 @@
                 <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
             </ng-template>
 
+            </p-panel>
+        </div>
+
+        <div class="card">
+            <p-panel [toggleable]="true" [collapsed]="true" >
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
+                    <span class="font-bold">Holiday List</span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="flex align-items-center gap-2">
+                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
+                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
+                    </div>
+                    <span class="p-text-secondary">
+                        {{ shift ? shift : 'No Data Found' }}
+                    </span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="icons">
+                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
+                    <span class="pi pi-cog"></span>
+                </button>
+                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
+            </ng-template>
+            <app-holiday-list></app-holiday-list>
+            </p-panel>
+        </div>
+
+    </div>
+
+</div>
+
+<p-divider align="left" type="solid">
+    <b>Shift Configuration</b>
+</p-divider>
+
+<div class="grid">
+
+    <div class="col-12 lg:col-12 xl:col-6">
+
+        <div class="card">
+            <p-panel [toggleable]="true" [collapsed]="true" >
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
+                    <span class="font-bold">Auto Shift</span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="flex align-items-center gap-2">
+                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
+                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
+                    </div>
+                    <span class="p-text-secondary">
+                        {{ shift ? shift : 'No Data Found' }}
+                    </span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="icons">
+                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
+                    <span class="pi pi-cog"></span>
+                </button>
+                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
+            </ng-template>
+            <app-shift></app-shift>
+            </p-panel>
+        </div>
+
+    </div>
+
+    <div class="col-12 lg:col-12 xl:col-6">
+
+        <div class="card">
+            <p-panel [toggleable]="true" [collapsed]="true" >
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
+                    <span class="font-bold">Fixed Shift</span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="flex align-items-center gap-2">
+                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
+                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
+                    </div>
+                    <span class="p-text-secondary">
+                        {{ shift ? shift : 'No Data Found' }}
+                    </span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="icons">
+                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
+                    <span class="pi pi-cog"></span>
+                </button>
+                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
+            </ng-template>
+            <app-fixed-shift></app-fixed-shift>
+            </p-panel>
+        </div>
+
+    </div>
+
+</div>
+
+<p-divider align="left" type="solid">
+    <b>Report Rules Configuration</b>
+</p-divider>
+
+<div class="grid">
+
+    <div class="col-12 lg:col-12 xl:col-6">
+
+        <div class="card">
+            <p-panel [toggleable]="true" [collapsed]="true" >
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
+                    <span class="font-bold">Overtime Roundoff Rules</span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="flex align-items-center gap-2">
+                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
+                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
+                    </div>
+                    <span class="p-text-secondary">
+                        {{ shift ? shift : 'No Data Found' }}
+                    </span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="icons">
+                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
+                    <span class="pi pi-cog"></span>
+                </button>
+                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
+            </ng-template>
+            <app-overtime-roundoff></app-overtime-roundoff>
+            </p-panel>
+        </div>
+
+    </div>
+
+    <div class="col-12 lg:col-12 xl:col-6">
+
+        <div class="card">
+            <p-panel [toggleable]="true" [collapsed]="true" >
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="fas fa-business-time text-blue-500 text-xl"></i>
+                    <span class="font-bold">Auto Absence Correction</span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="flex align-items-center gap-2">
+                        <p-button icon="pi pi-user" rounded="true" text="true"></p-button>
+                        <p-button icon="pi pi-bookmark" severity="secondary" rounded="true" text="true"></p-button>
+                    </div>
+                    <span class="p-text-secondary">
+                        {{ shift ? shift : 'No Data Found' }}
+                    </span>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="icons">
+                <button class="p-panel-header-icon p-link mr-2" (click)="menu.toggle($event)">
+                    <span class="pi pi-cog"></span>
+                </button>
+                <p-menu #menu id="config_menu" [model]="items" [popup]="true" />
+            </ng-template>
+            <app-absence-correction></app-absence-correction>
             </p-panel>
         </div>
 

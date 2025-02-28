@@ -139,7 +139,8 @@ import { ShopfloorComponent } from './components/configuration/shopfloor/shopflo
 import { MonthlyInOutComponent } from './components/resource/monthly-in-out/monthly-in-out.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 
-import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
+// import { MissedPunchComponent } from './components/resource/attendance-reg/missed-punch/missed-punch.component';
+import { MissedPunchComponent } from './components/resource/attendance-regularization/missed-punch/missed-punch.component';
 import { ShiftComponent } from './components/configuration/shift/shift.component';
 import { AbsentComponent } from './components/resource/absent/absent.component';
 import { LateEntryComponent } from './components/resource/late-entry/late-entry.component';
@@ -150,6 +151,10 @@ import { MissedPunchReportComponent } from './components/resource/missed-punch-r
 import { InsufficientHoursReportComponent } from './components/resource/insufficient-hours-report/insufficient-hours-report.component';
 import { MandaysComponent } from './components/resource/mandays/mandays.component';
 import { LogsComponent } from './components/configurations/logs/logs.component';
+import { FixedShiftComponent } from './components/configuration/fixed-shift/fixed-shift.component';
+import { OvertimeRoundoffComponent } from './components/configuration/overtime-roundoff/overtime-roundoff.component';
+import { HolidayListComponent } from './components/configuration/holiday-list/holiday-list.component';
+import { AbsenceCorrectionComponent } from './components/configuration/absence-correction/absence-correction.component';
 
 
 
@@ -169,7 +174,11 @@ import { LogsComponent } from './components/configurations/logs/logs.component';
         MissedPunchReportComponent,
         InsufficientHoursReportComponent,
         MandaysComponent,
-        LogsComponent
+        LogsComponent,
+        FixedShiftComponent,
+        OvertimeRoundoffComponent,
+        HolidayListComponent,
+        AbsenceCorrectionComponent
     ],
     imports: [
         AppRoutingModule,

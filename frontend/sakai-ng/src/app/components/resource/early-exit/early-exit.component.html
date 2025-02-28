@@ -177,7 +177,7 @@
             <td class="text-center"><span [class]="'status-badge status-' + item.shift_status">{{ item.shift_status }}</span></td>
             <td>{{ item.first_logtime }}</td>
             <td>{{ item.last_logtime }}</td>
-            <td><span [class]="getClassForTotalTime(item.total_time)">{{ item.total_time }}</span></td>
+            <td><span>{{ item.total_time }}</span></td>
             <td *ngIf="item.late_entry !== '00:00:00'; else emptyLateEntry">{{ item.late_entry }}</td>
             <ng-template #emptyLateEntry><td></td></ng-template>
             <td *ngIf="item.early_exit !== '00:00:00'; else emptyEarlyExit">{{ item.early_exit }}</td>
